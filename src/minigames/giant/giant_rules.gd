@@ -144,6 +144,7 @@ func do_tie(id: int) -> void:
 	_tie_cd[id] = TIE_COOLDOWN
 	var per_tie := TIE_BUDGET / maxf(1.0, float(_team_size))
 	bind = minf(100.0, bind + per_tie * PerkDB.tie_mult(Net.perks_of(id)))
+	Net.award(id, 8, "Tied the giant")
 	if _trip_ext < TRIP_EXTEND_MAX:
 		tripped += 0.15
 		_trip_ext += 0.15
@@ -186,10 +187,17 @@ func _stomp(pos: Vector3, r: float) -> void:
 	if over:
 		return
 	game._ev_fx.rpc("stomp", pos, 0.0, r)
+	game.props.blast(pos, r * 1.8, 9.0)
 	for id: int in alive.keys():
 		var av: Avatar = game.avatars.get(id)
-		if av and _flat_dist(av.global_position, pos) < r and av.global_position.y - pos.y < 0.9:
+		if av == null:
+			continue
+		var fd := _flat_dist(av.global_position, pos)
+		if fd < r and av.global_position.y - pos.y < 0.9:
 			kill(id, "got pancaked")
+		elif fd < r * 1.7:  # near miss: shockwave wobble
+			var away := av.global_position - pos
+			av.push.rpc(Vector3(away.x, 0, away.z).normalized() * 5.0 + Vector3.UP * 3.0)
 	for rid: int in _ropes.keys():
 		var rp: Dictionary = _ropes[rid]
 		if _seg_dist_xz(pos, rp.a, rp.b) < r:
@@ -202,6 +210,7 @@ func _slap(pos: Vector3, r: float) -> void:
 	if over:
 		return
 	game._ev_fx.rpc("slap", pos, 0.0, r)
+	game.props.blast(pos, r * 2.2, 16.0)
 	for id: int in alive.keys():
 		var av: Avatar = game.avatars.get(id)
 		if av == null:
@@ -221,6 +230,7 @@ func _fart(gav: Avatar, sf: float) -> void:
 		return
 	var back := -gav.forward()
 	game._ev_fx.rpc("fart", gav.global_position, gav.facing, sf)
+	game.props.blast(gav.global_position + back * 4.0 * sf, 8.0 * sf, 14.0)
 	for id: int in alive.keys():
 		var av: Avatar = game.avatars.get(id)
 		if av == null:
@@ -245,6 +255,7 @@ func kill(id: int, cause: String) -> void:
 	alive[id] = false
 	_pending.erase(id)
 	game._ev_kill.rpc(id, cause)
+	Net.award(game.giant_id, 25, "Flattened %s" % Net.pname(id))
 
 
 # --- tick --------------------------------------------------------------------------
@@ -332,7 +343,7 @@ func _sim_spears(delta: float, gav: Avatar) -> void:
 				break
 		if not hit:
 			var axis_a := gp + Vector3.UP * 0.4 * gav.size
-			var axis_b := gp + Vector3.UP * 1.3 * gav.size
+			var axis_b := gp + Vector3.UP * 0.95 * gav.size
 			if _seg_point_dist(axis_a, axis_b, np) < 0.45 * gav.size and not gav.fallen:
 				hit = true
 		if not hit:
@@ -349,7 +360,9 @@ func _sim_spears(delta: float, gav: Avatar) -> void:
 func _eye_hit(i: int, owner_id: int) -> void:
 	eye_hp[i] = int(eye_hp[i]) - 1
 	game._ev_eye.rpc(i, int(eye_hp[i]))
+	Net.award(owner_id, 10, "Spear to the eye")
 	if int(eye_hp[i]) <= 0:
+		Net.award(owner_id, 30, "Blinded the giant")
 		Net.give_coins(owner_id, 15)
 		Net.announce("%s BLINDED the giant's %s eye!" % [Net.pname(owner_id), "LEFT" if i == 0 else "RIGHT"])
 
@@ -399,16 +412,20 @@ func _end(side: String, msg: String) -> void:
 			var survived: bool = alive.get(id, false)
 			p.score = int(p.score) + (2 if survived else 1)
 			Net.give_coins(id, 60 if survived else 40)
+			Net.award(id, 120 if survived else 90, "Littles win!", "giant_win")
 		else:
 			Net.give_coins(id, 15)
+			Net.award(id, 40, "Good effort")
 		p.perks = []
 	if Net.players.has(g):
 		var gp: Dictionary = Net.players[g]
 		if side == "giant":
 			gp.score = int(gp.score) + 3
 			Net.give_coins(g, 80)
+			Net.award(g, 150, "Giant wins!", "giant_win")
 		else:
 			Net.give_coins(g, 15)
+			Net.award(g, 40, "Good effort")
 		gp.perks = []
 	Net.broadcast()
 	await get_tree().create_timer(7.0).timeout

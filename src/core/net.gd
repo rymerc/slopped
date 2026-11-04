@@ -118,11 +118,12 @@ func make_profile(raw: Dictionary, bot: bool) -> Dictionary:
 	var hat := str(raw.get("hat", "none"))
 	if not Art.HATS.has(hat):
 		hat = "none"
-	var body := str(raw.get("body", "bean"))
-	if not Art.BODIES.has(body):
-		body = "bean"
+	var lvl := clampi(int(raw.get("level", 1)), 1, 999)
+	var body := str(raw.get("body", "kid"))
+	if not Art.BODIES.has(body) or (not bot and not Chars.unlocked(body, lvl)):
+		body = "kid"
 	return {
-		"name": n, "color": c, "hat": hat, "body": body, "bot": bot,
+		"name": n, "color": c, "hat": hat, "body": body, "bot": bot, "level": lvl,
 		"coins": START_COINS, "score": 0, "perks": [], "giant_count": 0,
 	}
 
@@ -166,7 +167,9 @@ func request_look(changes: Dictionary) -> void:
 		p.color = changes.color
 	if changes.has("hat") and Art.HATS.has(str(changes.hat)):
 		p.hat = str(changes.hat)
-	if changes.has("body") and Art.BODIES.has(str(changes.body)):
+	if changes.has("level"):
+		p.level = clampi(int(changes.level), 1, 999)
+	if changes.has("body") and Art.BODIES.has(str(changes.body)) 			and Chars.unlocked(str(changes.body), int(p.get("level", 1))):
 		p.body = str(changes.body)
 	broadcast()
 
@@ -274,6 +277,24 @@ func rank_of(id: int) -> String:
 func give_coins(id: int, n: int) -> void:
 	if players.has(id):
 		players[id].coins = maxi(0, int(players[id].coins) + n)
+
+
+## Host -> a player: XP (and optionally a challenge completion). Bots ignored.
+func award(id: int, xp: int, reason: String, challenge_id := "") -> void:
+	if not multiplayer.is_server() or is_bot(id) or not players.has(id):
+		return
+	if id == multiplayer.get_unique_id():
+		_award(xp, reason, challenge_id)
+	else:
+		_award.rpc_id(id, xp, reason, challenge_id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _award(xp: int, reason: String, challenge_id: String) -> void:
+	if challenge_id != "":
+		Progress.challenge(challenge_id)
+	if xp > 0:
+		Progress.add(xp, reason)
 
 
 func give_perk(id: int, perk: String) -> void:

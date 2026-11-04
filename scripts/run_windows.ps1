@@ -1,4 +1,4 @@
-# Downloads Godot 4.5.1 (once) into tools\godot, imports the project, and runs it.
+# Downloads Godot 4.6.3 (once) into tools\godot, imports the project, and runs it.
 # Usage (from the repo root, in PowerShell):
 #   powershell -ExecutionPolicy Bypass -File scripts\run_windows.ps1            # play
 #   powershell -ExecutionPolicy Bypass -File scripts\run_windows.ps1 -Editor    # open editor
@@ -11,7 +11,7 @@ param(
     [int]$Bots = 3
 )
 $ErrorActionPreference = "Stop"
-$Version = "4.5.1-stable"
+$Version = "4.6.3-stable"
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ToolDir = Join-Path $Root "tools\godot"
 $Exe = Join-Path $ToolDir "Godot_v$($Version)_win64.exe"

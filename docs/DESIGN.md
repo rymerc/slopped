@@ -22,25 +22,50 @@ Takeaways:
 - **Tween libraries everywhere** (DOTween): the "juice" is squash/stretch + snappy tweens, not complex animation. Godot's built-in `Tween` covers this.
 - WEBFISHING proves Godot + GodotSteam ships a hit friendslop game at **196 MB**.
 
-## 2. Engine + 3D model approach (low compute)
+## 2. Engine + art direction (low compute, one visual identity)
 
-**Godot 4.5, Compatibility renderer** (OpenGL3). Runs on integrated GPUs and old laptops — the friend with the potato PC must be able to play.
+**Godot 4.6 (4.6.3), Compatibility renderer** (OpenGL3). Runs on integrated GPUs and old laptops — the friend with the potato PC must be able to play.
 
-The look (`src/art/`):
-- **One toon shader** (`toon.gdshader`): 2-band cel + rim light, colour as a uniform. **No textures at all.**
-- **Inverted-hull outline** (`outline.gdshader`) as `next_pass`. Grows from the mesh centre (not normals) so hard-edged boxes don't crack.
-- **Characters = primitives**: capsule body, sphere head, googly eyes, box feet, hat. ~600 tris each. Big heads + googly eyes = instant comedy.
-- Materials & meshes are cached (`Art.mat()`, `Art.box()`…), so 100 identical props share GPU resources.
+**Art direction: chunky faceted low-poly, flat colour, bright cartoon daylight.** Terrain, props and characters all use the same shader and palette, so everything looks like one universe. Rule: if a colour isn't in `Art`'s palette, it doesn't go in the game.
 
-Pipeline for real assets later (when primitives aren't enough):
-1. Blender, **< 1.5k tris per character, < 300 per prop**, no subdivision.
-2. **One shared 256×256 "palette" texture** (a grid of flat colour squares); UV each face onto a colour square. One material for the whole game → near-zero draw-call overhead, recolour by swapping the palette (same trick as Synty / many friendslop games).
-3. Export `.glb`; in Godot, override material with the toon shader + outline.
-4. Animation: **skeletal only for the body, everything else procedural** (waddle, hand bob, squash) like `Avatar._animate()`. 3–4 bones is plenty (root, body, head, two hands).
-5. Use `MultiMeshInstance3D` for grass/trees/crowds if counts go > 200.
-6. Physics: static primitives only; never trimesh colliders on characters.
+- **One toon shader** (`src/art/toon.gdshader`): per-triangle (faceted) normals from screen derivatives, 2-band cel sun, **hemispheric ambient** (sky tint from above, warm ground bounce from below, via the `sky_ambient` / `ground_ambient` shader globals), an optional gloss band for metal/ice/crystal, and vertex colours for terrain. The facets are the surface detail, so no normal maps or textures are needed.
+- **No haze**: linear tonemap, bloom only above HDR 1.15 (emissive bits), cartoon gradient sky (`sky.gdshader`). Depth fog starts far away (90–120 m) in the horizon colour, so it only adds atmospheric perspective to distant landmarks.
+- **Depth without SSAO** (Compatibility has none): baked per-face AO in the terrain vertex colours, real sun shadows, and a blob contact shadow under every avatar.
+- **Characters** (`src/art/chars.gd`): six costumes from the concept sheet: kid, frog suit, cat, robot, wizard, banana. Each has a big blocky bevelled head, dot eyes and stubby limbs. All costumes share one rig (`pivot > legs, torso > arms, head`), so animation and ragdoll work for every one. Costumes unlock with level.
+- **Palette**: grass `#7cc24f`, dirt `#c99a5e`, sand `#f0d48e`, rock `#a39cb3`; accents pink `#ff5fa2`, gold `#ffc935`, blue `#3ec1ff`; ink `#241a2e`.
+- Materials and meshes are cached (`Art.mat()`, `Art.bbox()`…), so 100 identical props share GPU resources. Grass and flowers are MultiMesh.
 
-Budget target: 60 fps at 1080p on Intel Iris Xe with 12 players.
+Pipeline for real assets later: Blender, < 1.5k tris per character, flat-shaded, UV'd onto one palette texture. Keep the same rig node names so `Avatar` / `Ragdoll` work unchanged.
+
+## 2b. Feel: movement, bodies, juice
+
+**Movement** (`src/player/avatar.gd`): ground acceleration 40 m/s² and deceleration 26 m/s² (+80 % when reversing). Sprint ramps up over ~0.4 s and is kept in the air. Jumps have a 0.14 s buffer, 0.12 s coyote time, variable height (release early to cut the jump), an apex hang, and 1.55× fall gravity for weight. Air control steers toward the input without bleeding momentum. Floor snapping keeps speed constant on slopes. The **dive / belly slide** (C) accelerates downhill (Slide Hill).
+
+**Bodies are not ragdolls by default.** Normal movement uses procedural animation (walk/sprint cycle, air poses, turn lean, blinks, squash and stretch). Impacts are graded:
+
+| impact (per body mass) | result |
+|---|---|
+| < 7 | partial ragdoll: spring-driven lean, head whip, arm flail |
+| 7–12 | stumble: control loss, big lean |
+| ≥ 12 (or a very hard landing) | full physics `Ragdoll` (limbs on jointed rigid bodies), then blend into a push-up / sit-up get-up |
+
+The giant never full-ragdolls (gameplay needs his pose); littles do. A death leaves a ragdoll corpse with X eyes, dizzy stars and a caption.
+
+**Pushing**: players shove each other physically (bigger bodies push harder): LMB shoves in the lobby, and a sprint-shove knocks people over. **Props** (`src/world/`) can be grabbed (E), thrown (LMB), knocked over and stacked. TNT barrels chain-explode and launch everyone nearby. The host simulates props; clients interpolate them.
+
+**Juice**: procedural sounds (`src/audio/sfx.gd`, synthesised at runtime, so there are no asset files; a `res://audio/<name>.wav` overrides any of them) for steps, jumps, landings, bonks, throws, explosions, farts, wind while falling, and the slide scrape. CPU particles (`src/art/fx.gd`) for dust, impacts, confetti, explosions and trails. Camera (`cam_rig.gd`): stride bob, landing bump, sprint/fall FOV, look-down while falling, strafe roll, trauma shake.
+
+**Progression** (`src/core/progress.gd`): XP from matches (eyes blinded, ties, wins, kills) and lifetime playground challenges → levels → costume unlocks. Saved locally; the level rides along in the profile.
+
+## 2c. Slop Island (the lobby is a playground)
+
+The lounge sits in the middle of an island, with a doorway out to each zone:
+- **North: Slide Hill.** A 30 m hill with a rainbow belly-slide lane, cliffs on the back, and a giant rubber duck and summit flag (landmark).
+- **West: The Chasm.** A pink-goo pit crossed by **THE GAUNTLET** (stepping stones, sweeper, balance beam + pendulum, bounce pad; timed, with a record) and the **Narrow Bridge** (sagging planks, no railings, push your friends off).
+- **East: Construction.** Scaffold towers to jump between, the crane landmark, a wrecking ball, crate pyramids, planks, beams and TNT.
+- **South: The Meadow.** Campfire hangout, kicker ramps, bowling with a giant ball, **the Vault** (needs both pressure plates held down: two players *or* a heavy crate), **Friend Ledge** (boost off a friend or stack two crates), a cave with treasure, and a lighthouse landmark.
+
+Falling into the goo or the sea respawns you, and whoever knocked you in gets "YEETED" credit.
 
 ## 3. Structure
 
@@ -107,7 +132,7 @@ Principles:
 
 1. GodotSteam: Steam lobbies/invites + P2P transport (replace ENet, keep the same RPCs).
 2. Proximity voice chat.
-3. Audio pass (fart, splat, wheel clicks) — biggest juice-per-hour.
+3. Audio pass: procedural placeholders exist; record real .wav files (`res://audio/<name>.wav` overrides).
 4. POCKET GOD minigame (uses the lobby leader as god).
-5. Glb character pipeline + palette texture; ragdoll trip.
+5. Glb character pipeline + palette texture (procedural costumes + ragdoll are done).
 6. Betrayal systems: giant deals, Rope Lord bonus, anonymous curse reveal at match end.

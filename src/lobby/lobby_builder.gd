@@ -36,10 +36,15 @@ static func build(root: Node3D) -> Dictionary:
 	_rug(root, Vector3(26, 0, 0), Vector2(10, 24), Color("#2e8b57"))
 	_rug(root, Vector3(0, 0, 25), Vector2(40, 10), Color("#ff7a3d"))
 	# Walls
+	# Walls, with a doorway out to each zone of the island
 	var wall := Color("#4a3566")
-	for s: float in [-1.0, 1.0]:
-		Art.solid_box(root, Vector3(HALF * 2, 6, 1), wall, Vector3(0, 3, HALF * s))
-		Art.solid_box(root, Vector3(1, 6, HALF * 2), wall, Vector3(HALF * s, 3, 0))
+	_wall(root, true, -HALF, [Vector2(-26, -18), Vector2(19, 27)], wall)   # north -> Slide Hill
+	_wall(root, true, HALF, [Vector2(-5, 5)], wall)                       # south -> Meadow
+	_wall(root, false, -HALF, [Vector2(12, 22)], wall)                    # west  -> Chasm
+	_wall(root, false, HALF, [Vector2(12, 22)], wall)                     # east  -> Construction
+	for x: float in [-HALF, HALF]:  # neon trim on the corners
+		for z: float in [-HALF, HALF]:
+			Art.part(root, Art.box(Vector3(1.2, 6.4, 1.2)), Color("#ff5fa2"), Vector3(x, 3.2, z), Vector3.ONE, Vector3.ZERO, false, 0.9)
 	Art.label(root, "THE SLOP LOUNGE", Vector3(0, 7.5, -HALF + 0.6), 0.04, Ui.ACCENT, false)
 	# Disco ball
 	var disco := Node3D.new()
@@ -71,6 +76,31 @@ static func build(root: Node3D) -> Dictionary:
 	return out
 
 
+## Wall along x (horizontal=true, at z=pos) or along z (at x=pos), skipping gaps.
+static func _wall(root: Node3D, horizontal: bool, pos: float, gaps: Array, color: Color) -> void:
+	var cuts: Array[float] = [-HALF]
+	for g: Vector2 in gaps:
+		cuts.append(g.x)
+		cuts.append(g.y)
+	cuts.append(HALF)
+	for i in range(0, cuts.size(), 2):
+		var a := cuts[i]
+		var b := cuts[i + 1]
+		if b - a < 0.1:
+			continue
+		var mid := (a + b) * 0.5
+		if horizontal:
+			Art.solid_box(root, Vector3(b - a, 6, 1), color, Vector3(mid, 3, pos))
+		else:
+			Art.solid_box(root, Vector3(1, 6, b - a), color, Vector3(pos, 3, mid))
+	for g: Vector2 in gaps:  # door frames
+		var mid := (g.x + g.y) * 0.5
+		var w := g.y - g.x
+		var p := Vector3(mid, 6.3, pos) if horizontal else Vector3(pos, 6.3, mid)
+		var sz := Vector3(w + 1.0, 0.8, 1.4) if horizontal else Vector3(1.4, 0.8, w + 1.0)
+		Art.part(root, Art.bbox(sz, 0.3), Color("#ffd23f"), p, Vector3.ONE, Vector3.ZERO, false, 0.4)
+
+
 static func _rug(root: Node3D, pos: Vector3, size: Vector2, color: Color) -> void:
 	Art.part(root, Art.box(Vector3(size.x, 0.04, size.y)), color, pos + Vector3(0, 0.02, 0), Vector3.ONE, Vector3.ZERO, false)
 
@@ -92,7 +122,7 @@ static func _build_bar(root: Node3D, out: Dictionary) -> void:
 		var p := BAR + Vector3(-6.0 + i * 2.4, 0, 0.4)
 		Art.solid_cyl(root, 0.4, 0.9, Color("#e63946"), p + Vector3(0, 0.45, 0), -1.0, 8)
 	# Bartender (static, never moves, judges you)
-	var bt: Node3D = Art.build_character({"color": Color("#8d8aa0"), "hat": "top", "body": "box"}).root
+	var bt: Node3D = Art.build_character({"color": Color("#8d8aa0"), "hat": "top", "body": "robot"}).root
 	bt.position = BAR + Vector3(0, 0, -3.5)
 	bt.rotation.y = PI
 	root.add_child(bt)
@@ -160,7 +190,7 @@ static func _build_south(root: Node3D, out: Dictionary) -> void:
 		var c := Color("#ff5fa2") if i % 2 == 0 else Color.WHITE
 		Art.part(root, Art.box(Vector3(1.0, 0.15, 2.2)), c, SHOP + Vector3(-2.5 + i, 3.45, 1.0), Vector3.ONE, Vector3(-15, 0, 0))
 	Art.label(root, "PERK SHOP", SHOP + Vector3(0, 4.3, 1.0), 0.02, Ui.YELLOW)
-	var keeper: Node3D = Art.build_character({"color": Color("#8ce36b"), "hat": "bucket", "body": "pear"}).root
+	var keeper: Node3D = Art.build_character({"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"}).root
 	keeper.position = SHOP + Vector3(0, 0, 2.6)
 	root.add_child(keeper)
 	# Bot kennel (doghouse)

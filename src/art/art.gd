@@ -1,50 +1,96 @@
 class_name Art
 extends RefCounted
-## The whole art style lives here: low-poly primitives + one toon shader +
-## inverted-hull outlines. No textures; colour is a material uniform.
+## The whole art style lives here: faceted low-poly primitives + one toon
+## shader (flat-shaded, hemispheric ambient). No textures; colour is a material
+## uniform drawn from ONE shared palette so everything belongs together.
 ## Materials and meshes are cached so identical parts share GPU resources.
 
 const TOON := preload("res://src/art/toon.gdshader")
-const OUTLINE := preload("res://src/art/outline.gdshader")
+const WATER := preload("res://src/art/water.gdshader")
+const SKY := preload("res://src/art/sky.gdshader")
 
 const HATS := ["none", "party", "top", "propeller", "bucket", "traffic", "chef"]
-const BODIES := ["bean", "box", "pear"]
+const BODIES := Chars.KINDS
 const SWATCHES := [
-	Color("#ff5fa2"), Color("#ffd23f"), Color("#3ec1ff"), Color("#8ce36b"),
-	Color("#b388ff"), Color("#ff7a3d"), Color("#f2f2f2"), Color("#4a4e69"),
+	Color("#ff5fa2"), Color("#ffd23f"), Color("#3ec1ff"), Color("#7ccf4e"),
+	Color("#8b5cf6"), Color("#ff8a3d"), Color("#f2efe9"), Color("#4a4e69"),
 ]
 
-const INK := Color(0.09, 0.06, 0.12)
-const SHOE := Color(0.18, 0.14, 0.2)
-const WOOD := Color("#9c6b43")
-const GOLD := Color("#ffcc33")
+# --- the palette (every world builds from these) ---------------------------
+const INK := Color("#241a2e")
+const SHOE := Color("#2f2838")
+const WOOD := Color("#b0773f")
+const GOLD := Color("#ffc935")
+const SKIN := Color("#f1c49a")
+const P_GRASS := Color("#7cc24f")
+const P_GRASS_DARK := Color("#5ea443")
+const P_GRASS_LIGHT := Color("#9ad45c")
+const P_DIRT := Color("#c99a5e")
+const P_SAND := Color("#f0d48e")
+const P_ROCK := Color("#a39cb3")
+const P_ROCK_DARK := Color("#7b7390")
+const P_BARK := Color("#8f5a35")
+const P_LEAF_A := Color("#62b545")
+const P_LEAF_B := Color("#86cc4c")
+const P_LEAF_C := Color("#4c9c47")
+const P_WATER := Color("#3fb6e8")
+const P_STEEL := Color("#9aa6b8")
+const P_HAZARD := Color("#ffc935")
+const P_RED := Color("#ee4b4b")
+const P_PINK := Color("#ff5fa2")
+const P_BLUE := Color("#3ec1ff")
+const P_PURPLE := Color("#8b5cf6")
+const P_ORANGE := Color("#ff8a3d")
+const P_CREAM := Color("#fff3dc")
 
 static var _mats: Dictionary = {}
 static var _meshes: Dictionary = {}
-static var _outline_mat: ShaderMaterial
 
 
 # --- materials -------------------------------------------------------------
 
-static func mat(color: Color, outline := true, glow := 0.0) -> ShaderMaterial:
-	var key := "%s|%s|%s" % [color.to_html(), outline, glow]
+## `outline` is kept for call-site compatibility; the faceted style has none.
+static func mat(color: Color, _outline := true, glow := 0.0, gloss := 0.0) -> ShaderMaterial:
+	var key := "%s|%s|%s" % [color.to_html(), glow, gloss]
 	if _mats.has(key):
 		return _mats[key]
 	var m := ShaderMaterial.new()
 	m.shader = TOON
 	m.set_shader_parameter("albedo", color)
 	m.set_shader_parameter("emission_strength", glow)
-	if outline:
-		m.next_pass = _outline()
+	m.set_shader_parameter("gloss", gloss)
 	_mats[key] = m
 	return m
 
 
-static func _outline() -> ShaderMaterial:
-	if _outline_mat == null:
-		_outline_mat = ShaderMaterial.new()
-		_outline_mat.shader = OUTLINE
-	return _outline_mat
+static func vcol_mat() -> ShaderMaterial:
+	if not _mats.has("vcol"):
+		var m := ShaderMaterial.new()
+		m.shader = TOON
+		m.set_shader_parameter("use_vertex_color", true)
+		m.set_shader_parameter("rim_strength", 0.0)
+		_mats["vcol"] = m
+	return _mats["vcol"]
+
+
+static func water_mat() -> ShaderMaterial:
+	if not _mats.has("water"):
+		var m := ShaderMaterial.new()
+		m.shader = WATER
+		_mats["water"] = m
+	return _mats["water"]
+
+
+static func shadow_mat() -> StandardMaterial3D:
+	if not _mats.has("blob"):
+		var m := StandardMaterial3D.new()
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(0.1, 0.05, 0.2, 0.32)
+		m.no_depth_test = false
+		m.render_priority = 1
+		_mats["blob"] = m
+	return _mats["blob"]
 
 
 static func ghost_mat() -> StandardMaterial3D:
@@ -99,6 +145,108 @@ static func capsule(r: float, h: float) -> Mesh:
 		m.height = h
 		m.radial_segments = 10
 		m.rings = 4
+		_meshes[key] = m
+	return _meshes[key]
+
+
+## Chamfered box: 6 faces + 12 edge bevels + 8 corner tris. With faceted
+## shading this is the signature chunky low-poly block (heads, bodies, crates).
+static func bbox(size: Vector3, bevel := 0.18) -> Mesh:
+	var key := "bb%s_%s" % [size, bevel]
+	if _meshes.has(key):
+		return _meshes[key]
+	var h := size * 0.5
+	# bevel is a fraction of the smallest half-extent
+	var b := clampf(bevel, 0.0, 0.95) * minf(h.x, minf(h.y, h.z))
+	# P(corner signs, axis at full extent)
+	var pt := func(sx: float, sy: float, sz: float, ax: int) -> Vector3:
+		var v := Vector3(sx * (h.x - b), sy * (h.y - b), sz * (h.z - b))
+		v[ax] = [sx, sy, sz][ax] * h[ax]
+		return v
+	var polys: Array = []
+	var signs := [-1.0, 1.0]
+	for ax in 3:  # main faces
+		for s: float in signs:
+			var poly: Array = []
+			for u: float in signs:
+				for w: float in signs:
+					var c := [0.0, 0.0, 0.0]
+					c[ax] = s
+					c[(ax + 1) % 3] = u
+					c[(ax + 2) % 3] = w
+					poly.append(pt.call(c[0], c[1], c[2], ax))
+			polys.append(poly)
+	for ax in 3:  # edges running along `ax`
+		var b1 := (ax + 1) % 3
+		var b2 := (ax + 2) % 3
+		for s1: float in signs:
+			for s2: float in signs:
+				var poly: Array = []
+				for sa: float in signs:
+					var c := [0.0, 0.0, 0.0]
+					c[ax] = sa
+					c[b1] = s1
+					c[b2] = s2
+					poly.append(pt.call(c[0], c[1], c[2], b1))
+					poly.append(pt.call(c[0], c[1], c[2], b2))
+				polys.append(poly)
+	for sx: float in signs:  # corners
+		for sy: float in signs:
+			for sz: float in signs:
+				polys.append([pt.call(sx, sy, sz, 0), pt.call(sx, sy, sz, 1), pt.call(sx, sy, sz, 2)])
+	var m := hull_mesh(polys)
+	_meshes[key] = m
+	return m
+
+
+## Builds a mesh from convex polygons (unordered points). Each polygon is
+## sorted around its centroid and wound clockwise seen from outside (Godot's
+## front-face convention), so this works for any convex solid around origin.
+static func hull_mesh(polys: Array, offset := Vector3.ZERO) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for poly: Array in polys:
+		var c := Vector3.ZERO
+		for p: Vector3 in poly:
+			c += p
+		c /= poly.size()
+		var n := c.normalized()
+		var t := (poly[0] as Vector3 - c).normalized()
+		var bt := n.cross(t)
+		var sorted := poly.duplicate()
+		sorted.sort_custom(func(a: Vector3, bb: Vector3) -> bool:
+			return atan2((a - c).dot(bt), (a - c).dot(t)) > atan2((bb - c).dot(bt), (bb - c).dot(t)))
+		# dedupe (degenerate bevels)
+		var pts: Array = []
+		for p: Vector3 in sorted:
+			if pts.is_empty() or (pts[-1] as Vector3).distance_to(p) > 0.0001:
+				pts.append(p)
+		if pts.size() > 2 and (pts[0] as Vector3).distance_to(pts[-1]) < 0.0001:
+			pts.pop_back()
+		for i in range(1, pts.size() - 1):
+			var a: Vector3 = pts[0]
+			var b: Vector3 = pts[i]
+			var d: Vector3 = pts[i + 1]
+			if (b - a).cross(d - a).dot(n) > 0.0:
+				var tmp := b
+				b = d
+				d = tmp
+			st.set_normal(n)
+			st.add_vertex(a + offset)
+			st.set_normal(n)
+			st.add_vertex(b + offset)
+			st.set_normal(n)
+			st.add_vertex(d + offset)
+	return st.commit()
+
+
+## Square-based pyramid / wedge helpers for ears, beards, roofs.
+static func prism(size: Vector3, left_to_right := 0.5) -> Mesh:
+	var key := "pr%s_%s" % [size, left_to_right]
+	if not _meshes.has(key):
+		var m := PrismMesh.new()
+		m.size = size
+		m.left_to_right = left_to_right
 		_meshes[key] = m
 	return _meshes[key]
 
@@ -170,47 +318,9 @@ static func label(parent: Node3D, text: String, pos: Vector3, px := 0.01,
 
 # --- characters ------------------------------------------------------------
 
-## Builds a googly-eyed bean person. Origin at the feet, facing -Z.
-## Returns handles to animated parts.
+## Builds a chunky low-poly character (see Chars). Origin at the feet, facing -Z.
 static func build_character(look: Dictionary) -> Dictionary:
-	var root := Node3D.new()
-	root.name = "Visual"
-	var pivot := Node3D.new()
-	root.add_child(pivot)
-	var col: Color = look.get("color", Color.ORANGE)
-	match str(look.get("body", "bean")):
-		"box":
-			part(pivot, box(Vector3(0.78, 0.95, 0.62)), col, Vector3(0, 0.72, 0))
-		"pear":
-			part(pivot, sphere(0.46), col, Vector3(0, 0.62, 0), Vector3(1.05, 1.15, 0.92))
-		_:
-			part(pivot, capsule(0.38, 1.1), col, Vector3(0, 0.75, 0))
-	var head := Node3D.new()
-	head.position = Vector3(0, 1.42, 0)
-	pivot.add_child(head)
-	part(head, sphere(0.36), col.lightened(0.12))
-	var eyes: Array = []
-	for sx: float in [-1.0, 1.0]:
-		var e := Node3D.new()
-		e.position = Vector3(0.15 * sx, 0.07, -0.29)
-		head.add_child(e)
-		part(e, sphere(0.12, 8), Color.WHITE)
-		var pupil := part(e, sphere(0.055, 6), INK, Vector3(0.0, 0.0, -0.09), Vector3.ONE, Vector3.ZERO, false)
-		pupil.name = "Pupil"
-		eyes.append(e)
-	part(head, box(Vector3(0.16, 0.04, 0.04)), INK, Vector3(0, -0.14, -0.33), Vector3.ONE, Vector3.ZERO, false)
-	var hands: Array = []
-	for sx: float in [-1.0, 1.0]:
-		hands.append(part(pivot, sphere(0.13, 8), col.darkened(0.12), Vector3(0.5 * sx, 0.72, 0)))
-	var feet: Array = []
-	for sx: float in [-1.0, 1.0]:
-		feet.append(part(pivot, box(Vector3(0.2, 0.14, 0.34)), SHOE, Vector3(0.17 * sx, 0.07, -0.05)))
-	var hat := build_hat(str(look.get("hat", "none")))
-	if hat:
-		hat.position = Vector3(0, 0.3, 0)
-		head.add_child(hat)
-	return {"root": root, "pivot": pivot, "head": head, "eyes": eyes,
-		"hands": hands, "feet": feet, "hat": hat}
+	return Chars.build(look)
 
 
 static func build_hat(kind: String) -> Node3D:
@@ -251,12 +361,26 @@ static func build_hat(kind: String) -> Node3D:
 	return h
 
 
-## Low-poly tree: trunk + stacked cones. Returns the static body.
-static func tree(parent: Node3D, pos: Vector3, s := 1.0) -> StaticBody3D:
-	var t := solid_cyl(parent, 0.35 * s, 2.4 * s, WOOD, pos + Vector3(0, 1.2 * s, 0), 0.25 * s, 6)
-	var green := Color("#4caf50").lerp(Color("#8ce36b"), randf())
-	part(t, cyl(0.0, 1.9 * s, 2.4 * s, 7), green, Vector3(0, 2.0 * s, 0))
-	part(t, cyl(0.0, 1.4 * s, 2.0 * s, 7), green.lightened(0.1), Vector3(0, 3.2 * s, 0))
+## Low-poly tree: faceted trunk + 2-3 blobby canopies from the palette.
+static func tree(parent: Node3D, pos: Vector3, s := 1.0, kind := -1) -> StaticBody3D:
+	var h := absf(sin(pos.x * 12.9898 + pos.z * 78.233))
+	if kind < 0:
+		kind = int(h * 3.0) % 3
+	var t := solid_cyl(parent, 0.3 * s, 2.2 * s, P_BARK, pos + Vector3(0, 1.1 * s, 0), 0.2 * s, 5)
+	var greens := [P_LEAF_A, P_LEAF_B, P_LEAF_C]
+	var g: Color = greens[int(h * 7.0) % 3]
+	match kind:
+		0:  # round puffball tree
+			part(t, sphere(1.5 * s, 7), g, Vector3(0, 2.0 * s, 0), Vector3(1, 0.9, 1))
+			part(t, sphere(1.0 * s, 6), g.lightened(0.08), Vector3(0.6 * s, 2.7 * s, 0.3 * s))
+		1:  # pine
+			part(t, cyl(0.0, 1.7 * s, 2.2 * s, 6), g.darkened(0.1), Vector3(0, 1.9 * s, 0))
+			part(t, cyl(0.0, 1.25 * s, 1.9 * s, 6), g.darkened(0.05), Vector3(0, 3.0 * s, 0))
+			part(t, cyl(0.0, 0.8 * s, 1.4 * s, 6), g, Vector3(0, 3.9 * s, 0))
+		_:  # lollipop cluster
+			part(t, sphere(1.2 * s, 6), g, Vector3(0, 2.2 * s, 0))
+			part(t, sphere(0.9 * s, 6), g.lightened(0.06), Vector3(-0.8 * s, 1.8 * s, 0.2 * s))
+			part(t, sphere(0.8 * s, 6), g.darkened(0.05), Vector3(0.7 * s, 1.7 * s, -0.4 * s))
 	return t
 
 
@@ -265,15 +389,15 @@ static func rock(parent: Node3D, pos: Vector3, s := 1.0) -> StaticBody3D:
 	b.position = pos
 	b.collision_mask = 0
 	parent.add_child(b)
-	part(b, sphere(1.0 * s, 6), Color("#8d8aa0"), Vector3.ZERO, Vector3(1.2, 0.7, 1.0),
-		Vector3(0, randf() * 360.0, 0))
+	var h := absf(sin(pos.x * 3.1 + pos.z * 7.7))
+	part(b, sphere(1.0 * s, 5), P_ROCK.lerp(P_ROCK_DARK, h * 0.6), Vector3.ZERO, Vector3(1.25, 0.75, 1.0),
+		Vector3(h * 40.0, h * 360.0, 0))
 	var cs := CollisionShape3D.new()
 	var sh := SphereShape3D.new()
 	sh.radius = 0.85 * s
 	cs.shape = sh
 	b.add_child(cs)
 	return b
-
 
 ## A thin cylinder from a to b (ropes, beams).
 static func beam(parent: Node3D, a: Vector3, b: Vector3, r: float, color: Color) -> Node3D:

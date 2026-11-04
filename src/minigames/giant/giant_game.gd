@@ -46,8 +46,8 @@ func build_world() -> void:
 	eye_max = 1 if modifier == "glass_eyes" else 3
 	eye_hp = [eye_max, eye_max]
 	seed(int(args.get("seed", 0)))
-	make_environment(Color("#5fb8ff"), Color("#d8f3ff"), 0.6, 1.3)
-	racks = GiantArena.build(self)
+	make_environment(Color("#3d8ef0"), Color("#bfe6ff"), 0.55, 0.8, 90.0, 380.0)
+	racks = GiantArena.build(self, props)
 	randomize()
 	rules = GiantRules.new()
 	rules.name = "Rules"
@@ -218,6 +218,7 @@ func _ev_spear(sid: int, pos: Vector3, vel: Vector3) -> void:
 	add_child(s)
 	s.position = pos
 	_spears[sid] = s
+	Sfx.at(self, "whoosh", pos, -4.0, 0.15, 1.3)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -226,6 +227,7 @@ func _ev_spear_end(sid: int, pos: Vector3) -> void:
 	_spears.erase(sid)
 	if is_instance_valid(s):
 		s.stick(pos)
+	Sfx.at(self, "knock", pos, -2.0, 0.2, 1.4)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -272,6 +274,12 @@ func _ev_trip(on: bool) -> void:
 		banner("TIMBERRR!\nTIE HIM UP!", 2.0)
 		cam.shake(1.2 if local_avatar() and local_avatar().pid == giant_id else 0.6)
 		GiantFx.dust(self, g.global_position + g.forward() * g.size, 2.0 * g.size)
+		Fx.dust(self, g.global_position + g.forward() * g.size * 1.2, 2.5)
+		Sfx.at(self, "death", g.global_position, 4.0, 0.05, 0.6)
+		get_tree().create_timer(0.45).timeout.connect(func() -> void:
+			if is_instance_valid(g):
+				Sfx.at(self, "boom", g.global_position + g.forward() * g.size, 4.0, 0.1, 1.4)
+				Fx.dust(self, g.global_position + g.forward() * g.size * 1.4, 3.0))
 	else:
 		tripped = 0.0
 
@@ -284,6 +292,8 @@ func _ev_eye(idx: int, hp: int) -> void:
 		return
 	var eye := (g.parts.eyes as Array)[idx] as Node3D
 	GiantFx.burst(self, eye.global_position, Color("#e63946"))
+	Sfx.at(self, "squish", eye.global_position, 4.0)
+	Fx.text(self, eye.global_position + Vector3.UP, "OW MY EYE" if hp <= 0 else "OW", Color.WHITE, 0.03)
 	if hp <= 0:
 		Art.part(eye, Art.box(Vector3(0.3, 0.06, 0.06)), Art.INK, Vector3(0, 0, -0.1), Vector3.ONE, Vector3(0, 0, 45), false)
 		Art.part(eye, Art.box(Vector3(0.3, 0.06, 0.06)), Art.INK, Vector3(0, 0, -0.1), Vector3.ONE, Vector3(0, 0, -45), false)
@@ -305,18 +315,31 @@ func _ev_fx(kind: String, pos: Vector3, yaw: float, r: float) -> void:
 		"warn": GiantFx.warn(self, pos, r)
 		"stomp":
 			GiantFx.dust(self, pos, r)
+			Fx.dust(self, pos, r * 0.6)
+			Sfx.at(self, "thud", pos, 6.0, 0.1, 0.7)
 			if near: cam.shake(0.6)
 		"slap":
 			GiantFx.slap(self, pos, r)
+			Fx.impact(self, pos + Vector3.UP, 1.6)
+			Sfx.at(self, "slap", pos, 8.0, 0.1, 0.8)
 			if near: cam.shake(1.0)
-		"pee": GiantFx.pee(self, pos, yaw, r)
-		"rumble": GiantFx.text(self, pos + Vector3.UP * 3.0 * r, "*rumble*", Color("#ff7a3d"))
+		"pee":
+			GiantFx.pee(self, pos, yaw, r)
+			Sfx.at(self, "hiss", pos, 2.0)
+		"rumble":
+			GiantFx.text(self, pos + Vector3.UP * 3.0 * r, "*rumble*", Color("#ff7a3d"))
+			Sfx.at(self, "fart", pos, -6.0, 0.05, 0.5)
 		"fart":
 			GiantFx.fart(self, pos, yaw, r)
+			Sfx.at(self, "fart", pos, 8.0, 0.1)
 			if near: cam.shake(0.8)
-		"tie": GiantFx.burst(self, pos + Vector3.UP * 0.5, Color("#f4e1b0"))
+		"tie":
+			GiantFx.burst(self, pos + Vector3.UP * 0.5, Color("#f4e1b0"))
+			Sfx.at(self, "knock", pos, 0.0, 0.2, 0.8)
 		"struggle": GiantFx.text(self, pos + Vector3.UP * 2.0, "*struggle*", Color.WHITE)
-		"shield": GiantFx.burst(self, pos + Vector3.UP, Color.WHITE)
+		"shield":
+			GiantFx.burst(self, pos + Vector3.UP, Color.WHITE)
+			Sfx.at(self, "boing", pos, 2.0)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -324,7 +347,16 @@ func _ev_kill(id: int, cause: String) -> void:
 	var av: Avatar = avatars.get(id)
 	if av:
 		GiantFx.burst(self, av.global_position + Vector3.UP * 0.5, Color("#ff5fa2"))
-		av.set_dead(true)
+		var g := giant_av()
+		var away := Vector3.UP
+		if g:
+			away = av.global_position - g.global_position
+			away.y = 0.0
+			away = away.normalized() if away.length() > 0.01 else Vector3.FORWARD
+		match cause:
+			"got pancaked": av.die(Vector3.ZERO, "pancake")
+			"was cremated by a fart": av.die(away * 14.0 + Vector3.UP * 9.0, "burnt")
+			_: av.die(away * 18.0 + Vector3.UP * 10.0, "launch")
 	toast("%s %s" % [Net.pname(id), cause])
 	if id == Net.me():
 		banner("YOU DIED\n(you're a ghost now: SPACE/SHIFT to fly)", 3.0)

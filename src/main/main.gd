@@ -16,6 +16,7 @@ var _bots: SpinBox
 var _status: Label
 var _color: Color = Art.SWATCHES[0]
 var _hat := "party"
+var _body := "kid"
 
 
 func _ready() -> void:
@@ -51,7 +52,8 @@ func _on_world(w: String, args: Dictionary) -> void:
 
 
 func _profile() -> Dictionary:
-	return {"name": _name_edit.text, "color": _color, "hat": _hat, "body": "bean"}
+	Progress.ensure_loaded()
+	return {"name": _name_edit.text, "color": _color, "hat": _hat, "body": _body, "level": Progress.level}
 
 
 func _join() -> void:
@@ -105,6 +107,7 @@ func _load_profile() -> void:
 	if cfg.load(SAVE_PATH) == OK:
 		_color = cfg.get_value("p", "color", _color)
 		_hat = cfg.get_value("p", "hat", _hat)
+		_body = cfg.get_value("p", "body", _body)
 		_saved_name = cfg.get_value("p", "name", "")
 		_saved_ip = cfg.get_value("p", "ip", "127.0.0.1")
 
@@ -118,6 +121,7 @@ func _save_profile() -> void:
 	cfg.set_value("p", "name", _name_edit.text)
 	cfg.set_value("p", "color", _color)
 	cfg.set_value("p", "hat", _hat)
+	cfg.set_value("p", "body", _body)
 	cfg.set_value("p", "ip", _ip_edit.text)
 	cfg.save(SAVE_PATH)
 
