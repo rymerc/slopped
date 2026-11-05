@@ -43,8 +43,15 @@ static func button(text: String, cb: Callable, color := ACCENT, size := 22) -> B
 	b.add_theme_stylebox_override("hover", box_style(color.lightened(0.15), 12, 3))
 	b.add_theme_stylebox_override("pressed", box_style(color.darkened(0.2), 12, 3))
 	b.add_theme_stylebox_override("disabled", box_style(color.darkened(0.5), 12, 3))
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.pressed.connect(cb)
+	var focus := StyleBoxFlat.new()  # visible focus ring: gamepads and Tab navigate these
+	focus.draw_center = false
+	focus.set_corner_radius_all(14)
+	focus.set_border_width_all(3)
+	focus.border_color = YELLOW
+	focus.set_expand_margin_all(3)
+	b.add_theme_stylebox_override("focus", focus)
+	if cb.is_valid():
+		b.pressed.connect(cb)
 	return b
 
 

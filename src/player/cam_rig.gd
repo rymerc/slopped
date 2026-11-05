@@ -13,7 +13,6 @@ var yaw := 0.0
 var pitch := -0.3
 var distance := 5.0
 var height := 1.6
-var sensitivity := 0.0025
 var base_fov := 72.0
 var wobble := 0.0  # drunk camera, seconds remaining
 var arm: SpringArm3D
@@ -38,6 +37,7 @@ func _ready() -> void:
 	probe.radius = 0.25
 	arm.shape = probe
 	cam = Camera3D.new()
+	base_fov = Settings.fov()
 	cam.fov = base_fov
 	cam.far = 600.0
 	arm.add_child(cam)
@@ -53,7 +53,7 @@ func set_target(t: Node3D) -> void:
 
 
 func shake(amount: float) -> void:
-	_trauma = clampf(maxf(_trauma, amount), 0.0, 1.5)
+	_trauma = clampf(maxf(_trauma, amount * float(Settings.shake_scale())), 0.0, 1.5)
 
 
 ## Called by the avatar on touchdown with the downward speed at impact.
@@ -67,14 +67,30 @@ func jumped() -> void:
 	_bump_v += 0.9
 
 
+func _pad_look(delta: float) -> void:
+	var v := Input.get_vector("look_left", "look_right", "look_up", "look_down")
+	if v == Vector2.ZERO:
+		return
+	v *= v.length()  # response curve: fine aim near centre, fast turns at full tilt
+	var speed := 3.2 * float(Settings.g("controls", "pad_look"))
+	var inv := -1.0 if Settings.g("controls", "invert_y") else 1.0
+	yaw -= v.x * speed * delta
+	pitch = clampf(pitch - v.y * speed * 0.7 * inv * delta, -1.35, 0.7)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var m := event as InputEventMouseMotion
-		yaw -= m.relative.x * sensitivity
-		pitch = clampf(pitch - m.relative.y * sensitivity, -1.35, 0.7)
+		var sens: float = Settings.sensitivity()
+		var inv := -1.0 if Settings.g("controls", "invert_y") else 1.0
+		yaw -= m.relative.x * sens
+		pitch = clampf(pitch - m.relative.y * sens * inv, -1.35, 0.7)
 
 
 func _process(delta: float) -> void:
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_pad_look(delta)
+	base_fov = Settings.fov()
 	var av := target as Avatar
 	var vel := Vector3.ZERO
 	var on_floor := true
@@ -106,7 +122,7 @@ func _process(delta: float) -> void:
 	_bump = clampf(_bump, -0.6, 0.4)
 
 	# bob: tiny vertical bounce per step, half-rate sideways sway
-	var bob_amp := 0.03 * clampf(move, 0.0, 1.2) * (1.0 + sprint * 0.8) * sqrt(s) if on_floor else 0.0
+	var bob_amp := 0.03 * clampf(move, 0.0, 1.2) * (1.0 + sprint * 0.8) * sqrt(s) * float(Settings.bob_scale()) if on_floor else 0.0
 	var bob_y := absf(sin(phase)) * bob_amp
 	var bob_x := sin(phase * 0.5) * bob_amp * 0.6
 

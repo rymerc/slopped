@@ -195,4 +195,13 @@ func _build_menu() -> void:
 	_status = Ui.label("Host with bots to play solo. Friends join your IP (port %d UDP)." % Net.PORT, 18)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_status)
-	v.add_child(Ui.button("Quit", func() -> void: get_tree().quit(), Ui.PANEL.lightened(0.2), 20))
+	var settings := SettingsMenu.new()
+	layer.add_child(settings)
+	var foot := Ui.hbox()
+	v.add_child(foot)
+	var sb := Ui.button("Settings", settings.open, Ui.PANEL.lightened(0.2), 20)
+	sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	foot.add_child(sb)
+	var qb := Ui.button("Quit", func() -> void: get_tree().quit(), Ui.PANEL.lightened(0.2), 20)
+	qb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	foot.add_child(qb)

@@ -69,6 +69,7 @@ static func vcol_mat() -> ShaderMaterial:
 		m.shader = TOON
 		m.set_shader_parameter("use_vertex_color", true)
 		m.set_shader_parameter("rim_strength", 0.0)
+		m.set_shader_parameter("grain", 0.22)
 		_mats["vcol"] = m
 	return _mats["vcol"]
 

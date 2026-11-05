@@ -11,6 +11,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+Settings="*res://src/core/settings.gd"
 Net="*res://src/core/net.gd"
 
 [display]
@@ -41,6 +42,10 @@ sky_ambient={
 ground_ambient={
 "type": "color",
 "value": Color(0.35, 0.3, 0.28, 1)
+}
+paint_grain={
+"type": "sampler2D",
+"value": "res://assets/textures/paint_grain.png"
 }
 
 [layer_names]

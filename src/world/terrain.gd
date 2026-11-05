@@ -43,7 +43,8 @@ static func build(root: Node3D, height_fn: Callable, color_fn: Callable, half: f
 				var around := (float(height_fn.call(mid.x + cell * 2.0, mid.z)) + float(height_fn.call(mid.x - cell * 2.0, mid.z))
 					+ float(height_fn.call(mid.x, mid.z + cell * 2.0)) + float(height_fn.call(mid.x, mid.z - cell * 2.0))) * 0.25
 				var ao := clampf(1.0 - maxf(0.0, around - mid.y) * 0.07, 0.62, 1.0)
-				col = Color(col.r * ao, col.g * ao, col.b * ao)
+				col = Color(col.r * ao, col.g * ao, col.b * ao).srgb_to_linear()
+				col.a = 0.0
 				# clockwise seen from above (Godot front face)
 				for v: Vector3 in [a, b, c]:
 					st.set_color(col)
@@ -90,7 +91,9 @@ static func scatter(root: Node3D, mesh: Mesh, count: int, half: float, height_fn
 		var b := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * s)
 		xfs.append(Transform3D(b, Vector3(x, y, z)))
 		var c: Color = colors[rng.randi() % colors.size()]
-		cols.append(c.lightened(rng.randf_range(-0.05, 0.08)))
+		c = c.lightened(rng.randf_range(-0.05, 0.08)).srgb_to_linear()
+		c.a = 0.0
+		cols.append(c)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -127,7 +130,7 @@ static func tuft_mesh() -> Mesh:
 static func flower_mesh() -> Mesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var stem := Color("#5ea443")
+	var stem := Color("#5ea443").srgb_to_linear()
 	var tris := [
 		[Vector3(-0.015, 0, 0), Vector3(0, 0.3, 0), Vector3(0.015, 0, 0)],
 		[Vector3(0.015, 0, 0), Vector3(0, 0.3, 0), Vector3(-0.015, 0, 0)],

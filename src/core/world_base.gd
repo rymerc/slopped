@@ -25,6 +25,7 @@ var _toasts: VBoxContainer
 var _banner: Label
 var _banner_t := 0.0
 var _pause: Control
+var _settings: SettingsMenu
 
 
 func _ready() -> void:
@@ -218,7 +219,7 @@ func _update_prompt(me: Avatar) -> void:
 	var best: Dictionary = {}
 	var best_d := INF
 	if me and me.holding and can_act():
-		_prompt.text = "[LMB] throw   [E] drop"
+		_prompt.text = "[%s] throw   [%s] drop" % [InputSetup.label("primary"), InputSetup.label("interact")]
 		_prompt.visible = true
 		if Input.is_action_just_pressed("interact"):
 			props.release(false, Vector3.ZERO)
@@ -233,7 +234,7 @@ func _update_prompt(me: Avatar) -> void:
 				best = it
 				best_d = d
 	if grab and (best.is_empty() or me.global_position.distance_to(grab.global_position) < best_d):
-		_prompt.text = "[E] grab %s" % grab.kind.replace("_s", "").replace("_", " ")
+		_prompt.text = "[%s] grab %s" % [InputSetup.label("interact"), grab.kind.replace("_s", "").replace("_", " ")]
 		_prompt.visible = true
 		if Input.is_action_just_pressed("interact"):
 			props.grab(grab)
@@ -244,7 +245,7 @@ func _update_prompt(me: Avatar) -> void:
 	var t: Variant = best.text
 	if t is Callable:
 		t = (t as Callable).call()
-	_prompt.text = "[E] %s" % t
+	_prompt.text = "[%s] %s" % [InputSetup.label("interact"), t]
 	_prompt.visible = true
 	if Input.is_action_just_pressed("interact"):
 		(best.action as Callable).call()
@@ -259,7 +260,9 @@ func set_mouse_captured(on: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if _settings and _settings.visible:
+		return
+	if event.is_action_pressed("menu"):
 		if ui_open:
 			close_ui()
 		else:
@@ -337,6 +340,7 @@ func _build_pause() -> void:
 	_pause.add_child(v)
 	v.add_child(Ui.label("Paused-ish (game keeps running)", 26))
 	v.add_child(Ui.button("Resume", func() -> void: set_mouse_captured(true)))
+	v.add_child(Ui.button("Settings", _open_settings, Ui.PANEL.lightened(0.2)))
 	v.add_child(Ui.button("Leave to Menu", func() -> void: Net.leave(), Ui.PANEL.lightened(0.2)))
 	v.add_child(Ui.button("Quit Game", func() -> void: get_tree().quit(), Color("#e63946")))
 	Ui.anchor(_pause, Control.PRESET_CENTER)
@@ -344,6 +348,14 @@ func _build_pause() -> void:
 	_pause.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_pause.visible = false
 	hud.add_child(_pause)
+	_settings = SettingsMenu.new()
+	_settings.closed.connect(func() -> void: _pause.visible = Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not ui_open)
+	hud.add_child(_settings)
+
+
+func _open_settings() -> void:
+	_pause.visible = false
+	_settings.open()
 
 
 func toast(msg: String) -> void:
@@ -370,7 +382,8 @@ func banner(msg: String, secs := 3.0) -> void:
 ## hemispheric ambient via shader globals, and only *distant* depth fog in the
 ## horizon colour (atmospheric perspective for landmarks; nearby stays crisp).
 func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energy := 1.3,
-		fog_from := 90.0, fog_to := 320.0) -> void:
+		fog_from := 90.0, fog_to := 320.0, sun_rot := Vector3(-50, 38, 0), sun_col := Color("#fff4dc"),
+		bounce := Color("#c9a27a")) -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
@@ -386,7 +399,7 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	env.ambient_light_energy = 0.0
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.tonemap_exposure = 1.0
-	env.glow_enabled = true
+	env.glow_enabled = bool(Settings.g("video", "glow"))
 	env.glow_intensity = 0.35
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.15
@@ -401,19 +414,21 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	env.fog_sun_scatter = 0.0
 	var we := WorldEnvironment.new()
 	we.environment = env
+	we.add_to_group(Settings.GROUP_ENV)
 	add_child(we)
 	# hemispheric ambient: sky tint from above, warm bounce from below
 	RenderingServer.global_shader_parameter_set("sky_ambient", sky_top.lerp(Color.WHITE, 0.55) * ambient)
-	RenderingServer.global_shader_parameter_set("ground_ambient", Color("#c9a27a") * ambient * 0.7)
+	RenderingServer.global_shader_parameter_set("ground_ambient", bounce * ambient * 0.7)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-50, 38, 0)
-	sun.light_color = Color("#fff4dc")
+	sun.rotation_degrees = sun_rot
+	sun.light_color = sun_col
 	sun.light_energy = sun_energy
 	sun.shadow_enabled = true
 	sun.shadow_opacity = 0.75
 	sun.shadow_blur = 0.6
-	sun.directional_shadow_max_distance = 90.0
+	sun.add_to_group(Settings.GROUP_SUN)
 	add_child(sun)
+	Settings.apply_world()
 
 
 # --- progression HUD ---------------------------------------------------------

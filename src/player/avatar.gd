@@ -33,6 +33,8 @@ const KNOCKDOWN_AT := 12.0
 const HARD_LAND := 23.0
 const SPLAT_LAND := 31.0
 const SLIDE_MAX := 26.0
+const SLIDE_PEAK_DB := -20.0
+const SLIDE_SILENT_DB := -60.0
 const GETUP_TIME := 0.75
 const BLEND_TIME := 0.3
 
@@ -553,7 +555,7 @@ func _simulate(delta: float) -> void:
 		dir = cam.yaw_basis() * Vector3(iv.x, 0.0, iv.y)
 		want_jump = Input.is_action_just_pressed("jump")
 		hold_jump = Input.is_action_pressed("jump")
-		sprint = Input.is_action_pressed("sprint")
+		sprint = _sprint_input()
 		want_dive = Input.is_action_just_pressed("dive")
 	if dir.length() > 1.0:
 		dir = dir.normalized()
@@ -609,7 +611,7 @@ func _simulate(delta: float) -> void:
 		_dive_cd = 0.6
 		_coyote = 0.0
 		_squash_v = 2.0
-		Sfx.at(self, "whoosh", global_position, -2.0, 0.1, 0.9)
+		Sfx.at(self, "whoosh", global_position, -12.0, 0.1, 0.9)
 
 	var hv := Vector3(velocity.x, 0.0, velocity.z)
 	if state == St.SLIDE:
@@ -777,7 +779,7 @@ func _bump_props() -> void:
 
 func _on_jump() -> void:
 	_squash_v = 3.2
-	Sfx.at(self, "jump", global_position, -6.0, 0.08, 1.0 / sqrt(size))
+	Sfx.at(self, "jump", global_position, -15.0, 0.08, 1.0 / sqrt(size))
 	if cam:
 		cam.jumped()
 
@@ -787,7 +789,7 @@ func _on_land(impact: float) -> void:
 	var w := world()
 	if impact > 5.0 and w:
 		Fx.dust(w, global_position, clampf(impact / 16.0, 0.3, 1.6) * sqrt(size))
-		Sfx.at(self, "land", global_position, linear_to_db(clampf(impact / 18.0, 0.2, 1.4)), 0.1, 1.0 / sqrt(size))
+		Sfx.at(self, "land", global_position, linear_to_db(clampf(impact / 22.0, 0.12, 1.0)) - 8.0, 0.1, 1.0 / sqrt(size))
 	if cam:
 		cam.land(impact)
 	if state == St.SLIDE:
@@ -1001,12 +1003,24 @@ func _blink(delta: float) -> void:
 		_blink_t = randf_range(1.8, 5.0)
 
 
+## Hold-to-sprint, or tap-to-toggle when the accessibility option is on. The
+## toggle drops itself when you stop moving, so you never restart at a run.
+func _sprint_input() -> bool:
+	if not Settings.g("controls", "toggle_sprint"):
+		return Input.is_action_pressed("sprint")
+	if Input.is_action_just_pressed("sprint"):
+		Settings.sprint_latched = not Settings.sprint_latched
+	if Input.get_vector("move_left", "move_right", "move_forward", "move_back").length() < 0.1:
+		Settings.sprint_latched = false
+	return Settings.sprint_latched
+
+
 func _footstep() -> void:
 	var w := world()
 	if w == null:
 		return
 	var p := global_position
-	var loud := -14.0 + sprint_k * 6.0 + 4.0 * log(size + 0.01)
+	var loud := -22.0 + sprint_k * 3.0 + 4.0 * log(size + 0.01)
 	Sfx.at(w, "step", p, loud, 0.18, (1.0 + sprint_k * 0.15) / sqrt(size))
 	if sprint_k > 0.6 or size > 2.0:
 		Fx.step(w, p)
@@ -1037,25 +1051,37 @@ func _update_audio(delta: float) -> void:
 		if _wind == null:
 			_wind = AudioStreamPlayer.new()
 			_wind.stream = Sfx.stream("wind")
+			_wind.bus = &"Movement"
 			_wind.volume_db = -60.0
 			add_child(_wind)
 			_wind.play()
 		var spd := velocity.length()
 		var fall := clampf((-velocity.y - 10.0) / 25.0, 0.0, 1.0)
 		var k := maxf(fall, clampf((spd - 14.0) / 20.0, 0.0, 1.0))
-		_wind.volume_db = lerpf(_wind.volume_db, linear_to_db(maxf(k, 0.001)) - 4.0, clampf(delta * 5.0, 0.0, 1.0))
+		_wind.volume_db = lerpf(_wind.volume_db, linear_to_db(maxf(k, 0.001)) - 12.0, clampf(delta * 5.0, 0.0, 1.0))
 		_wind.pitch_scale = 0.8 + k * 0.5
 	var sliding := state == St.SLIDE and floor_vis
 	if sliding and _scrape == null:
 		_scrape = AudioStreamPlayer3D.new()
 		_scrape.stream = Sfx.stream("scrape")
-		_scrape.unit_size = 6.0
+		_scrape.bus = &"Movement"
+		_scrape.unit_size = 5.0
+		_scrape.max_distance = 35.0
+		_scrape.volume_db = SLIDE_SILENT_DB
 		add_child(_scrape)
-		_scrape.play()
 		_slide_dust = Fx.trail(self, Color("#e9dcc0"), 0.14)
 	if _scrape:
+		# Ease in and out so starting / stopping a slide never clicks, and stop the
+		# stream entirely once it's inaudible.
 		var sp := Vector2(net_velocity.x, net_velocity.z).length()
-		_scrape.volume_db = linear_to_db(clampf(sp / 14.0, 0.001, 1.0)) - 6.0 if sliding else -80.0
-		_scrape.pitch_scale = 0.7 + clampf(sp / 25.0, 0.0, 0.8)
+		var want := SLIDE_SILENT_DB
+		if sliding:
+			want = lerpf(-30.0, SLIDE_PEAK_DB, clampf(sp / 22.0, 0.0, 1.0))
+			if not _scrape.playing:
+				_scrape.play(randf() * 2.0)
+		_scrape.volume_db = move_toward(_scrape.volume_db, want, delta * (70.0 if sliding else 45.0))
+		_scrape.pitch_scale = lerpf(_scrape.pitch_scale, 0.85 + clampf(sp / 26.0, 0.0, 1.0) * 0.3, clampf(delta * 6.0, 0.0, 1.0))
+		if not sliding and _scrape.playing and _scrape.volume_db <= SLIDE_SILENT_DB + 1.0:
+			_scrape.stop()
 		if _slide_dust:
 			_slide_dust.emitting = sliding and sp > 4.0

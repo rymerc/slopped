@@ -11,6 +11,9 @@ extends RefCounted
 
 const RATE := 22050
 const MAX_VOICES := 40
+## Which mixer bus each clip plays on (Settings exposes a slider per bus).
+const MOVEMENT := ["step", "jump", "land", "scrape", "wind"]
+const INTERFACE := ["click", "ding", "coin"]
 
 static var _cache: Dictionary = {}
 static var _voices := 0
@@ -25,11 +28,18 @@ static func stream(n: String) -> AudioStream:
 	return s
 
 
+static func bus_for(n: String) -> StringName:
+	if n in MOVEMENT:
+		return &"Movement"
+	return &"Interface" if n in INTERFACE else &"Effects"
+
+
 static func at(where: Node, n: String, pos: Vector3, db := 0.0, pitch_var := 0.08, pitch := 1.0) -> void:
 	if where == null or not where.is_inside_tree() or _voices >= MAX_VOICES:
 		return
 	var p := AudioStreamPlayer3D.new()
 	p.stream = stream(n)
+	p.bus = bus_for(n)
 	p.volume_db = db
 	p.pitch_scale = maxf(0.05, pitch * (1.0 + randf_range(-pitch_var, pitch_var)))
 	p.unit_size = 8.0
@@ -40,10 +50,7 @@ static func at(where: Node, n: String, pos: Vector3, db := 0.0, pitch_var := 0.0
 		host = where
 	host.add_child(p)
 	p.global_position = pos
-	_voices += 1
-	p.finished.connect(func() -> void:
-		_voices -= 1
-		p.queue_free())
+	_track(p)
 	p.play()
 
 
@@ -52,14 +59,20 @@ static func ui(where: Node, n: String, db := 0.0, pitch := 1.0) -> void:
 		return
 	var p := AudioStreamPlayer.new()
 	p.stream = stream(n)
+	p.bus = &"Interface"
 	p.volume_db = db
 	p.pitch_scale = pitch
 	where.add_child(p)
-	_voices += 1
-	p.finished.connect(func() -> void:
-		_voices -= 1
-		p.queue_free())
+	_track(p)
 	p.play()
+
+
+## Voices are released when the player leaves the tree, so a world change that
+## frees a playing sound can't leak a voice slot.
+static func _track(p: Node) -> void:
+	_voices += 1
+	p.tree_exited.connect(func() -> void: _voices -= 1)
+	p.connect("finished", p.queue_free)
 
 
 # --- synthesis -------------------------------------------------------------
@@ -67,11 +80,11 @@ static func ui(where: Node, n: String, db := 0.0, pitch := 1.0) -> void:
 static func _make(n: String) -> AudioStreamWAV:
 	match n:
 		"jump": return _render(0.16, func(t: float, _i: int) -> float:
-			return _sq(t, lerpf(260.0, 620.0, t / 0.16)) * 0.35 * _env(t, 0.16, 0.005))
+			return sin(TAU * lerpf(240.0, 430.0, sqrt(t / 0.16)) * t) * 0.3 * _env(t, 0.16, 0.012))
 		"land": return _render(0.14, func(t: float, _i: int) -> float:
-			return (sin(TAU * lerpf(110.0, 50.0, t / 0.14) * t) * 0.8 + _lp_noise(0.25) * 0.6) * _env(t, 0.14, 0.002))
-		"step": return _render(0.06, func(t: float, _i: int) -> float:
-			return _lp_noise(0.35) * _env(t, 0.06, 0.002) * 0.6)
+			return (sin(TAU * lerpf(95.0, 48.0, t / 0.14) * t) * 0.7 + _lp_noise(0.12) * 0.4) * _env(t, 0.14, 0.004))
+		"step": return _render(0.07, func(t: float, _i: int) -> float:
+			return (_lp_noise(0.16) * 0.7 + sin(TAU * 95.0 * t) * 0.35) * _env(t, 0.07, 0.004) * 0.55)
 		"bonk": return _render(0.18, func(t: float, _i: int) -> float:
 			return (sin(TAU * lerpf(700.0, 220.0, sqrt(t / 0.18)) * t) + randf_range(-1, 1) * maxf(0.0, 1.0 - t * 60.0)) * 0.5 * _env(t, 0.18, 0.001))
 		"pop": return _render(0.08, func(t: float, _i: int) -> float:
@@ -111,11 +124,46 @@ static func _make(n: String) -> AudioStreamWAV:
 			return randf_range(-1, 1) * maxf(0.0, 1.0 - t * 40.0) * 0.6)
 		"wind": return _render(2.0, func(t: float, _i: int) -> float:
 			return _bp_noise(0.04 + 0.02 * sin(TAU * 0.5 * t)) * 0.8, true)
-		"scrape": return _render(1.0, func(_t: float, _i: int) -> float:
-			return _bp_noise(0.25) * 0.4, true)
+		"scrape": return _make_slide()
 		"squish": return _render(0.2, func(t: float, _i: int) -> float:
 			return (_lp_noise(0.3) * 0.6 + sin(TAU * lerpf(300.0, 120.0, t / 0.2) * t) * 0.4) * _env(t, 0.2, 0.004))
 	return _render(0.05, func(_t: float, _i: int) -> float: return 0.0)
+
+
+## Belly-slide loop: a soft, dark cloth-on-grass rush. Heavily low-passed noise
+## with a slow swell so it never reads as a static hiss, crossfaded end to start
+## so the loop point has no click.
+static func _make_slide() -> AudioStreamWAV:
+	var secs := 2.4
+	var fade := 0.4
+	var n := int(secs * RATE)
+	var nf := int(fade * RATE)
+	var raw := PackedFloat32Array()
+	raw.resize(n + nf)
+	var lp1 := 0.0
+	var lp2 := 0.0
+	for i in raw.size():
+		var w := randf_range(-1.0, 1.0)
+		lp1 += (w - lp1) * 0.09
+		lp2 += (lp1 - lp2) * 0.22
+		var t := float(i) / RATE
+		var swell := 0.78 + 0.22 * sin(TAU * t / secs) * sin(TAU * 3.0 * t / secs)
+		raw[i] = lp2 * 2.4 * swell
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	for i in n:
+		var v := raw[i]
+		if i < nf:
+			var k := float(i) / nf
+			v = v * sqrt(k) + raw[n + i] * sqrt(1.0 - k)
+		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 30000.0))
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = RATE
+	w.data = data
+	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	w.loop_end = n
+	return w
 
 
 static var _lp := 0.0

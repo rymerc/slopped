@@ -1,0 +1,2570 @@
+{
+"coaster_bench": {
+"size": [
+0.8,
+0.491,
+0.486
+],
+"tris": 112
+},
+"coaster_coaster_train": {
+"size": [
+0.7,
+0.617,
+1.3
+],
+"tris": 668
+},
+"coaster_coaster_wood_corner_large": {
+"size": [
+4.5,
+0.35,
+4.5
+],
+"tris": 1256
+},
+"coaster_coaster_wood_corner_small": {
+"size": [
+2.5,
+0.35,
+2.5
+],
+"tris": 800
+},
+"coaster_coaster_wood_curve": {
+"size": [
+3.0,
+0.35,
+4.0
+],
+"tris": 964
+},
+"coaster_coaster_wood_looping": {
+"size": [
+2.0,
+4.092,
+4.109
+],
+"tris": 2276
+},
+"coaster_coaster_wood_straight": {
+"size": [
+1.0,
+0.35,
+4.0
+],
+"tris": 800
+},
+"coaster_coaster_wood_straight_bump_down": {
+"size": [
+1.0,
+0.847,
+4.0
+],
+"tris": 928
+},
+"coaster_coaster_wood_straight_bump_up": {
+"size": [
+1.0,
+0.846,
+4.0
+],
+"tris": 928
+},
+"coaster_coaster_wood_straight_hill_complete": {
+"size": [
+1.0,
+1.349,
+4.0
+],
+"tris": 928
+},
+"coaster_coaster_wood_track": {
+"size": [
+1.0,
+0.3,
+1.0
+],
+"tris": 128
+},
+"coaster_flowers": {
+"size": [
+0.777,
+0.137,
+0.786
+],
+"tris": 264
+},
+"coaster_park_entrance": {
+"size": [
+3.085,
+2.435,
+1.155
+],
+"tris": 942
+},
+"coaster_ride_entrance": {
+"size": [
+1.0,
+1.5,
+1.045
+],
+"tris": 270
+},
+"coaster_ride_exit": {
+"size": [
+1.0,
+1.25,
+1.045
+],
+"tris": 152
+},
+"coaster_stall_drinks": {
+"size": [
+1.0,
+1.88,
+1.2
+],
+"tris": 274
+},
+"coaster_stall_food": {
+"size": [
+1.042,
+1.545,
+1.2
+],
+"tris": 380
+},
+"coaster_stall_information": {
+"size": [
+1.0,
+1.5,
+1.15
+],
+"tris": 212
+},
+"coaster_stall_toilets": {
+"size": [
+1.0,
+1.4,
+1.06
+],
+"tris": 211
+},
+"coaster_station": {
+"size": [
+1.5,
+0.3,
+1.0
+],
+"tris": 60
+},
+"coaster_station_fence": {
+"size": [
+1.5,
+0.63,
+1.0
+],
+"tris": 212
+},
+"coaster_station_gate": {
+"size": [
+1.5,
+0.63,
+1.0
+],
+"tris": 328
+},
+"coaster_support_large": {
+"size": [
+0.479,
+1.0,
+0.479
+],
+"tris": 44
+},
+"coaster_support_large_bottom": {
+"size": [
+0.7,
+1.0,
+0.7
+],
+"tris": 112
+},
+"coaster_support_small": {
+"size": [
+0.36,
+1.0,
+0.36
+],
+"tris": 44
+},
+"coaster_support_small_bottom": {
+"size": [
+0.6,
+1.0,
+0.6
+],
+"tris": 112
+},
+"coaster_train_log_flume": {
+"size": [
+0.56,
+0.66,
+1.5
+],
+"tris": 219
+},
+"coaster_trash": {
+"size": [
+0.424,
+0.437,
+0.424
+],
+"tris": 72
+},
+"coaster_tree": {
+"size": [
+0.855,
+1.188,
+0.855
+],
+"tris": 284
+},
+"coaster_tree_large": {
+"size": [
+0.877,
+1.959,
+0.877
+],
+"tris": 284
+},
+"fantasytown_banner_green": {
+"size": [
+0.05,
+0.839,
+0.5
+],
+"tris": 102
+},
+"fantasytown_banner_red": {
+"size": [
+0.05,
+0.839,
+0.5
+],
+"tris": 98
+},
+"fantasytown_cart": {
+"size": [
+0.893,
+0.536,
+1.34
+],
+"tris": 608
+},
+"fantasytown_cart_high": {
+"size": [
+0.893,
+0.861,
+1.39
+],
+"tris": 1028
+},
+"fantasytown_chimney": {
+"size": [
+0.212,
+1.0,
+0.34
+],
+"tris": 32
+},
+"fantasytown_fence": {
+"size": [
+0.075,
+0.38,
+1.0
+],
+"tris": 84
+},
+"fantasytown_fence_broken": {
+"size": [
+0.255,
+0.38,
+1.0
+],
+"tris": 124
+},
+"fantasytown_fence_gate": {
+"size": [
+0.075,
+0.38,
+1.0
+],
+"tris": 560
+},
+"fantasytown_fountain_round_detail": {
+"size": [
+2.0,
+0.48,
+2.0
+],
+"tris": 1628
+},
+"fantasytown_hedge": {
+"size": [
+0.25,
+0.25,
+1.0
+],
+"tris": 54
+},
+"fantasytown_hedge_large": {
+"size": [
+0.4,
+0.6,
+1.0
+],
+"tris": 90
+},
+"fantasytown_lantern": {
+"size": [
+0.216,
+1.556,
+0.224
+],
+"tris": 158
+},
+"fantasytown_pillar_wood": {
+"size": [
+0.16,
+1.0,
+0.16
+],
+"tris": 44
+},
+"fantasytown_planks": {
+"size": [
+1.0,
+0.06,
+1.0
+],
+"tris": 96
+},
+"fantasytown_poles": {
+"size": [
+0.1,
+1.0,
+1.0
+],
+"tris": 28
+},
+"fantasytown_rock_large": {
+"size": [
+1.67,
+1.163,
+1.549
+],
+"tris": 200
+},
+"fantasytown_rock_small": {
+"size": [
+0.998,
+1.02,
+1.326
+],
+"tris": 128
+},
+"fantasytown_rock_wide": {
+"size": [
+1.094,
+1.02,
+1.567
+],
+"tris": 156
+},
+"fantasytown_stall": {
+"size": [
+0.65,
+0.366,
+1.0
+],
+"tris": 106
+},
+"fantasytown_stall_bench": {
+"size": [
+0.26,
+0.226,
+0.94
+],
+"tris": 180
+},
+"fantasytown_stall_green": {
+"size": [
+1.0,
+1.237,
+1.0
+],
+"tris": 322
+},
+"fantasytown_stall_red": {
+"size": [
+1.0,
+1.237,
+1.0
+],
+"tris": 270
+},
+"fantasytown_stall_stool": {
+"size": [
+0.26,
+0.226,
+0.26
+],
+"tris": 180
+},
+"fantasytown_tree": {
+"size": [
+1.023,
+2.413,
+1.023
+],
+"tris": 168
+},
+"fantasytown_tree_crooked": {
+"size": [
+1.023,
+2.413,
+1.023
+],
+"tris": 178
+},
+"fantasytown_tree_high": {
+"size": [
+1.023,
+2.973,
+1.023
+],
+"tris": 200
+},
+"food_barrel": {
+"size": [
+0.76,
+0.679,
+0.679
+],
+"tris": 308
+},
+"food_burger": {
+"size": [
+0.404,
+0.29,
+0.404
+],
+"tris": 294
+},
+"food_donut_sprinkles": {
+"size": [
+0.245,
+0.095,
+0.283
+],
+"tris": 180
+},
+"food_glass": {
+"size": [
+0.16,
+0.285,
+0.184
+],
+"tris": 44
+},
+"food_glass_wine": {
+"size": [
+0.227,
+0.5,
+0.197
+],
+"tris": 232
+},
+"food_mug": {
+"size": [
+0.344,
+0.273,
+0.285
+],
+"tris": 232
+},
+"food_pizza": {
+"size": [
+0.842,
+0.043,
+0.842
+],
+"tris": 1208
+},
+"food_pizza_box": {
+"size": [
+0.942,
+0.882,
+0.952
+],
+"tris": 84
+},
+"food_plate": {
+"size": [
+0.892,
+0.09,
+0.892
+],
+"tris": 140
+},
+"food_plate_dinner": {
+"size": [
+0.892,
+0.221,
+0.892
+],
+"tris": 354
+},
+"food_soda_can": {
+"size": [
+0.225,
+0.351,
+0.225
+],
+"tris": 164
+},
+"food_whole_ham": {
+"size": [
+0.381,
+0.44,
+0.64
+],
+"tris": 128
+},
+"food_wine_red": {
+"size": [
+0.191,
+0.699,
+0.165
+],
+"tris": 132
+},
+"food_wine_white": {
+"size": [
+0.203,
+0.656,
+0.176
+],
+"tris": 124
+},
+"kk_city_bench": {
+"size": [
+0.4,
+0.1,
+0.15
+],
+"tris": 44
+},
+"kk_city_box_A": {
+"size": [
+0.2,
+0.176,
+0.203
+],
+"tris": 32
+},
+"kk_city_box_B": {
+"size": [
+0.152,
+0.17,
+0.154
+],
+"tris": 20
+},
+"kk_city_bush": {
+"size": [
+0.189,
+0.381,
+0.199
+],
+"tris": 72
+},
+"kk_city_dumpster": {
+"size": [
+0.566,
+0.317,
+0.353
+],
+"tris": 126
+},
+"kk_city_firehydrant": {
+"size": [
+0.135,
+0.225,
+0.131
+],
+"tris": 180
+},
+"kk_city_streetlight": {
+"size": [
+0.269,
+0.96,
+0.069
+],
+"tris": 176
+},
+"kk_city_trash_A": {
+"size": [
+0.127,
+0.052,
+0.133
+],
+"tris": 18
+},
+"kk_city_trash_B": {
+"size": [
+0.068,
+0.04,
+0.071
+],
+"tris": 18
+},
+"kk_city_watertower": {
+"size": [
+0.499,
+0.67,
+0.499
+],
+"tris": 146
+},
+"kk_furniture_armchair": {
+"size": [
+1.8,
+1.224,
+1.6
+],
+"tris": 528
+},
+"kk_furniture_armchair_pillows": {
+"size": [
+1.8,
+1.224,
+1.6
+],
+"tris": 614
+},
+"kk_furniture_bed_double_A": {
+"size": [
+3.1,
+1.0,
+3.0
+],
+"tris": 540
+},
+"kk_furniture_bed_double_B": {
+"size": [
+3.1,
+1.0,
+3.0
+],
+"tris": 600
+},
+"kk_furniture_bed_single_A": {
+"size": [
+1.6,
+1.0,
+3.0
+],
+"tris": 474
+},
+"kk_furniture_bed_single_B": {
+"size": [
+1.6,
+1.0,
+3.0
+],
+"tris": 534
+},
+"kk_furniture_book_set": {
+"size": [
+0.78,
+0.5,
+0.365
+],
+"tris": 196
+},
+"kk_furniture_book_single": {
+"size": [
+0.26,
+0.5,
+0.365
+],
+"tris": 68
+},
+"kk_furniture_cabinet_medium": {
+"size": [
+2.0,
+1.0,
+1.002
+],
+"tris": 428
+},
+"kk_furniture_cabinet_medium_decorated": {
+"size": [
+2.042,
+1.827,
+1.002
+],
+"tris": 1018
+},
+"kk_furniture_cabinet_small": {
+"size": [
+1.0,
+1.0,
+1.002
+],
+"tris": 322
+},
+"kk_furniture_cabinet_small_decorated": {
+"size": [
+1.048,
+1.618,
+1.104
+],
+"tris": 464
+},
+"kk_furniture_cactus_medium_A": {
+"size": [
+0.88,
+0.827,
+0.837
+],
+"tris": 448
+},
+"kk_furniture_cactus_medium_B": {
+"size": [
+0.88,
+0.827,
+0.837
+],
+"tris": 448
+},
+"kk_furniture_cactus_small_A": {
+"size": [
+0.5,
+0.552,
+0.5
+],
+"tris": 252
+},
+"kk_furniture_cactus_small_B": {
+"size": [
+0.5,
+0.552,
+0.5
+],
+"tris": 252
+},
+"kk_furniture_chair_A": {
+"size": [
+0.75,
+1.258,
+0.845
+],
+"tris": 308
+},
+"kk_furniture_chair_A_wood": {
+"size": [
+0.75,
+1.258,
+0.845
+],
+"tris": 308
+},
+"kk_furniture_chair_B": {
+"size": [
+0.75,
+1.258,
+0.845
+],
+"tris": 384
+},
+"kk_furniture_chair_B_wood": {
+"size": [
+0.75,
+1.258,
+0.845
+],
+"tris": 384
+},
+"kk_furniture_chair_C": {
+"size": [
+0.75,
+1.203,
+0.936
+],
+"tris": 288
+},
+"kk_furniture_chair_stool": {
+"size": [
+0.75,
+0.5,
+0.75
+],
+"tris": 216
+},
+"kk_furniture_chair_stool_wood": {
+"size": [
+0.75,
+0.5,
+0.75
+],
+"tris": 216
+},
+"kk_furniture_couch": {
+"size": [
+3.0,
+1.224,
+1.6
+],
+"tris": 636
+},
+"kk_furniture_couch_pillows": {
+"size": [
+3.0,
+1.224,
+1.6
+],
+"tris": 808
+},
+"kk_furniture_lamp_standing": {
+"size": [
+1.0,
+2.52,
+1.0
+],
+"tris": 320
+},
+"kk_furniture_lamp_table": {
+"size": [
+1.0,
+1.022,
+1.0
+],
+"tris": 392
+},
+"kk_furniture_pictureframe_large_A": {
+"size": [
+1.01,
+1.2,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_large_B": {
+"size": [
+2.0,
+1.2,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_medium": {
+"size": [
+0.7,
+0.9,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_small_A": {
+"size": [
+0.5,
+0.6,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_small_B": {
+"size": [
+0.7,
+0.44,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_small_C": {
+"size": [
+0.5,
+0.5,
+0.2
+],
+"tris": 60
+},
+"kk_furniture_pictureframe_standing_A": {
+"size": [
+0.5,
+0.619,
+0.379
+],
+"tris": 74
+},
+"kk_furniture_pictureframe_standing_B": {
+"size": [
+0.7,
+0.468,
+0.357
+],
+"tris": 74
+},
+"kk_furniture_pillow_A": {
+"size": [
+0.65,
+0.2,
+0.5
+],
+"tris": 86
+},
+"kk_furniture_pillow_B": {
+"size": [
+0.65,
+0.2,
+0.5
+],
+"tris": 86
+},
+"kk_furniture_rug_oval_A": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 176
+},
+"kk_furniture_rug_oval_B": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 176
+},
+"kk_furniture_rug_rectangle_A": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 44
+},
+"kk_furniture_rug_rectangle_B": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 44
+},
+"kk_furniture_rug_rectangle_stripes_A": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 68
+},
+"kk_furniture_rug_rectangle_stripes_B": {
+"size": [
+3.0,
+0.1,
+2.0
+],
+"tris": 68
+},
+"kk_furniture_shelf_A_big": {
+"size": [
+2.0,
+0.4,
+0.5
+],
+"tris": 212
+},
+"kk_furniture_shelf_A_small": {
+"size": [
+1.0,
+0.4,
+0.5
+],
+"tris": 212
+},
+"kk_furniture_shelf_B_large": {
+"size": [
+2.0,
+0.4,
+0.5
+],
+"tris": 212
+},
+"kk_furniture_shelf_B_large_decorated": {
+"size": [
+2.0,
+0.818,
+0.5
+],
+"tris": 482
+},
+"kk_furniture_shelf_B_small": {
+"size": [
+1.0,
+0.4,
+0.5
+],
+"tris": 212
+},
+"kk_furniture_shelf_B_small_decorated": {
+"size": [
+1.0,
+1.012,
+0.571
+],
+"tris": 532
+},
+"kk_furniture_table_low": {
+"size": [
+2.4,
+0.5,
+1.5
+],
+"tris": 276
+},
+"kk_furniture_table_medium": {
+"size": [
+2.0,
+1.0,
+2.0
+],
+"tris": 168
+},
+"kk_furniture_table_medium_long": {
+"size": [
+3.0,
+1.0,
+2.0
+],
+"tris": 168
+},
+"kk_furniture_table_small": {
+"size": [
+1.0,
+1.0,
+1.0
+],
+"tris": 168
+},
+"kk_restaurant_chair_A": {
+"size": [
+0.75,
+1.208,
+0.796
+],
+"tris": 428
+},
+"kk_restaurant_chair_B": {
+"size": [
+0.75,
+1.208,
+0.796
+],
+"tris": 428
+},
+"kk_restaurant_chair_stool": {
+"size": [
+0.75,
+0.5,
+0.75
+],
+"tris": 272
+},
+"kk_restaurant_crate": {
+"size": [
+2.0,
+0.8,
+2.0
+],
+"tris": 132
+},
+"kk_restaurant_crate_potatoes": {
+"size": [
+2.0,
+0.966,
+2.0
+],
+"tris": 1068
+},
+"kk_restaurant_crate_tomatoes": {
+"size": [
+2.0,
+0.923,
+2.0
+],
+"tris": 2072
+},
+"kk_restaurant_food_burger": {
+"size": [
+0.95,
+0.857,
+0.95
+],
+"tris": 1622
+},
+"kk_restaurant_food_dinner": {
+"size": [
+1.037,
+0.908,
+0.95
+],
+"tris": 1196
+},
+"kk_restaurant_jar_A_large": {
+"size": [
+0.5,
+0.75,
+0.5
+],
+"tris": 168
+},
+"kk_restaurant_jar_B_medium": {
+"size": [
+0.5,
+0.65,
+0.5
+],
+"tris": 188
+},
+"kk_restaurant_jar_C_small": {
+"size": [
+0.566,
+0.55,
+0.566
+],
+"tris": 192
+},
+"kk_restaurant_ketchup": {
+"size": [
+0.3,
+0.779,
+0.3
+],
+"tris": 168
+},
+"nature_cactus_short": {
+"size": [
+0.342,
+0.533,
+0.297
+],
+"tris": 116
+},
+"nature_cactus_tall": {
+"size": [
+0.396,
+0.75,
+0.339
+],
+"tris": 122
+},
+"nature_canoe": {
+"size": [
+0.3,
+0.183,
+1.15
+],
+"tris": 200
+},
+"nature_canoe_paddle": {
+"size": [
+0.077,
+0.036,
+0.59
+],
+"tris": 32
+},
+"nature_crop_pumpkin": {
+"size": [
+0.441,
+0.334,
+0.452
+],
+"tris": 120
+},
+"nature_flower_purpleA": {
+"size": [
+0.159,
+0.242,
+0.181
+],
+"tris": 76
+},
+"nature_flower_redA": {
+"size": [
+0.159,
+0.292,
+0.181
+],
+"tris": 76
+},
+"nature_flower_yellowA": {
+"size": [
+0.159,
+0.192,
+0.181
+],
+"tris": 76
+},
+"nature_grass_large": {
+"size": [
+0.409,
+0.254,
+0.408
+],
+"tris": 224
+},
+"nature_grass_leafs": {
+"size": [
+0.234,
+0.143,
+0.257
+],
+"tris": 36
+},
+"nature_log": {
+"size": [
+0.234,
+0.173,
+0.71
+],
+"tris": 200
+},
+"nature_log_large": {
+"size": [
+1.0,
+0.417,
+0.549
+],
+"tris": 96
+},
+"nature_log_stack": {
+"size": [
+0.425,
+0.346,
+0.71
+],
+"tris": 184
+},
+"nature_log_stackLarge": {
+"size": [
+0.634,
+0.346,
+0.71
+],
+"tris": 310
+},
+"nature_mushroom_red": {
+"size": [
+0.174,
+0.203,
+0.201
+],
+"tris": 48
+},
+"nature_mushroom_redGroup": {
+"size": [
+0.27,
+0.25,
+0.254
+],
+"tris": 144
+},
+"nature_mushroom_tanGroup": {
+"size": [
+0.27,
+0.25,
+0.254
+],
+"tris": 144
+},
+"nature_plant_bush": {
+"size": [
+0.396,
+0.244,
+0.396
+],
+"tris": 32
+},
+"nature_plant_bushDetailed": {
+"size": [
+0.603,
+0.36,
+0.603
+],
+"tris": 104
+},
+"nature_plant_bushLarge": {
+"size": [
+0.374,
+0.243,
+0.336
+],
+"tris": 60
+},
+"nature_plant_bushSmall": {
+"size": [
+0.383,
+0.207,
+0.336
+],
+"tris": 16
+},
+"nature_plant_flatTall": {
+"size": [
+0.272,
+0.284,
+0.272
+],
+"tris": 32
+},
+"nature_pot_large": {
+"size": [
+0.564,
+0.2,
+0.488
+],
+"tris": 68
+},
+"nature_pot_small": {
+"size": [
+0.323,
+0.268,
+0.28
+],
+"tris": 72
+},
+"nature_rock_largeA": {
+"size": [
+0.785,
+0.26,
+1.015
+],
+"tris": 80
+},
+"nature_rock_largeD": {
+"size": [
+1.069,
+0.568,
+1.03
+],
+"tris": 80
+},
+"nature_rock_largeE": {
+"size": [
+1.095,
+0.292,
+0.92
+],
+"tris": 64
+},
+"nature_rock_smallA": {
+"size": [
+0.361,
+0.191,
+0.361
+],
+"tris": 16
+},
+"nature_rock_smallD": {
+"size": [
+0.426,
+0.231,
+0.369
+],
+"tris": 32
+},
+"nature_rock_tallA": {
+"size": [
+0.983,
+0.996,
+0.683
+],
+"tris": 136
+},
+"nature_rock_tallD": {
+"size": [
+0.443,
+0.772,
+0.461
+],
+"tris": 38
+},
+"nature_rock_tallG": {
+"size": [
+0.425,
+0.783,
+0.491
+],
+"tris": 62
+},
+"nature_sign": {
+"size": [
+0.3,
+0.409,
+0.07
+],
+"tris": 44
+},
+"nature_statue_column": {
+"size": [
+0.3,
+1.0,
+0.3
+],
+"tris": 122
+},
+"nature_statue_head": {
+"size": [
+0.726,
+1.0,
+0.554
+],
+"tris": 196
+},
+"nature_statue_obelisk": {
+"size": [
+0.307,
+0.875,
+0.307
+],
+"tris": 38
+},
+"nature_stump_old": {
+"size": [
+0.357,
+0.266,
+0.371
+],
+"tris": 120
+},
+"nature_stump_round": {
+"size": [
+0.321,
+0.206,
+0.371
+],
+"tris": 56
+},
+"nature_tent_detailedOpen": {
+"size": [
+0.875,
+0.561,
+0.666
+],
+"tris": 232
+},
+"nature_tree_default": {
+"size": [
+0.755,
+1.708,
+0.654
+],
+"tris": 114
+},
+"nature_tree_detailed": {
+"size": [
+0.847,
+1.332,
+0.762
+],
+"tris": 402
+},
+"nature_tree_fat": {
+"size": [
+0.755,
+1.15,
+0.654
+],
+"tris": 50
+},
+"nature_tree_oak": {
+"size": [
+0.641,
+1.226,
+0.74
+],
+"tris": 196
+},
+"nature_tree_palm": {
+"size": [
+0.935,
+1.515,
+1.013
+],
+"tris": 186
+},
+"nature_tree_palmBend": {
+"size": [
+0.935,
+1.38,
+1.013
+],
+"tris": 200
+},
+"nature_tree_palmDetailedShort": {
+"size": [
+1.034,
+1.124,
+1.034
+],
+"tris": 336
+},
+"nature_tree_palmDetailedTall": {
+"size": [
+1.034,
+1.423,
+1.034
+],
+"tris": 336
+},
+"nature_tree_palmShort": {
+"size": [
+1.034,
+1.056,
+1.034
+],
+"tris": 190
+},
+"nature_tree_palmTall": {
+"size": [
+1.034,
+1.356,
+1.034
+],
+"tris": 190
+},
+"nature_tree_pineRoundA": {
+"size": [
+0.617,
+1.366,
+0.712
+],
+"tris": 204
+},
+"nature_tree_pineTallA_detailed": {
+"size": [
+0.386,
+1.53,
+0.392
+],
+"tris": 134
+},
+"nature_tree_pineTallC_detailed": {
+"size": [
+0.48,
+1.67,
+0.555
+],
+"tris": 154
+},
+"nature_tree_plateau": {
+"size": [
+0.612,
+1.249,
+0.655
+],
+"tris": 215
+},
+"pirate_barrel": {
+"size": [
+1.336,
+1.229,
+1.336
+],
+"tris": 148
+},
+"pirate_boat_row_large": {
+"size": [
+2.749,
+0.848,
+2.852
+],
+"tris": 174
+},
+"pirate_boat_row_small": {
+"size": [
+2.749,
+0.848,
+2.372
+],
+"tris": 168
+},
+"pirate_bottle": {
+"size": [
+0.364,
+0.89,
+0.364
+],
+"tris": 124
+},
+"pirate_bottle_large": {
+"size": [
+0.466,
+0.89,
+0.466
+],
+"tris": 108
+},
+"pirate_cannon": {
+"size": [
+1.402,
+1.055,
+1.925
+],
+"tris": 232
+},
+"pirate_cannon_ball": {
+"size": [
+0.637,
+0.67,
+0.552
+],
+"tris": 48
+},
+"pirate_chest": {
+"size": [
+1.275,
+1.348,
+1.314
+],
+"tris": 232
+},
+"pirate_crate": {
+"size": [
+1.078,
+0.77,
+1.309
+],
+"tris": 76
+},
+"pirate_crate_bottles": {
+"size": [
+1.078,
+1.057,
+1.309
+],
+"tris": 572
+},
+"pirate_flag": {
+"size": [
+1.337,
+2.097,
+0.399
+],
+"tris": 144
+},
+"pirate_flag_high": {
+"size": [
+1.337,
+3.597,
+0.399
+],
+"tris": 144
+},
+"pirate_flag_high_pennant": {
+"size": [
+1.762,
+3.597,
+0.399
+],
+"tris": 118
+},
+"pirate_flag_pennant": {
+"size": [
+1.762,
+2.097,
+0.399
+],
+"tris": 118
+},
+"pirate_grass": {
+"size": [
+0.519,
+0.314,
+0.544
+],
+"tris": 72
+},
+"pirate_grass_patch": {
+"size": [
+1.313,
+0.471,
+1.271
+],
+"tris": 360
+},
+"pirate_grass_plant": {
+"size": [
+1.114,
+0.52,
+1.237
+],
+"tris": 144
+},
+"pirate_mast": {
+"size": [
+4.386,
+7.864,
+1.74
+],
+"tris": 302
+},
+"pirate_mast_ropes": {
+"size": [
+4.386,
+7.888,
+2.349
+],
+"tris": 350
+},
+"pirate_palm_bend": {
+"size": [
+2.88,
+4.251,
+3.216
+],
+"tris": 338
+},
+"pirate_palm_detailed_bend": {
+"size": [
+2.88,
+4.251,
+3.216
+],
+"tris": 482
+},
+"pirate_palm_detailed_straight": {
+"size": [
+3.216,
+4.213,
+3.216
+],
+"tris": 482
+},
+"pirate_palm_straight": {
+"size": [
+2.489,
+4.213,
+2.489
+],
+"tris": 338
+},
+"pirate_patch_sand_foliage": {
+"size": [
+7.736,
+0.564,
+6.036
+],
+"tris": 636
+},
+"pirate_platform": {
+"size": [
+2.5,
+0.228,
+2.513
+],
+"tris": 60
+},
+"pirate_platform_planks": {
+"size": [
+1.894,
+0.428,
+2.702
+],
+"tris": 48
+},
+"pirate_rocks_a": {
+"size": [
+5.113,
+2.898,
+4.386
+],
+"tris": 264
+},
+"pirate_rocks_b": {
+"size": [
+4.437,
+3.654,
+4.705
+],
+"tris": 300
+},
+"pirate_rocks_c": {
+"size": [
+3.643,
+2.3,
+3.669
+],
+"tris": 232
+},
+"pirate_rocks_sand_a": {
+"size": [
+5.113,
+3.212,
+4.386
+],
+"tris": 552
+},
+"pirate_rocks_sand_b": {
+"size": [
+4.379,
+3.714,
+4.71
+],
+"tris": 516
+},
+"pirate_rocks_sand_c": {
+"size": [
+3.71,
+2.614,
+3.722
+],
+"tris": 448
+},
+"pirate_ship_medium": {
+"size": [
+4.8,
+9.964,
+10.6
+],
+"tris": 1723
+},
+"pirate_ship_pirate_small": {
+"size": [
+4.8,
+9.964,
+8.8
+],
+"tris": 1461
+},
+"pirate_ship_small": {
+"size": [
+4.8,
+9.964,
+8.8
+],
+"tris": 1370
+},
+"pirate_ship_wreck": {
+"size": [
+4.8,
+9.964,
+10.6
+],
+"tris": 2282
+},
+"pirate_structure": {
+"size": [
+2.5,
+2.2,
+2.5
+],
+"tris": 276
+},
+"pirate_structure_fence": {
+"size": [
+2.5,
+2.2,
+2.5
+],
+"tris": 356
+},
+"pirate_structure_platform": {
+"size": [
+2.5,
+0.928,
+2.513
+],
+"tris": 220
+},
+"pirate_structure_platform_dock": {
+"size": [
+2.5,
+1.312,
+2.513
+],
+"tris": 324
+},
+"pirate_structure_platform_dock_small": {
+"size": [
+1.9,
+1.312,
+2.512
+],
+"tris": 312
+},
+"pirate_structure_roof": {
+"size": [
+3.085,
+3.4,
+3.234
+],
+"tris": 348
+},
+"pirate_tool_paddle": {
+"size": [
+0.658,
+2.349,
+0.208
+],
+"tris": 60
+},
+"pirate_tool_shovel": {
+"size": [
+0.658,
+2.349,
+0.283
+],
+"tris": 168
+},
+"pirate_tower_watch": {
+"size": [
+3.049,
+2.785,
+3.049
+],
+"tris": 248
+},
+"retrourban_detail_barrier_strong_type_a": {
+"size": [
+0.664,
+0.332,
+0.249
+],
+"tris": 28
+},
+"retrourban_detail_barrier_type_a": {
+"size": [
+0.433,
+0.4,
+0.134
+],
+"tris": 44
+},
+"retrourban_detail_beam": {
+"size": [
+0.25,
+0.25,
+1.0
+],
+"tris": 44
+},
+"retrourban_detail_bench": {
+"size": [
+0.604,
+0.409,
+0.322
+],
+"tris": 84
+},
+"retrourban_detail_cables_type_a": {
+"size": [
+1.0,
+0.143,
+0.0
+],
+"tris": 4
+},
+"retrourban_detail_dumpster_closed": {
+"size": [
+0.6,
+0.545,
+0.454
+],
+"tris": 22
+},
+"retrourban_detail_dumpster_open": {
+"size": [
+0.6,
+0.55,
+0.485
+],
+"tris": 24
+},
+"retrourban_pallet": {
+"size": [
+1.0,
+0.15,
+1.0
+],
+"tris": 84
+},
+"retrourban_pallet_small": {
+"size": [
+0.5,
+0.15,
+0.575
+],
+"tris": 60
+},
+"retrourban_planks": {
+"size": [
+1.13,
+0.1,
+0.57
+],
+"tris": 36
+},
+"retrourban_scaffolding_floor": {
+"size": [
+1.0,
+0.07,
+1.0
+],
+"tris": 38
+},
+"retrourban_scaffolding_poles": {
+"size": [
+1.0,
+1.0,
+1.0
+],
+"tris": 48
+},
+"retrourban_scaffolding_structure": {
+"size": [
+1.0,
+1.0,
+1.0
+],
+"tris": 124
+},
+"retrourban_truck_flat": {
+"size": [
+0.83,
+1.006,
+1.643
+],
+"tris": 68
+},
+"retrourban_truck_green": {
+"size": [
+0.83,
+1.006,
+1.643
+],
+"tris": 48
+},
+"retrourban_truck_green_cargo": {
+"size": [
+0.83,
+0.738,
+1.168
+],
+"tris": 12
+},
+"survival_barrel_open": {
+"size": [
+0.236,
+0.344,
+0.236
+],
+"tris": 380
+},
+"survival_bedroll": {
+"size": [
+0.31,
+0.125,
+0.608
+],
+"tris": 144
+},
+"survival_bedroll_frame": {
+"size": [
+0.272,
+0.148,
+0.608
+],
+"tris": 100
+},
+"survival_box": {
+"size": [
+0.25,
+0.25,
+0.25
+],
+"tris": 124
+},
+"survival_box_large": {
+"size": [
+0.25,
+0.25,
+0.5
+],
+"tris": 124
+},
+"survival_box_open": {
+"size": [
+0.25,
+0.306,
+0.25
+],
+"tris": 156
+},
+"survival_bucket": {
+"size": [
+0.144,
+0.192,
+0.144
+],
+"tris": 68
+},
+"survival_campfire_pit": {
+"size": [
+0.278,
+0.109,
+0.269
+],
+"tris": 305
+},
+"survival_campfire_stand": {
+"size": [
+0.41,
+0.281,
+0.124
+],
+"tris": 76
+},
+"survival_fence": {
+"size": [
+0.5,
+0.517,
+0.043
+],
+"tris": 48
+},
+"survival_fence_doorway": {
+"size": [
+0.5,
+0.517,
+0.048
+],
+"tris": 108
+},
+"survival_fence_fortified": {
+"size": [
+0.5,
+0.517,
+0.053
+],
+"tris": 120
+},
+"survival_fish": {
+"size": [
+0.205,
+0.106,
+0.065
+],
+"tris": 233
+},
+"survival_fish_large": {
+"size": [
+0.307,
+0.159,
+0.098
+],
+"tris": 233
+},
+"survival_resource_planks": {
+"size": [
+0.373,
+0.094,
+0.626
+],
+"tris": 72
+},
+"survival_resource_stone": {
+"size": [
+0.165,
+0.107,
+0.142
+],
+"tris": 44
+},
+"survival_resource_wood": {
+"size": [
+0.205,
+0.062,
+0.087
+],
+"tris": 64
+},
+"survival_rock_a": {
+"size": [
+0.555,
+0.393,
+0.622
+],
+"tris": 104
+},
+"survival_rock_b": {
+"size": [
+0.835,
+0.419,
+0.725
+],
+"tris": 156
+},
+"survival_rock_c": {
+"size": [
+0.784,
+0.51,
+0.566
+],
+"tris": 120
+},
+"survival_rock_flat": {
+"size": [
+1.786,
+0.195,
+1.448
+],
+"tris": 274
+},
+"survival_rock_flat_grass": {
+"size": [
+1.786,
+0.226,
+1.448
+],
+"tris": 758
+},
+"survival_rock_sand_a": {
+"size": [
+0.555,
+0.393,
+0.484
+],
+"tris": 92
+},
+"survival_rock_sand_b": {
+"size": [
+0.799,
+0.449,
+0.789
+],
+"tris": 180
+},
+"survival_rock_sand_c": {
+"size": [
+0.784,
+0.51,
+0.569
+],
+"tris": 144
+},
+"survival_signpost": {
+"size": [
+0.214,
+0.46,
+0.043
+],
+"tris": 44
+},
+"survival_signpost_single": {
+"size": [
+0.209,
+0.46,
+0.043
+],
+"tris": 28
+},
+"survival_structure_canvas": {
+"size": [
+0.5,
+0.5,
+0.5
+],
+"tris": 96
+},
+"survival_tent": {
+"size": [
+0.561,
+0.491,
+0.561
+],
+"tris": 124
+},
+"survival_tent_canvas": {
+"size": [
+0.561,
+0.491,
+0.561
+],
+"tris": 148
+},
+"survival_tool_axe": {
+"size": [
+0.114,
+0.256,
+0.031
+],
+"tris": 84
+},
+"survival_tool_hammer": {
+"size": [
+0.09,
+0.153,
+0.04
+],
+"tris": 52
+},
+"survival_tool_pickaxe": {
+"size": [
+0.179,
+0.24,
+0.039
+],
+"tris": 74
+},
+"survival_tree": {
+"size": [
+0.553,
+1.411,
+0.526
+],
+"tris": 226
+},
+"survival_tree_autumn": {
+"size": [
+0.553,
+1.411,
+0.526
+],
+"tris": 198
+},
+"survival_tree_autumn_tall": {
+"size": [
+0.553,
+1.711,
+0.526
+],
+"tris": 198
+},
+"survival_tree_log": {
+"size": [
+0.249,
+0.277,
+1.0
+],
+"tris": 88
+},
+"survival_tree_log_small": {
+"size": [
+0.249,
+0.277,
+0.65
+],
+"tris": 88
+},
+"survival_tree_tall": {
+"size": [
+0.553,
+1.711,
+0.526
+],
+"tris": 254
+},
+"survival_tree_trunk": {
+"size": [
+0.2,
+0.261,
+0.2
+],
+"tris": 52
+},
+"survival_workbench": {
+"size": [
+0.326,
+0.287,
+0.296
+],
+"tris": 236
+},
+"survival_workbench_anvil": {
+"size": [
+0.323,
+0.336,
+0.296
+],
+"tris": 298
+},
+"survival_workbench_grind": {
+"size": [
+0.26,
+0.282,
+0.329
+],
+"tris": 232
+},
+"watercraft_boat_fishing_small": {
+"size": [
+1.785,
+2.6,
+3.87
+],
+"tris": 237
+},
+"watercraft_boat_house_a": {
+"size": [
+2.678,
+2.172,
+4.644
+],
+"tris": 408
+},
+"watercraft_boat_house_b": {
+"size": [
+2.678,
+2.198,
+5.552
+],
+"tris": 380
+},
+"watercraft_boat_house_c": {
+"size": [
+2.678,
+3.003,
+5.152
+],
+"tris": 452
+},
+"watercraft_boat_house_d": {
+"size": [
+2.678,
+3.44,
+4.644
+],
+"tris": 550
+},
+"watercraft_boat_row_large": {
+"size": [
+2.749,
+0.848,
+2.852
+],
+"tris": 174
+},
+"watercraft_boat_sail_a": {
+"size": [
+1.785,
+4.739,
+3.77
+],
+"tris": 386
+},
+"watercraft_boat_sail_b": {
+"size": [
+1.785,
+4.481,
+4.07
+],
+"tris": 426
+},
+"watercraft_boat_speed_a": {
+"size": [
+1.785,
+1.5,
+3.37
+],
+"tris": 156
+},
+"watercraft_boat_speed_b": {
+"size": [
+1.785,
+1.593,
+3.291
+],
+"tris": 148
+},
+"watercraft_boat_speed_c": {
+"size": [
+1.785,
+1.3,
+3.17
+],
+"tris": 154
+},
+"watercraft_boat_tug_a": {
+"size": [
+1.785,
+2.237,
+3.47
+],
+"tris": 471
+},
+"watercraft_buoy": {
+"size": [
+0.928,
+1.844,
+0.928
+],
+"tris": 118
+},
+"watercraft_buoy_flag": {
+"size": [
+0.928,
+2.718,
+1.289
+],
+"tris": 218
+},
+"watercraft_cargo_container_a": {
+"size": [
+1.38,
+1.104,
+2.76
+],
+"tris": 160
+},
+"watercraft_cargo_container_b": {
+"size": [
+1.38,
+1.104,
+2.76
+],
+"tris": 160
+},
+"watercraft_cargo_pile_a": {
+"size": [
+2.54,
+1.2,
+2.752
+],
+"tris": 176
+},
+"watercraft_ramp": {
+"size": [
+2.729,
+1.137,
+2.814
+],
+"tris": 128
+},
+"watercraft_ship_small": {
+"size": [
+4.8,
+9.964,
+10.6
+],
+"tris": 1723
+}
+}

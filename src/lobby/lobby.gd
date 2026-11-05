@@ -32,8 +32,16 @@ var _slide_from_top := false
 var _session_done: Dictionary = {}
 
 
+## Golden hour: low sun from the south-west rakes long shadows down Main Street
+## and across the casino front, the sky turns warm at the horizon, and shadows
+## stay cool and readable. Low enough for neon to glow, bright enough to play.
+static func apply_lighting(w: WorldBase) -> void:
+	w.make_environment(Color("#4a86dc"), Color("#ffd9b5"), 0.82, 1.1, 150.0, 620.0,
+		Vector3(-30, -52, 0), Color("#fff2e2"), Color("#d9b08e"))
+
+
 func build_world() -> void:
-	make_environment(Color("#3d8ef0"), Color("#bfe6ff"), 0.55, 0.78, 120.0, 520.0)
+	apply_lighting(self)
 	_refs = LobbyBuilder.build(self)
 	_play = Playground.build(self, props)
 	water_y = Playground.KILL_Y
@@ -58,7 +66,10 @@ func build_world() -> void:
 	_hud_info = Ui.label("", 20)
 	_hud_info.position = Vector2(16, 12)
 	hud.add_child(_hud_info)
-	var help := Ui.label("WASD move  SHIFT sprint  SPACE jump  C dive/slide  E grab/use  LMB shove/throw  G smite (leader)  ESC menu", 16)
+	var k := func(a: String) -> String: return InputSetup.label(a)
+	var help := Ui.label("%s%s%s%s move   %s sprint   %s jump   %s dive/slide   %s grab/use   %s shove/throw   %s smite (leader)   %s menu" % [
+		k.call("move_forward"), k.call("move_left"), k.call("move_back"), k.call("move_right"), k.call("sprint"), k.call("jump"),
+		k.call("dive"), k.call("interact"), k.call("primary"), k.call("god"), k.call("menu")], 16)
 	Ui.anchor(help, Control.PRESET_BOTTOM_LEFT, 12)
 	hud.add_child(help)
 	_wire_stations()
