@@ -28,7 +28,7 @@ static func label(text: String, size := 22, color := TEXT) -> Label:
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_color_override("font_outline_color", Art.INK)
-	l.add_theme_constant_override("outline_size", maxi(4, size / 5))
+	l.add_theme_constant_override("outline_size", maxi(3, size / 7))
 	return l
 
 
@@ -38,7 +38,7 @@ static func button(text: String, cb: Callable, color := ACCENT, size := 22) -> B
 	b.add_theme_font_size_override("font_size", size)
 	b.add_theme_color_override("font_color", TEXT)
 	b.add_theme_color_override("font_outline_color", Art.INK)
-	b.add_theme_constant_override("outline_size", 6)
+	b.add_theme_constant_override("outline_size", 4)
 	b.add_theme_stylebox_override("normal", box_style(color, 12, 3))
 	b.add_theme_stylebox_override("hover", box_style(color.lightened(0.15), 12, 3))
 	b.add_theme_stylebox_override("pressed", box_style(color.darkened(0.2), 12, 3))

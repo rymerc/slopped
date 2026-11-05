@@ -78,6 +78,18 @@ def bake_face_colors(ob):
     me.color_attributes.render_color_index = 0
 
 
+def warm_foliage(ob):
+    """Kenney Nature leaves are a cool teal; pull them toward the island's greens."""
+    a = ob.data.color_attributes["Col"]
+    c = np.empty(len(a.data) * 4, dtype=np.float32)
+    a.data.foreach_get("color", c)
+    c = c.reshape(-1, 4)
+    leaf = c[:, 1] > c[:, 0] * 1.15
+    c[leaf, 2] *= 0.42
+    c[leaf, 0] *= 1.25
+    a.data.foreach_set("color", c.ravel())
+
+
 def export_glb(path, objects=None):
     if objects is not None:
         bpy.ops.object.select_all(action="DESELECT")

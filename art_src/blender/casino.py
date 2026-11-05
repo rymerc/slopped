@@ -6,10 +6,11 @@ from town import BRASS, CREAM, INK, NEON_CYAN, NEON_GOLD, NEON_PINK, WOOD_D, WOO
 
 FELT = hexc("#0f7a4f")
 FELT_B = hexc("#1b4fa0")
-CARPET_A = hexc("#3a1747")
-CARPET_B = hexc("#5a1f4f")
-CARPET_C = hexc("#1f6a68")
-DARK = hexc("#20142a")
+CARPET_A = hexc("#6a2a80")
+CARPET_B = hexc("#8f2f76")
+CARPET_C = hexc("#2f9a96")
+DARK = hexc("#3d2a55")
+PLUM = hexc("#7a3a8a")
 STUCCO = hexc("#ece0c6")
 SYMBOLS = [hexc(c) for c in ("#e8372f", "#f3c62f", "#f6f0e0", "#3fb24a", "#2f6be0", "#e8372f", "#f3c62f", "#9a3fd0")]
 
@@ -37,11 +38,11 @@ def casino(out):
     ops = [(W - dw / 2, dw, 0.0, 5.0)]
     for k in (2.5, 8.0, 27.0, 32.5):
         ops.append((k, 3.2, 2.2, 5.6))
-    m.wall((-W, D), (W, D), 0, 11.5, wallc, ops, frame=hexc("#1f6a68"), glass=gl, inner=hexc("#4a2150"), board=0.5, jit=0.04)
-    m.wall((W, D), (W, -D), 0, H + 0.5, wallc, inner=hexc("#4a2150"), board=0.5, jit=0.04, frame=BRASS, glass=gl,
+    m.wall((-W, D), (W, D), 0, 11.5, wallc, ops, frame=hexc("#1f6a68"), glass=gl, inner=PLUM, board=0.5, jit=0.04)
+    m.wall((W, D), (W, -D), 0, H + 0.5, wallc, inner=PLUM, board=0.5, jit=0.04, frame=BRASS, glass=gl,
            openings=[(9.5, 5.0, 0.0, 4.2)])
-    m.wall((W, -D), (-W, -D), 0, H + 0.5, wallc, inner=hexc("#4a2150"), board=0.5, jit=0.04)
-    m.wall((-W, -D), (-W, D), 0, H + 0.5, wallc, inner=hexc("#4a2150"), board=0.5, jit=0.04, frame=BRASS, glass=gl,
+    m.wall((W, -D), (-W, -D), 0, H + 0.5, wallc, inner=PLUM, board=0.5, jit=0.04)
+    m.wall((-W, -D), (-W, D), 0, H + 0.5, wallc, inner=PLUM, board=0.5, jit=0.04, frame=BRASS, glass=gl,
            openings=[(9.5, 5.0, 0.0, 4.2)])
     # ceiling with gold coffers
     m.box(-W, H, -D, W, H + 0.2, D, DARK, sub=2.5)
@@ -51,7 +52,7 @@ def casino(out):
         m.box(-W, H - 0.25, j * 4.8 - 0.12, W, H, j * 4.8 + 0.12, BRASS)
     m.box(-W - 0.2, H + 0.5, -D - 0.2, W + 0.2, H + 1.0, D + 0.2, hexc("#1f6a68"))
     m.box(-W - 0.4, H + 1.0, -D - 0.4, W + 0.4, H + 1.25, D + 0.4, BRASS)
-    m.box(-W, H + 1.25, -D, W, H + 1.3, D, hexc("#3a3a48"), sub=4.0)
+    m.box(-W, H + 1.25, -D, W, H + 1.3, D, hexc("#7a7f8c"), sub=4.0)
     # art-deco front: stepped pylons flanking a marquee tower
     for sx in (-1, 1):
         for k, (x0, x1, top) in enumerate(((9.0, 12.5, 14.0), (5.2, 8.6, 17.0))):
@@ -137,7 +138,7 @@ def casino(out):
         x = -3.3 + k * 0.38
         y = -1.2 + 2.8 * (k / 17.0) ** 2.2
         p.box(x, y, 0.04, x + 0.3, y + 0.14, 0.06, hexc("#46e3ff"), glow=0.95)
-    # the bank of doors: DYN so the entrance can slide open as people approach
+    m.room(-W, 0, -D, W, H, D, level=0.13, col=(1.0, 0.8, 0.85))
     m.finish(out)
 
 
@@ -177,14 +178,14 @@ def slot_machine(out):
             a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
             A = (0.0, math.cos(a0) * R, math.sin(a0) * R)
             B = (0.0, math.cos(a1) * R, math.sin(a1) * R)
-            p.face([p.P(w, A[1], A[2]), p.P(w, B[1], B[2]), p.P(-w, B[1], B[2]), p.P(-w, A[1], A[2])], hexc("#f6efe0"), 0.12)
+            p.face([p.P(-w, A[1], A[2]), p.P(-w, B[1], B[2]), p.P(w, B[1], B[2]), p.P(w, A[1], A[2])], hexc("#f6efe0"), 0.12)
             am = (a0 + a1) * 0.5
             # symbol: a chunky gem on each face
             ym, zm = math.cos(am) * (R + 0.012), math.sin(am) * (R + 0.012)
             ty, tz = -math.sin(am), math.cos(am)
             s = 0.075
             p.face([p.P(-s, ym - ty * s, zm - tz * s), p.P(-s, ym + ty * s, zm + tz * s),
-                    p.P(s, ym + ty * s, zm + tz * s), p.P(s, ym - ty * s, zm - tz * s)][::-1], SYMBOLS[i], 0.3)
+                    p.P(s, ym + ty * s, zm + tz * s), p.P(s, ym - ty * s, zm - tz * s)], SYMBOLS[i], 0.3)
     # the arm
     p = m.part("lever")
     p.origin = (0.86, 1.25, 0.05)
@@ -234,7 +235,7 @@ def roulette_table(out):
     wx = -1.05
     m.cyl(wx, 0.95, 0, 0.66, 1.12, 0.66, hexc("#4a2415"), n=20)
     m.cyl(wx, 1.12, 0, 0.66, 1.15, 0.56, BRASS, n=20)
-    p = m.part("wheel")
+    p = m.part("rotor")
     p.origin = (wx, 1.16, 0)
     n = 18
     for i in range(n):
@@ -296,7 +297,7 @@ def prize_wheel(out):
     ptr = [m.P(-0.25, 6.45, 0.35), m.P(0.25, 6.45, 0.35), m.P(0.0, 5.8, 0.35)]
     m.face(ptr, hexc("#e8372f"), 0.4)
     m.face(ptr[::-1], hexc("#e8372f"), 0.4)
-    p = m.part("wheel")
+    p = m.part("rotor")
     p.origin = (0, 3.3, 0.3)
     segs = [hexc(c) for c in ("#2f9e6b", "#b5202f", "#e6b23c", "#6a2fa0", "#20142a", "#2f9e6b", "#7a1020", "#ffd257")]
     sub = 5

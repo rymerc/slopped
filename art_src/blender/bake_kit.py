@@ -53,6 +53,8 @@ for kid, path in sorted(jobs.items()):
         continue
     for o in meshes:
         common.bake_face_colors(o)
+        if kid.startswith("nature_") or kid.startswith("coaster_tree") or kid.startswith("coaster_flowers"):
+            common.warm_foliage(o)
     bpy.ops.object.select_all(action="DESELECT")
     for o in meshes:
         o.select_set(True)

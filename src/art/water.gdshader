@@ -6,8 +6,8 @@ render_mode cull_disabled;
 
 global uniform vec4 sky_ambient : source_color;
 
-uniform vec4 shallow : source_color = vec4(0.3, 0.8, 0.95, 1.0);
-uniform vec4 deep : source_color = vec4(0.12, 0.5, 0.85, 1.0);
+uniform vec4 shallow : source_color = vec4(0.36, 0.72, 0.76, 1.0);
+uniform vec4 deep : source_color = vec4(0.1, 0.42, 0.62, 1.0);
 uniform float wave = 0.25;
 
 void vertex() {
@@ -30,5 +30,5 @@ void light() {
 	float ndl = dot(NORMAL, LIGHT);
 	DIFFUSE_LIGHT += (smoothstep(0.0, 0.1, ndl) * 0.7 + 0.3) * ATTENUATION * LIGHT_COLOR / PI;
 	vec3 h = normalize(LIGHT + VIEW);
-	SPECULAR_LIGHT += smoothstep(0.96, 0.975, dot(NORMAL, h)) * ATTENUATION * LIGHT_COLOR * 0.5;
+	SPECULAR_LIGHT += smoothstep(0.985, 0.992, dot(NORMAL, h)) * ATTENUATION * LIGHT_COLOR * 0.22;
 }

@@ -35,14 +35,16 @@ def porch(m, x0, x1, z0, z1, y, deck=WOOD, posts=5, roof_y=4.6, roof_col=None, r
             m.quad(m.P(x0 - 0.3, yb, b), m.P(x1 + 0.3, yb, b), m.P(x1 + 0.3, ya, a), m.P(x0 - 0.3, ya, a), c)
             m.quad(m.P(x1 + 0.3, yb - 0.03, b), m.P(x0 - 0.3, yb - 0.03, b), m.P(x0 - 0.3, ya - 0.03, a), m.P(x1 + 0.3, ya - 0.03, a), scale_col(WOOD_D, 0.8))
         m.box(x0 - 0.3, roof_y - 0.18, z1 - 0.28, x1 + 0.3, roof_y, z1 - 0.12, WOOD_D)
+    # Boardwalks must never stop a running player: the whole front and both ends
+    # are ramps, dressed as two broad steps.
     if ramp_x is not None:
-        rx0, rx1 = ramp_x - ramp_w / 2, ramp_x + ramp_w / 2
-        n = 8
-        for i in range(n):
-            za, zb = z1 + ramp_len * i / n, z1 + ramp_len * (i + 1) / n
-            ya, yb = y * (1 - i / n), y * (1 - (i + 1) / n)
-            m.quad(m.P(rx0, yb, zb), m.P(rx1, yb, zb), m.P(rx1, ya, za), m.P(rx0, ya, za), jitter(deck, m.rng, 0.1))
-        m.col_ramp((ramp_x, 0.0, z1 + ramp_len), (ramp_x, y, z1), ramp_w)
+        run = 1.3
+        for (za, zb, ya, yb) in ((z1, z1 + run * 0.5, y, y * 0.5), (z1 + run * 0.5, z1 + run, y * 0.5, 0.0)):
+            m.box(x0, 0, za, x1, ya, zb, jitter(deck, m.rng, 0.06), faces="YZ")
+        m.col_ramp((0.5 * (x0 + x1), 0.0, z1 + run), (0.5 * (x0 + x1), y, z1), x1 - x0 + 2.0 * run)
+        for (x_edge, sgn) in ((x0, -1), (x1, 1)):
+            m.col_ramp((x_edge + sgn * run, 0.0, 0.5 * (z0 + z1)), (x_edge, y, 0.5 * (z0 + z1)), z1 - z0)
+            m.box(min(x_edge, x_edge + sgn * run), 0, z0, max(x_edge, x_edge + sgn * run), y * 0.5, z1, jitter(deck, m.rng, 0.06), faces="xXY")
 
 
 def hitching_rail(m, x0, x1, z):
@@ -205,6 +207,7 @@ def saloon(out):
     m.col(tx - 0.95, fl + 0.4, tz - 1.0, tx + 0.95, fl + 1.2, tz + 0.7)
     m.text("VIP", vx0 + 2.6, F + 3.6, -D + 0.3, 1.1, NEON_PINK, font="Monoton-Regular", glow=0.9, depth=0.03, res=1)
     m.lamp(tx, fl + 3.0, tz + 1.0, radius=7.0, power=0.12, col=(1.0, 0.45, 0.6))
+    m.room(-W, 0, -D, W, H, D, level=0.1, col=(1.0, 0.95, 0.86))
     m.finish(out)
 
 
@@ -280,6 +283,7 @@ def sheriff(out):
     m.col(-6.8, F, 3.0, -2.8, F + 1.28, 5.5)
     m.lamp(0, 5.5, 2.5, radius=11.0, power=0.15)
     m.lamp(0, 3.5, -5.0, radius=9.0, power=0.07, col=(0.7, 0.8, 1.0))
+    m.room(-W, 0, -D, W, 6.6, D, level=0.1, col=(1.0, 0.95, 0.86))
     m.finish(out)
 
 
@@ -339,6 +343,7 @@ def store(out):
                     m.cyl(x, y, -D + 0.8, 0.14, y + 0.42, 0.14, c, n=7)
                 x += m.rng.uniform(0.45, 0.62)
     m.lamp(0, 4.6, 0, radius=11.0, power=0.15)
+    m.room(-W, 0, -D, W, 5.6, D, level=0.11, col=(1.0, 0.95, 0.86))
     m.finish(out)
 
 
@@ -419,6 +424,7 @@ def hotel(out):
             m.box(-5 + i, F, -1 + j, -4 + i, F + 0.03, j, c, faces="Y")
     m.lamp(-3, 4.8, 1.5, radius=12.0, power=0.16)
     m.lamp(6, 4.8, -2, radius=8.0, power=0.1)
+    m.room(-W, 0, -D, W, 6.0, D, level=0.11, col=(1.0, 0.95, 0.88))
     m.finish(out)
 
 

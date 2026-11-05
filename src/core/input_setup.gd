@@ -169,5 +169,6 @@ static func label(action: String) -> String:
 	if ev is InputEventKey:
 		var phys := (ev as InputEventKey).physical_keycode
 		var mapped := DisplayServer.keyboard_get_keycode_from_physical(phys) if DisplayServer.get_name() != "headless" else phys
-		return OS.get_keycode_string(mapped).to_upper()
+		var name := OS.get_keycode_string(mapped).to_upper()
+		return {"ESCAPE": "ESC", "CONTROL": "CTRL"}.get(name, name)
 	return "?"

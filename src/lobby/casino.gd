@@ -23,6 +23,9 @@ const WHEEL_SEGMENTS := [
 	{"label": "JACKPOT 80c", "kind": "jackpot"},
 ]
 
+const ROULETTE_COST := 10
+const ROULETTE_PICKS := {"red": {"slots": 18, "pay": 2}, "black": {"slots": 18, "pay": 2}, "green": {"slots": 1, "pay": 14}}
+
 var _crash: Dictionary = {}  # peer -> {bet, start_ms, point}
 
 
@@ -54,6 +57,7 @@ func req_slots() -> void:
 		msg = "Pair! +15c"
 	elif reels.has("SKULL") and randf() < 0.25:
 		msg = "A skull stares back. " + _grant(id, false)
+	_fx.rpc("slots", id)
 	_reply(id, "slots", {"reels": reels, "msg": msg})
 
 
@@ -111,6 +115,7 @@ func req_wheel() -> void:
 			msg = _curse_random_other(id)
 		_:
 			msg = "Nothing. Spin again?"
+	_fx.rpc("wheel", id)
 	_reply(id, "wheel", {"index": idx, "msg": msg})
 
 
@@ -127,7 +132,34 @@ func req_ducks(pick: int) -> void:
 		msg = "Your duck WON! +%dc" % won
 		if randf() < 0.3:
 			msg += ". It also pooped on someone: " + _curse_random_other(id)
+	_fx.rpc("ducks", winner)
 	_reply(id, "ducks", {"winner": winner, "pick": pick, "msg": msg})
+
+
+@rpc("any_peer", "reliable")
+func req_roulette(pick: String) -> void:
+	var id := Net.sender()
+	if not ROULETTE_PICKS.has(pick) or not _pay(id, ROULETTE_COST):
+		return
+	var roll := randi() % 37  # 0 = green, odd = red, even = black
+	var landed := "green" if roll == 0 else ("red" if roll % 2 == 1 else "black")
+	var msg := "%s %d. The house thanks you." % [landed.to_upper(), roll]
+	if landed == pick:
+		var won: int = ROULETTE_COST * int(ROULETTE_PICKS[pick].pay)
+		Net.give_coins(id, won)
+		msg = "%s %d! +%dc" % [landed.to_upper(), roll, won]
+		if pick == "green":
+			Net.announce("%s hit GREEN on the roulette" % Net.pname(id))
+	_fx.rpc("roulette", roll)
+	_reply(id, "roulette", {"landed": landed, "roll": roll, "pick": pick, "msg": msg})
+
+
+## Tells every peer to animate the physical machine in the casino.
+@rpc("authority", "call_local", "reliable")
+func _fx(kind: String, a: int) -> void:
+	var w := get_parent()
+	if w and w.has_method("casino_fx"):
+		w.casino_fx(kind, a)
 
 
 @rpc("any_peer", "reliable")

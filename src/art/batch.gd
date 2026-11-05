@@ -55,7 +55,7 @@ static func _flatten(mesh: Mesh) -> Array:
 		var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX] if a[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 		if c.is_empty():
 			c.resize(v.size())
-			c.fill(Color.WHITE)
+			c.fill(Color(1, 1, 1, 0))  # alpha is the emission mask: plain meshes must not glow
 		if idx.is_empty():
 			verts.append_array(v)
 			norms.append_array(n)

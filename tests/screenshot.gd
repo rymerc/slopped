@@ -43,12 +43,19 @@ func _process(_d: float) -> bool:
 			_shots = [
 				["ragdoll", Vector3(0, 1.7, 15.2), Vector3(0, 1.0, 9.0)],
 				["lineup", Vector3(0, 1.7, 15.2), Vector3(0, 1.0, 9.0)],
-				["island", Vector3(60, 85, 150), Vector3(0, 0, -10)],
-				["slide_hill", Vector3(30, 14, -30), Vector3(0, 18, -85)],
+				["island", Vector3(70, 95, 165), Vector3(0, 0, -10)],
+				["square", Vector3(4, 3.2, 21), Vector3(0, 4.5, -20)],
+				["mainst", Vector3(-3, 3.0, -22), Vector3(14, 3.5, -30)],
+				["casino_front", Vector3(11, 2.6, 0), Vector3(30, 7.5, -1)],
+				["casino_in", Vector3(31, 2.6, -1), Vector3(46, 1.8, -4)],
+				["saloon_in", Vector3(-27, 2.6, -27), Vector3(-16, 1.5, -38)],
+				["slide_hill", Vector3(5, 7, -22), Vector3(0, 18, -85)],
 				["chasm", Vector3(-42, 12, 34), Vector3(-80, 2, 0)],
-				["construction", Vector3(48, 10, 30), Vector3(85, 4, -10)],
-				["meadow", Vector3(-10, 9, 40), Vector3(20, 1, 85)],
-				["lounge", Vector3(18, 9, 22), Vector3(0, 1, 0)],
+				["yard", Vector3(60, 8, 24), Vector3(95, 4, -10)],
+				["meadow", Vector3(-6, 7, 44), Vector3(14, 1, 85)],
+				["cove", Vector3(-62, 7, 70), Vector3(-104, 1.5, 96)],
+				["pier", Vector3(-100, 4, 88), Vector3(-130, 5, 122)],
+				["carnival", Vector3(64, 6, -62), Vector3(98, 9, -100)],
 			]
 		else:
 			_shots = [["arena", Vector3(30, 26, 60), Vector3(0, 0, 0)], ["arena_low", Vector3(10, 3, 22), Vector3(0, 3, 0)]]

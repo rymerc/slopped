@@ -1,6 +1,6 @@
 class_name Lobby
 extends WorldBase
-## The Slop Lounge. Between-game hub: customise, gamble, drink, flex.
+## Slopsville. Between-game hub: customise, gamble, drink, flex, fall off things.
 ## Score rank changes your body here: leader = big, fast, crowned, can smite.
 ## Loser = tiny, slow, feeble.
 
@@ -11,6 +11,8 @@ const RANK_FX := {
 }
 const DRINKS := ["giant", "tiny", "zoom", "floaty", "drunk", "burp"]
 const SMITE_COOLDOWN := 6.0
+const CANNON_VEL := Vector3(-5.8, 21.0, -24.0)
+const CANNON_MOUTH := Vector3(0, 6.0, -3.8)
 
 var casino: Casino
 var casino_ui: CasinoUI
@@ -30,30 +32,54 @@ var _vault_vis := false
 var _gauntlet_start := -1.0
 var _slide_from_top := false
 var _session_done: Dictionary = {}
+var _door_a := 0.0
+var _slot_spin: Dictionary = {}
+var _wheel_v := 0.0
+var _roul_v := 0.0
+var _duck_t := 0.0
+var _duck_win := 0
+var _dive_top := 0.0
 
 
 ## Golden hour: low sun from the south-west rakes long shadows down Main Street
 ## and across the casino front, the sky turns warm at the horizon, and shadows
 ## stay cool and readable. Low enough for neon to glow, bright enough to play.
 static func apply_lighting(w: WorldBase) -> void:
-	w.make_environment(Color("#4a86dc"), Color("#ffd9b5"), 0.82, 1.1, 150.0, 620.0,
-		Vector3(-30, -52, 0), Color("#fff2e2"), Color("#d9b08e"))
+	w.make_environment(Color("#4a86dc"), Color("#ffd9b5"), 0.6, 0.9, 150.0, 620.0,
+		Vector3(-30, -52, 0), Color("#fff0dc"), Color("#d9b08e"))
 
 
 func build_world() -> void:
 	apply_lighting(self)
-	_refs = LobbyBuilder.build(self)
-	_play = Playground.build(self, props)
+	var batch := Batch.new()
+	_refs = LobbyBuilder.build(self, batch, props)
+	_play = Playground.build(self, props, batch)
 	water_y = Playground.KILL_Y
 	allow_shove = true
 	for i in 3:
-		props.spawn("duck", LobbyBuilder.DUCKS + Vector3(-3.5 - i * 0.8, 0.5, 4.0))
+		props.spawn("duck", Vector3(-12 - i * 0.8, 0.5, 9.0))
 	for i in 3:
 		props.spawn("ball", Vector3(-8 + i * 8.0, 1.0, 12))
 	wheel = BigWheel.new()
-	wheel.position = Vector3(0, 0, -4)
+	wheel.position = Vector3(0, 0.1, -4)
 	add_child(wheel)
 	wheel.spin_finished.connect(_on_wheel_done)
+	# Everything static merges into a few chunked meshes; the keep-list stays live
+	# because Lobby animates it.
+	var keep: Array = [wheel]
+	for d: Dictionary in [_refs, _play]:
+		for v: Variant in d.values():
+			if v is Node:
+				keep.append(v)
+		for h: Dictionary in d.get("hazards", []):
+			for k: Variant in h.values():
+				if k is Node:
+					keep.append(k)
+		for pad: Dictionary in d.get("pads", []):
+			keep.append(pad.node)
+	keep.append_array(_play.get("plates", []))
+	batch.absorb(self, keep)
+	batch.commit(self)
 
 	casino = Casino.new()
 	casino.name = "Casino"
@@ -76,30 +102,35 @@ func build_world() -> void:
 
 
 func world_started() -> void:
-	banner("THE SLOP LOUNGE\nhit the big red button to spin", 4.0)
+	banner("WELCOME TO SLOPSVILLE\nhit the big red button to spin", 4.0)
 
 
 func _wire_stations() -> void:
 	add_interact(LobbyBuilder.START_BTN, 3.0, "SPIN THE WHEEL (start game)", _press_start, _can_start)
-	add_interact(LobbyBuilder.BAR, 4.0, "Order a Mystery Slop (free, probably fine)", _server_call.bind("req_drink", []))
-	add_interact(LobbyBuilder.THRONE, 2.5, "Sit on the throne", banner.bind("You are the main character.", 2.0))
-	add_interact(LobbyBuilder.PAINT, 2.5, "Dunk yourself in paint", _cycle.bind("color"))
-	add_interact(LobbyBuilder.HATS, 2.5, "Grab a different hat", _cycle.bind("hat"))
-	add_interact(LobbyBuilder.BODY, 2.5, "Swap your body", _cycle.bind("body"))
-	add_interact(LobbyBuilder.SLOTS, 2.5, "Play SLOTS", _open_casino.bind("slots"))
-	add_interact(LobbyBuilder.CRASH, 2.5, "Play CRASH", _open_casino.bind("crash"))
-	add_interact(LobbyBuilder.MINIWHEEL, 2.5, "Spin LIL' WHEEL", _open_casino.bind("wheel"))
-	add_interact(LobbyBuilder.DUCKS, 2.5, "Bet on DUCKS", _open_casino.bind("ducks"))
+	add_interact(LobbyBuilder.BAR, 4.5, "Order a Mystery Slop (free, probably fine)", _server_call.bind("req_drink", []))
+	add_interact(Playground.BAR2 + Vector3(0, 0, 0), 6.0, "Order a Mystery Slop (now with sand)", _server_call.bind("req_drink", []))
+	add_interact(LobbyBuilder.THRONE, 2.8, "Sit on the throne", banner.bind("You are the main character.", 2.0))
+	add_interact(LobbyBuilder.PAINT, 2.2, "Dunk yourself in paint", _cycle.bind("color"))
+	add_interact(LobbyBuilder.HATS, 2.0, "Grab a different hat", _cycle.bind("hat"))
+	add_interact(LobbyBuilder.BODY, 2.2, "Swap your body", _cycle.bind("body"))
+	for p: Vector3 in LobbyBuilder.SLOTS:
+		add_interact(p + Vector3(0, 0, 1.2), 1.7, "Play SLOTS", _open_casino.bind("slots"))
+	add_interact(LobbyBuilder.CRASH + Vector3(-1.4, 0, 0), 2.2, "Play CRASH", _open_casino.bind("crash"))
+	add_interact(LobbyBuilder.MINIWHEEL + Vector3(-3.6, -0.6, 0), 3.0, "Spin LIL' WHEEL", _open_casino.bind("wheel"))
+	add_interact(LobbyBuilder.DUCKS + Vector3(2.4, 0, 0), 3.2, "Bet on DUCKS", _open_casino.bind("ducks"))
+	for p: Vector3 in LobbyBuilder.ROULETTE:
+		add_interact(p + Vector3(0, 0, 2.2), 2.4, "Play ROULETTE", _open_casino.bind("roulette"))
 	add_interact(LobbyBuilder.SHOP, 3.5, "Browse the PERK SHOP", _open_casino.bind("shop"))
-	add_interact(LobbyBuilder.KENNEL + Vector3(-1.2, 0, -1), 2.2, "Adopt a bot (host)", _server_call.bind("req_bot", [true]))
-	add_interact(LobbyBuilder.KENNEL + Vector3(1.2, 0, -1), 2.2, "Release a bot (host)", _server_call.bind("req_bot", [false]))
-	add_interact(LobbyBuilder.TOILET, 2.2, "Flush yourself", _server_call.bind("req_flush", []))
+	add_interact(LobbyBuilder.KENNEL + Vector3(-3, 0, -0.9), 2.4, "Adopt a bot (host)", _server_call.bind("req_bot", [true]))
+	add_interact(LobbyBuilder.KENNEL + Vector3(5, 0, -0.9), 2.4, "Release a bot (host)", _server_call.bind("req_bot", [false]))
+	add_interact(LobbyBuilder.TOILET, 2.4, "Flush yourself", _server_call.bind("req_flush", []))
 	add_interact(Playground.TROPHY + Vector3(0, 1, 0), 2.8, _trophy_text, _claim_trophy)
 	add_interact(Playground.SUMMIT + Vector3(-4, 0, 3), 3.0, "Plant your flag on the summit", _server_call.bind("req_spot", ["summit"]))
 	add_interact(Playground.VAULT + Vector3(0, 0, 1.5), 2.5, "Loot the Vault", _server_call.bind("req_spot", ["vault"]),
 		func() -> bool: return vault_open > 0.0)
 	add_interact(Playground.LEDGE + Vector3(0, 3.0, 0), 2.2, "Open the Friend Ledge chest", _server_call.bind("req_spot", ["ledge"]))
 	add_interact(Playground.CAVE + Vector3(6.2, 0, 0), 2.4, "Open the cave chest", _server_call.bind("req_spot", ["cave"]))
+	add_interact(Playground.CANNON + Vector3(0, 0.4, 6.0), 3.5, "Climb into the HUMAN CANNON", _fire_cannon)
 
 
 func _server_call(method: String, call_args: Array) -> void:
@@ -239,7 +270,7 @@ func req_flush() -> void:
 		return
 	var av: Avatar = avatars.get(Net.sender())
 	if av:
-		var p := Vector3(randf_range(-25, 25), 6.0, randf_range(-25, 25))
+		var p := Vector3(randf_range(-20, 20), 6.0, randf_range(-16, 18))
 		av.teleport.rpc(p)
 		Net.announce("%s went down the drain" % Net.pname(av.pid))
 
@@ -294,8 +325,7 @@ func world_process(delta: float) -> void:
 	clock += delta
 	_update_hazard_visuals(delta)
 	_local_goals()
-	var disco: Node3D = _refs.disco
-	disco.rotate_y(delta * 0.6)
+	_update_town(delta)
 	var now := Time.get_ticks_msec()
 	for id: int in _drink.keys():
 		if now > int(_drink[id].until):
@@ -351,7 +381,7 @@ func _drive_bots(_delta: float) -> void:
 		var to := goal - av.global_position
 		to.y = 0.0
 		if to.length() < 1.5 or randf() < 0.002:
-			_bot_goals[av.pid] = Vector3(randf_range(-26, 26), 0, randf_range(-20, 26))
+			_bot_goals[av.pid] = Vector3(randf_range(-20, 22), 0, randf_range(-17, 20))
 			av.bot_move = Vector3.ZERO
 		else:
 			av.bot_move = to.normalized() * (0.4 if randf() < 0.5 else 0.6)
@@ -415,6 +445,89 @@ func _update_hazard_visuals(delta: float) -> void:
 	var plates: Array = _play.get("plates", [])
 	for i in plates.size():
 		(plates[i] as MeshInstance3D).position.y = Playground.PLATE_A.y + (0.17 if _plate_pressed(i) else 0.25)
+
+
+## Doors swing, rides turn, casino machines spin. Purely visual, driven by the
+## shared clock so every peer sees the same rides in the same place.
+func _update_town(delta: float) -> void:
+	var doors: Dictionary = _refs.get("saloon_doors", {})
+	var open := 0.0
+	var door_pos := LobbyBuilder.SALOON + Vector3(0, 0, 9)
+	for av: Avatar in avatars.values():
+		var d := av.global_position - door_pos
+		if absf(d.x) < 2.6 and absf(d.z) < 2.2:
+			open = maxf(open, 1.0 if d.z > 0.0 else -1.0) if d.z > 0.0 else minf(open, -1.0)
+	_door_a = lerpf(_door_a, open * 1.45, clampf(delta * 10.0, 0.0, 1.0))
+	if doors.has("doorL"):
+		(doors.doorL as Node3D).rotation.y = -_door_a
+		(doors.doorR as Node3D).rotation.y = _door_a
+	if _play.has("carousel"):
+		(_play.carousel as Node3D).rotation.y = clock * 0.45
+	var ferris: Dictionary = _play.get("ferris", {})
+	if ferris.has("rotor"):
+		var a := clock * 0.16
+		(ferris.rotor as Node3D).rotation.z = a
+		var hub: Vector3 = (ferris.rotor as Node3D).position
+		for i in 12:
+			var car: Node3D = ferris.get("car%d" % i)
+			var ca := TAU * i / 12.0 + a
+			car.position = hub + Vector3(cos(ca), sin(ca), 0) * 13.0
+	var slots: Array = _refs.get("slots", [])
+	for i in slots.size():
+		var t := float(_slot_spin.get(i, 0.0))
+		if t <= 0.0:
+			continue
+		_slot_spin[i] = t - delta
+		var dyn: Dictionary = slots[i]
+		for r in 3:
+			if t > 0.5 + r * 0.5 - 0.4:
+				(dyn["reel%d" % r] as Node3D).rotate_x(delta * 22.0)
+		(dyn.lever as Node3D).rotation.x = -0.9 * clampf((t - 1.6) * 3.0, 0.0, 1.0)
+	var rw := _refs.get("prize_wheel") as Node3D
+	if rw and _wheel_v > 0.0:
+		rw.rotation.z += _wheel_v * delta
+		_wheel_v = move_toward(_wheel_v, 0.0, delta * 3.2)
+	var roul: Array = _refs.get("roulette", [])
+	for dyn: Dictionary in roul:
+		(dyn.rotor as Node3D).rotation.y += delta * (0.25 + _roul_v)
+		(dyn.ball as Node3D).rotation.y -= delta * (0.0 + _roul_v * 2.0)
+	_roul_v = move_toward(_roul_v, 0.0, delta * 1.8)
+	var ducks: Dictionary = _refs.get("ducks", {})
+	if _duck_t > 0.0 and not ducks.is_empty():
+		_duck_t -= delta
+		var p := 1.0 - _duck_t / 3.5
+		for i in 4:
+			var speed := 1.0 if i == _duck_win else 0.8 + 0.12 * sin(i * 7.3)
+			var dn := ducks["duck%d" % i] as Node3D
+			dn.position.x = -3.9 + 7.8 * clampf(p * speed, 0.0, 1.0)
+			dn.position.y = 1.05 + absf(sin(_duck_t * 14.0 + i)) * 0.08
+		if _duck_t <= 0.0:
+			get_tree().create_timer(1.5).timeout.connect(_reset_ducks)
+
+
+func _reset_ducks() -> void:
+	var ducks: Dictionary = _refs.get("ducks", {})
+	for i in 4:
+		if ducks.has("duck%d" % i):
+			(ducks["duck%d" % i] as Node3D).position.x = -3.9
+
+
+## Called on every peer when anyone plays a machine (see Casino._fx).
+func casino_fx(kind: String, a: int) -> void:
+	match kind:
+		"slots":
+			var slots: Array = _refs.get("slots", [])
+			if not slots.is_empty():
+				var m: int = a % slots.size()
+				_slot_spin[m] = 2.0
+				Sfx.at(self, "click", LobbyBuilder.SLOTS[m], 0.0, 0.1, 0.7)
+		"wheel":
+			_wheel_v = 13.0 + randf() * 6.0
+		"roulette":
+			_roul_v = 7.0
+		"ducks":
+			_duck_t = 3.5
+			_duck_win = a
 
 
 ## Owner-side hazard + bounce-pad checks (players and host-run bots).
@@ -591,6 +704,10 @@ func _local_goals() -> void:
 		_gauntlet_start = clock
 		toast("GAUNTLET: GO GO GO! (grab the trophy at the end)")
 		Sfx.ui(self, "click")
+	if p.distance_to(Playground.DIVE) < 12.0:
+		_dive_top = maxf(_dive_top, p.y)
+	elif me.is_on_floor() and p.distance_to(Playground.DIVE) > 14.0:
+		_dive_top = 0.0
 	if me.state == Avatar.St.SLIDE and p.z < -75.0 and absf(p.x) < 4.0:
 		_slide_from_top = true
 	if _slide_from_top and me.state != Avatar.St.SLIDE:
@@ -600,8 +717,30 @@ func _local_goals() -> void:
 		_slide_from_top = false
 
 
+## Into the barrel, out over the rooftops. Uses the same owner-side velocity write
+## as bounce pads, so it needs nothing new from the network.
+func _fire_cannon() -> void:
+	var me := local_avatar()
+	if me == null:
+		return
+	me.global_position = Playground.CANNON + CANNON_MOUTH
+	me.velocity = CANNON_VEL
+	me.floor_vis = false
+	Sfx.at(self, "boom", Playground.CANNON + CANNON_MOUTH, 2.0, 0.05, 1.3)
+	Fx.explosion(self, Playground.CANNON + CANNON_MOUTH, 2.0)
+	cam.shake(0.7)
+	toast("WHEEEEEEEEE")
+
+
 func respawn_for(av: Avatar) -> Vector3:
 	var p := av.global_position
+	var r := Vector2(p.x, p.z).length()
+	if Playground._cove(p.x, p.z, r) > 0.05 or p.distance_to(Playground.DIVE) < 40.0:
+		if av.is_local() and _dive_top > 12.0:
+			Progress.challenge("dive")
+			toast("DIVE SCORE: %.0f m" % _dive_top)
+		_dive_top = 0.0
+		return Playground.PIER_START + Vector3(0, 0.6, 0)
 	if p.x < -50.0 and absf(p.z) < 36.0:
 		if av.is_local():
 			_gauntlet_start = -1.0

@@ -17,6 +17,9 @@ const KINDS := {
 	"pin": {"mass": 0.8, "cyl": Vector2(0.17, 0.9), "solid": false},
 	"duck": {"mass": 0.4, "sphere": 0.32, "bounce": 0.5, "solid": false},
 	"beam": {"mass": 9.0, "box": Vector3(4.0, 0.3, 0.3), "solid": true},
+	"stool": {"mass": 1.2, "cyl": Vector2(0.34, 0.9), "solid": false},
+	"keg": {"mass": 4.5, "cyl": Vector2(0.4, 0.95), "solid": true},
+	"beachball": {"mass": 0.3, "sphere": 0.6, "bounce": 0.85, "solid": false},
 }
 
 var id := 0
@@ -79,20 +82,33 @@ func setup(k: String) -> void:
 	trail = Fx.trail(self, Color.WHITE, clampf(radius * 0.25, 0.06, 0.2))
 
 
+## Kit mesh stretched to fill a collision shape exactly, whatever the source's
+## proportions, so visuals and physics agree on every prop.
+func _fit(id: String, size: Vector3) -> void:
+	var box := Kit.aabb(id)
+	var mi := MeshInstance3D.new()
+	mi.mesh = Kit.mesh(id)
+	mi.material_override = Art.vcol_mat()
+	mi.scale = size / box.size
+	mi.position = -box.get_center() * mi.scale
+	add_child(mi)
+
+
 func _build_visual() -> void:
 	match kind:
 		"crate", "crate_s":
-			var s: float = (KINDS[kind].box as Vector3).x
-			Art.part(self, Art.bbox(Vector3.ONE * s, 0.12), Color("#c98a4b"))
-			for ax: Vector3 in [Vector3(1, 0, 0), Vector3(0, 0, 1)]:
-				for side: float in [-1.0, 1.0]:
-					var p := ax * s * 0.505 * side
-					var sz := Vector3(0.02, s * 0.98, s * 0.18) if ax.x != 0.0 else Vector3(s * 0.18, s * 0.98, 0.02)
-					Art.part(self, Art.box(sz), Color("#8f5a2f"), p, Vector3.ONE, Vector3(0, 0, 45) if ax.x == 0.0 else Vector3(45, 0, 0))
+			_fit("survival_box", KINDS[kind].box)
 		"barrel":
-			Art.part(self, Art.cyl(0.4, 0.4, 1.0, 8), Color("#3d8bd9"))
-			for y: float in [-0.32, 0.32]:
-				Art.part(self, Art.cyl(0.415, 0.415, 0.08, 8), Art.P_STEEL, Vector3(0, y, 0))
+			_fit("pirate_barrel", Vector3(0.8, 1.0, 0.8))
+		"keg":
+			_fit("survival_barrel_open", Vector3(0.8, 0.95, 0.8))
+		"stool":
+			_fit("kk_restaurant_chair_stool", Vector3(0.68, 0.9, 0.68))
+		"beachball":
+			var cols := [Art.P_RED, Color.WHITE, Art.P_BLUE, Art.GOLD]
+			Art.part(self, Art.sphere(0.6, 10), cols[id % 4])
+			Art.part(self, Art.sphere(0.61, 10), Color.WHITE, Vector3.ZERO, Vector3(0.3, 1.0, 1.0))
+			Art.part(self, Art.sphere(0.61, 10), cols[(id + 2) % 4], Vector3.ZERO, Vector3(1.0, 1.0, 0.3))
 		"tnt":
 			Art.part(self, Art.cyl(0.38, 0.38, 0.95, 8), Art.P_RED)
 			Art.part(self, Art.cyl(0.39, 0.39, 0.2, 8), Art.P_HAZARD, Vector3.ZERO, Vector3.ONE, Vector3.ZERO, false, 0.3)
@@ -184,7 +200,7 @@ func tick(delta: float, is_host: bool, av: Avatar) -> void:
 		trail.emitting = holder == 0 and thrown_t < 2.0 and sp > 6.0
 	if holder == 0 and _prev_speed > 4.0 and sp < _prev_speed * 0.55 and _sound_cd <= 0.0:
 		_sound_cd = 0.15
-		var snd := "boing" if kind in ["ball", "big_ball", "duck"] else ("knock" if mass < 7.0 else "thud")
+		var snd := "boing" if kind in ["ball", "big_ball", "duck", "beachball"] else ("knock" if mass < 7.0 else "thud")
 		Sfx.at(self, snd, global_position, linear_to_db(clampf(_prev_speed / 12.0, 0.15, 1.2)) - 2.0, 0.15,
 			clampf(1.6 / sqrt(mass), 0.5, 1.8))
 		if _prev_speed > 8.0:

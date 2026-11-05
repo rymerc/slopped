@@ -20,6 +20,7 @@ var _crash_t0 := 0
 var _wheel_labels: Array[Label] = []
 var _ducks: Array[ColorRect] = []
 var _duck_pick := 0
+var _roulette_label: Label
 
 
 func _ready() -> void:
@@ -45,6 +46,7 @@ func open(kind: String) -> void:
 		"crash": _build_crash()
 		"wheel": _build_wheel()
 		"ducks": _build_ducks()
+		"roulette": _build_roulette()
 		"shop": _build_shop()
 	_msg = Ui.label("", 22, Ui.YELLOW)
 	_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -140,6 +142,30 @@ func _build_ducks() -> void:
 		row.add_child(Ui.button("DUCK %d" % (i + 1), _pick_duck.bind(i), c.darkened(0.2)))
 
 
+func _build_roulette() -> void:
+	_title("ROULETTE", "%dc a spin. Red or black pays x2, green pays x14." % Casino.ROULETTE_COST)
+	_roulette_label = Ui.label("--", 72, Ui.YELLOW)
+	_roulette_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_body.add_child(_roulette_label)
+	var row := Ui.hbox()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_body.add_child(row)
+	row.add_child(Ui.button("RED", _send.bind("req_roulette", ["red"]), Color("#b5202f"), 30))
+	row.add_child(Ui.button("BLACK", _send.bind("req_roulette", ["black"]), Color("#1a1a22"), 30))
+	row.add_child(Ui.button("GREEN", _send.bind("req_roulette", ["green"]), Color("#0f7a4f"), 30))
+
+
+func _anim_roulette() -> void:
+	var col := {"red": Color("#ff5a5a"), "black": Ui.TEXT, "green": Color("#5ee08f")}
+	if _anim_t < 2.0:
+		_roulette_label.text = str(randi() % 37)
+		_roulette_label.add_theme_color_override("font_color", col.values().pick_random())
+	else:
+		_roulette_label.text = str(int(_anim_data.roll))
+		_roulette_label.add_theme_color_override("font_color", col[str(_anim_data.landed)])
+		_finish()
+
+
 func _pick_duck(i: int) -> void:
 	_duck_pick = i
 	_send("req_ducks", [i])
@@ -179,7 +205,7 @@ func _on_result(kind: String, data: Dictionary) -> void:
 		"broke", "shop":
 			_busy = false
 			_msg.text = str(data.msg)
-		"slots", "wheel", "ducks":
+		"slots", "wheel", "ducks", "roulette":
 			_anim_data = data
 			_anim_t = 0.0
 		"crash_start":
@@ -208,6 +234,7 @@ func _process(delta: float) -> void:
 		"slots": _anim_slots()
 		"wheel": _anim_wheel()
 		"ducks": _anim_ducks()
+		"roulette": _anim_roulette()
 
 
 func _finish() -> void:

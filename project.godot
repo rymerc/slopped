@@ -48,6 +48,10 @@ paint_grain={
 "value": "res://assets/textures/paint_grain.png"
 }
 
+[gui]
+
+theme/custom_font="res://assets/fonts/LilitaOne-Regular.ttf"
+
 [layer_names]
 
 3d_physics/layer_1="world"

@@ -73,14 +73,16 @@ func _process(_delta: float) -> void:
 		_blind_mat.set_shader_parameter("left_blind", 1.0 if int(game.eye_hp[0]) <= 0 else 0.0)
 		_blind_mat.set_shader_parameter("right_blind", 1.0 if int(game.eye_hp[1]) <= 0 else 0.0)
 		if game.tripped > 0.0:
-			_info.text = "YOU'RE DOWN! MASH LMB TO STRUGGLE FREE"
+			_info.text = "YOU'RE DOWN! MASH %s TO STRUGGLE FREE" % InputSetup.label("primary")
 		else:
-			_info.text = "LMB stomp %s   RMB slap %s   Q ice pee %s   F fire fart %s" % [
-				_cd("stomp"), _cd("slap"), _cd("pee"), _cd("fart")]
+			_info.text = "%s stomp %s   %s slap %s   %s ice pee %s   %s fire fart %s" % [
+				InputSetup.label("primary"), _cd("stomp"), InputSetup.label("secondary"), _cd("slap"),
+				InputSetup.label("ability_1"), _cd("pee"), InputSetup.label("ability_2"), _cd("fart")]
 	elif me != null and me.dead:
-		_info.text = "ghost mode: WASD fly, SPACE up, SHIFT down. Haunt them."
+		_info.text = "ghost mode: move to fly, %s up, %s down. Haunt them." % [InputSetup.label("jump"), InputSetup.label("sprint")]
 	else:
-		_info.text = "spears %d   LMB throw at his EYES   RMB plant rope stake (x2 = tripwire)   E tie (when he's down)" % int(game.spears.get(Net.me(), 0))
+		_info.text = "spears %d   %s throw at his EYES   %s plant rope stake (x2 = tripwire)   %s tie (when he's down)" % [
+			int(game.spears.get(Net.me(), 0)), InputSetup.label("primary"), InputSetup.label("secondary"), InputSetup.label("interact")]
 
 
 func _pips(hp: int) -> String:

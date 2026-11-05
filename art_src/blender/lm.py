@@ -52,6 +52,7 @@ class LM:
         self.fcols = []
         self.cols = []    # (xform, size) box colliders
         self.lamps = []   # (pos, radius, intensity, colour)
+        self.rooms = []   # (min, max, level, colour): flat fill light inside a box
         self.dyn = {}     # name -> sub-LM
         self.xf = [Matrix.Identity(4)]
         self.origin = (0.0, 0.0, 0.0)  # DYN parts: pivot, in the parent's space
@@ -171,14 +172,14 @@ class LM:
                 cc = self.P(x1 + over, yb, zb)
                 d = self.P(x0 - over, yb, zb)
                 if side > 0:
-                    self.face([b, a, d, cc], c)
-                else:
                     self.face([a, b, cc, d], c)
+                else:
+                    self.face([b, a, d, cc], c)
                 # underside so interiors don't see through
                 if side > 0:
-                    self.face([a, b, cc, d], scale_col(col, 0.5))
-                else:
                     self.face([b, a, d, cc], scale_col(col, 0.5))
+                else:
+                    self.face([a, b, cc, d], scale_col(col, 0.5))
 
     def gable_end(self, x, y, z0, z1, h, col, flip=False):
         zm = (z0 + z1) * 0.5
@@ -318,9 +319,16 @@ class LM:
         m = Matrix.Translation((a + b) * 0.5) @ Matrix.Rotation(yaw, 4, "Y") @ Matrix.Rotation(pitch, 4, "X") @ Matrix.Translation((0, -t * 0.5, 0))
         self.cols.append((self.xf[-1] @ m, Vector((w, t, length))))
 
-    def lamp(self, x, y, z, radius=9.0, power=0.1, col=(1.0, 0.72, 0.4)):
+    def lamp(self, x, y, z, radius=9.0, power=0.1, col=(1.0, 0.88, 0.68)):
         p = self.P(x, y, z)
         self.lamps.append((np.array([p.x, p.y, p.z], dtype=np.float32), radius, power, col))
+
+    def room(self, x0, y0, z0, x1, y1, z1, level=0.06, col=(1.0, 0.85, 0.7)):
+        """Flat fill light for everything inside a box (interiors have no sun)."""
+        a, b = self.P(x0, y0, z0), self.P(x1, y1, z1)
+        lo = np.array([min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)], dtype=np.float32)
+        hi = np.array([max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)], dtype=np.float32)
+        self.rooms.append((lo, hi, level, col))
 
     def part(self, name, seed=2):
         sub = LM(name, seed)
@@ -350,8 +358,8 @@ class LM:
         if ao:
             mult = _bake_ao(ob, ao_samples, ao_dist)
             cols[:, :3] *= mult[:, None]
-        if self.lamps:
-            _bake_lamps(me, cols, self.lamps)
+        if self.lamps or self.rooms:
+            _bake_lamps(me, cols, self.lamps, self.rooms)
         attr.data.foreach_set("color", cols.ravel())
         me.color_attributes.active_color = attr
         me.color_attributes.render_color_index = me.color_attributes.find("Col")
@@ -432,12 +440,13 @@ def _bake_ao(ob, samples, dist):
     a = np.empty(len(me.loops) * 4, dtype=np.float32)
     ao.data.foreach_get("color", a)
     v = a.reshape(-1, 4)[:, 0]
+    print(f"  AO {ob.name}: min {v.min():.2f} mean {v.mean():.2f} max {v.max():.2f}")
     me.color_attributes.remove(me.color_attributes["AO"])
     me.materials.clear()
     return 0.42 + 0.58 * np.clip(v, 0.0, 1.0) ** 0.8
 
 
-def _bake_lamps(me, cols, lamps):
+def _bake_lamps(me, cols, lamps, rooms=()):
     """Warm point lights painted into the vertices: rgb tints toward the lamp, alpha
     adds a small self-illumination so rooms read as lit even in sun shadow."""
     n = len(me.vertices)
@@ -455,8 +464,13 @@ def _bake_lamps(me, cols, lamps):
         f = np.clip(1.0 - d / radius, 0.0, 1.0) ** 2 * power
         light += f
         tint += f[:, None] * np.array(c, dtype=np.float32)
+    for lo, hi, level, c in rooms:
+        inside = np.all((pts >= lo - 0.05) & (pts <= hi + 0.05), axis=1)
+        f = inside * level
+        light += f
+        tint += f[:, None] * np.array(c, dtype=np.float32)
     mask = light > 0.0
     tint[mask] /= light[mask, None]
     k = np.clip(light * 2.0, 0.0, 0.3)[:, None]
     cols[:, :3] = cols[:, :3] * (1.0 - k) + cols[:, :3] * tint * k * 1.2
-    cols[:, 3] = np.maximum(cols[:, 3], np.clip(light, 0.0, 0.16))
+    cols[:, 3] = np.maximum(cols[:, 3], np.clip(light, 0.0, 0.3))

@@ -17,6 +17,7 @@ const CHALLENGES := {
 	"boom": {"name": "Blow up a TNT barrel", "xp": 40},
 	"slide": {"name": "Belly-slide down Slide Hill", "xp": 40},
 	"giant_win": {"name": "Win a round of Giant Hunt", "xp": 150},
+	"dive": {"name": "High-dive off the Slop Cove tower", "xp": 50},
 }
 
 static var xp := 0

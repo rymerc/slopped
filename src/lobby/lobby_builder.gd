@@ -1,216 +1,235 @@
 class_name LobbyBuilder
 extends RefCounted
-## Static geometry for the "Slop Lounge" lobby. Everything is primitives.
-##   North: bar + VIP throne (leader only)     West: wardrobe
-##   East: casino machines                     South: perk shop, kennel, toilet, trampoline
-##   Centre: the Big Wheel + START button
+## SLOPSVILLE: the between-games hub, a ridiculous western town.
+##   Square      Big Wheel + START button, trampoline, spawn
+##   NW          Saloon (Mystery Slop bar, VIP throne)
+##   NE          Sheriff (Hall of Fame board, Bot Jail)
+##   E           The Lucky Duck Casino (slots, crash, wheel, ducks, roulette)
+##   SW          General Store (perk shop)
+##   SE          Grand Slop Hotel (wardrobe)
+## Main Street runs on the x=0 axis, so the Slide Hill belly-slide spits you into town.
+## Art lives in res://assets (built from art_src/); this file only places it and
+## says where the gameplay stations are.
 
-const HALF := 32.0
+const SALOON := Vector3(-21, 0, -33)
+const SHERIFF := Vector3(17, 0, -32)
+const CASINO := Vector3(40, 0, -1)
+const STORE := Vector3(-17, 0, 33)
+const HOTEL := Vector3(19, 0, 33.5)
 
 # Stations (world positions). Lobby wires interactions to these.
 const START_BTN := Vector3(0, 0, 3)
-const BAR := Vector3(0, 0, -21.5)
-const THRONE := Vector3(13, 0.8, -26)
-const VIP_GATE := Vector3(13, 0, -21.5)
-const PAINT := Vector3(-27, 0, -6)
-const HATS := Vector3(-27, 0, 0)
-const BODY := Vector3(-27, 0, 6)
-const SLOTS := Vector3(27, 0, -9)
-const CRASH := Vector3(27, 0, -3)
-const MINIWHEEL := Vector3(27, 0, 3)
-const DUCKS := Vector3(27, 0, 9)
-const SHOP := Vector3(-10, 0, 25)
-const KENNEL := Vector3(10, 0, 25)
-const TOILET := Vector3(-26, 0, 26)
+const BAR := Vector3(-22, 0.4, -36.2)
+const THRONE := Vector3(-10.4, 1.2, -36.0)
+const VIP_GATE := Vector3(-13.4, 0.4, -26.2)
+const PAINT := Vector3(28, 0.4, 37.6)
+const HATS := Vector3(24.6, 0.4, 37.6)
+const BODY := Vector3(21.2, 0.4, 37.6)
+const SLOTS: Array[Vector3] = [Vector3(31.6, 0, -18.4), Vector3(34.0, 0, -18.4), Vector3(36.4, 0, -18.4),
+	Vector3(43.6, 0, -18.4), Vector3(46.0, 0, -18.4), Vector3(48.4, 0, -18.4)]
+const CRASH := Vector3(49.6, 0, -10.5)
+const MINIWHEEL := Vector3(49.8, 0.6, 7.0)
+const DUCKS := Vector3(30.8, 0, 10.0)
+const ROULETTE: Array[Vector3] = [Vector3(38, 0, -7.5), Vector3(45, 0, -7.5)]
+const SHOP := Vector3(-17, 0.4, 34.2)
+const KENNEL := Vector3(17, 0.4, -32)
+const TOILET := Vector3(-37, 0, 25)
 const TRAMPOLINE := Vector3(0, 0, 18)
-const FAME := Vector3(24, 0, 28)
+const FAME := Vector3(23.2, 3.1, -23.65)
 
 
-static func build(root: Node3D) -> Dictionary:
+static func build(root: Node3D, b: Batch, props: PropSystem) -> Dictionary:
 	var out := {}
-	# Floor + rugs
-	Art.solid_box(root, Vector3(HALF * 2, 1, HALF * 2), Color("#6b4c8a"), Vector3(0, -0.5, 0), false)
-	_rug(root, Vector3(0, 0, 0), Vector2(18, 18), Color("#ffd23f"))
-	_rug(root, Vector3(0, 0, -24), Vector2(34, 12), Color("#c44569"))
-	_rug(root, Vector3(-26, 0, 0), Vector2(10, 20), Color("#3ec1ff"))
-	_rug(root, Vector3(26, 0, 0), Vector2(10, 24), Color("#2e8b57"))
-	_rug(root, Vector3(0, 0, 25), Vector2(40, 10), Color("#ff7a3d"))
-	# Walls
-	# Walls, with a doorway out to each zone of the island
-	var wall := Color("#4a3566")
-	_wall(root, true, -HALF, [Vector2(-26, -18), Vector2(19, 27)], wall)   # north -> Slide Hill
-	_wall(root, true, HALF, [Vector2(-5, 5)], wall)                       # south -> Meadow
-	_wall(root, false, -HALF, [Vector2(12, 22)], wall)                    # west  -> Chasm
-	_wall(root, false, HALF, [Vector2(12, 22)], wall)                     # east  -> Construction
-	for x: float in [-HALF, HALF]:  # neon trim on the corners
-		for z: float in [-HALF, HALF]:
-			Art.part(root, Art.box(Vector3(1.2, 6.4, 1.2)), Color("#ff5fa2"), Vector3(x, 3.2, z), Vector3.ONE, Vector3.ZERO, false, 0.9)
-	Art.label(root, "THE SLOP LOUNGE", Vector3(0, 7.5, -HALF + 0.6), 0.04, Ui.ACCENT, false)
-	# Disco ball
-	var disco := Node3D.new()
-	disco.name = "Disco"
-	disco.position = Vector3(0, 13, 6)
-	root.add_child(disco)
-	Art.part(disco, Art.sphere(1.0, 8), Color("#d0d8ff"), Vector3.ZERO, Vector3.ONE, Vector3.ZERO, true, 0.6)
-	out.disco = disco
-	for i in 3:
-		var l := OmniLight3D.new()
-		l.light_color = [Color("#ff5fa2"), Color("#3ec1ff"), Color("#ffd23f")][i]
-		l.light_energy = 1.5
-		l.omni_range = 14.0
-		l.position = Vector3(cos(i * 2.1) * 4, -1.5, sin(i * 2.1) * 4)
-		disco.add_child(l)
+	var saloon := Kit.landmark(root, b, "saloon", SALOON)
+	out.saloon_doors = saloon.dyn
+	Kit.landmark(root, b, "sheriff", SHERIFF)
+	Kit.landmark(root, b, "store", STORE, 180.0)
+	Kit.landmark(root, b, "hotel", HOTEL, 180.0)
+	Kit.landmark(root, b, "casino", CASINO, -90.0)
+	Kit.landmark(root, b, "water_tower", Vector3(-40, 0, -2))
+	Kit.landmark(root, b, "outhouse", TOILET + Vector3(0, 0, 1.9), 180.0)
+	Kit.landmark(root, b, "town_arch", Vector3(0, 0, 45))
 
-	# Centre: start button podium
-	Art.solid_cyl(root, 1.4, 1.0, Color("#4a4e69"), START_BTN + Vector3(0, 0.5, 0), -1.0, 12)
-	var btn := Art.part(root, Art.cyl(0.9, 1.0, 0.35, 12), Color("#e63946"), START_BTN + Vector3(0, 1.15, 0), Vector3.ONE, Vector3.ZERO, true, 0.35)
-	out.start_button = btn
-	Art.label(root, "START", START_BTN + Vector3(0, 2.2, 0), 0.012, Color.WHITE)
-
-	_build_bar(root, out)
-	_build_wardrobe(root)
-	_build_casino(root)
-	_build_south(root, out)
-	for p: Vector3 in [Vector3(-14, 0, -14), Vector3(14, 0, 14), Vector3(-14, 0, 14), Vector3(14, 0, -10)]:
-		_plant(root, p)
+	_square(root, b, out)
+	_saloon_interior(root, b, out)
+	_casino_floor(root, b, out)
+	_store_and_hotel(root, b)
+	_jail(root, b, out)
+	_streets(root, b, props)
 	return out
 
 
-## Wall along x (horizontal=true, at z=pos) or along z (at x=pos), skipping gaps.
-static func _wall(root: Node3D, horizontal: bool, pos: float, gaps: Array, color: Color) -> void:
-	var cuts: Array[float] = [-HALF]
-	for g: Vector2 in gaps:
-		cuts.append(g.x)
-		cuts.append(g.y)
-	cuts.append(HALF)
-	for i in range(0, cuts.size(), 2):
-		var a := cuts[i]
-		var b := cuts[i + 1]
-		if b - a < 0.1:
-			continue
-		var mid := (a + b) * 0.5
-		if horizontal:
-			Art.solid_box(root, Vector3(b - a, 6, 1), color, Vector3(mid, 3, pos))
-		else:
-			Art.solid_box(root, Vector3(1, 6, b - a), color, Vector3(pos, 3, mid))
-	for g: Vector2 in gaps:  # door frames
-		var mid := (g.x + g.y) * 0.5
-		var w := g.y - g.x
-		var p := Vector3(mid, 6.3, pos) if horizontal else Vector3(pos, 6.3, mid)
-		var sz := Vector3(w + 1.0, 0.8, 1.4) if horizontal else Vector3(1.4, 0.8, w + 1.0)
-		Art.part(root, Art.bbox(sz, 0.3), Color("#ffd23f"), p, Vector3.ONE, Vector3.ZERO, false, 0.4)
+static func _square(root: Node3D, b: Batch, out: Dictionary) -> void:
+	# Stone circle under the wheel + the big red button
+	var stone := Color("#b8ad9f")
+	Art.part(root, Art.cyl(11.0, 11.2, 0.12, 24), stone, Vector3(0, 0.06, -1.5))
+	Art.part(root, Art.cyl(9.8, 9.8, 0.13, 24), Color("#d3c5ae"), Vector3(0, 0.07, -1.5))
+	Art.part(root, Art.cyl(6.4, 6.4, 0.14, 24), Color("#a33a2c"), Vector3(0, 0.08, -1.5))
+	Art.solid_cyl(root, 1.4, 1.0, Color("#4a4e69"), START_BTN + Vector3(0, 0.5, 0), -1.0, 12)
+	Art.part(root, Art.cyl(1.55, 1.55, 0.18, 12), Art.GOLD, START_BTN + Vector3(0, 0.1, 0))
+	var btn := Art.part(root, Art.cyl(0.9, 1.0, 0.35, 12), Color("#e63946"), START_BTN + Vector3(0, 1.15, 0), Vector3.ONE, Vector3.ZERO, true, 0.35)
+	out.start_button = btn
+	Art.label(root, "START", START_BTN + Vector3(0, 2.2, 0), 0.012, Color.WHITE)
+	# Trampoline: a repurposed wagon wheel, naturally
+	Art.solid_cyl(root, 2.2, 0.5, Color("#6e4326"), TRAMPOLINE + Vector3(0, 0.25, 0), -1.0, 14)
+	Art.part(root, Art.cyl(2.28, 2.28, 0.12, 14), Art.GOLD, TRAMPOLINE + Vector3(0, 0.46, 0))
+	Art.part(root, Art.cyl(2.0, 2.0, 0.06, 14), Color("#3ec1ff"), TRAMPOLINE + Vector3(0, 0.52, 0), Vector3.ONE, Vector3.ZERO, false, 0.3)
+	# Fountain, benches and planters around the square
+	Dress.put(root, b, "fantasytown_fountain_round_detail", Vector3(-17, 0, 6), 0.0, 3.0, Dress.COL_BOX)
+	for p: Vector3 in [Vector3(-11, 0, -14), Vector3(11, 0, -14), Vector3(-11, 0, 14), Vector3(11, 0, 14)]:
+		Dress.put(root, b, "coaster_bench", p, 90.0 if p.x < 0 else -90.0, 1.4, Dress.COL_NONE, true)
+		Dress.put(root, b, "nature_pot_large", p + Vector3(0, 0, 2.0), 0.0, 1.6, Dress.COL_BOX, true)
+		Dress.put(root, b, "kk_furniture_cactus_medium_A", p + Vector3(0, 0.5, 2.0), 0.0, 1.5, Dress.COL_NONE, true)
 
 
-static func _rug(root: Node3D, pos: Vector3, size: Vector2, color: Color) -> void:
-	Art.part(root, Art.box(Vector3(size.x, 0.04, size.y)), color, pos + Vector3(0, 0.02, 0), Vector3.ONE, Vector3.ZERO, false)
-
-
-static func _plant(root: Node3D, pos: Vector3) -> void:
-	var b := Art.solid_cyl(root, 0.6, 1.0, Color("#c96f4a"), pos + Vector3(0, 0.5, 0), 0.75, 8)
-	Art.part(b, Art.sphere(1.0, 7), Color("#5fbf5a"), Vector3(0, 1.3, 0))
-	Art.part(b, Art.sphere(0.7, 7), Color("#8ce36b"), Vector3(0.4, 2.0, 0.2))
-
-
-static func _build_bar(root: Node3D, out: Dictionary) -> void:
-	Art.solid_box(root, Vector3(16, 1.2, 1.4), Color("#7a4b2a"), BAR + Vector3(0, 0.6, -1.5))
-	Art.part(root, Art.box(Vector3(16.4, 0.15, 1.8)), Color("#c98b4a"), BAR + Vector3(0, 1.27, -1.5))
-	Art.solid_box(root, Vector3(16, 4, 0.6), Color("#5a3a20"), BAR + Vector3(0, 2, -6))
-	for i in 14:
-		var c := Color.from_hsv(randf(), 0.7, 0.9)
-		Art.part(root, Art.cyl(0.12, 0.16, 0.6, 6), c, BAR + Vector3(-6.5 + i, 2.4, -5.5), Vector3.ONE, Vector3.ZERO, true, 0.5)
-	for i in 6:
-		var p := BAR + Vector3(-6.0 + i * 2.4, 0, 0.4)
-		Art.solid_cyl(root, 0.4, 0.9, Color("#e63946"), p + Vector3(0, 0.45, 0), -1.0, 8)
-	# Bartender (static, never moves, judges you)
+static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
+	var f := 0.4
+	# bartender (never moves, judges you)
 	var bt: Node3D = Art.build_character({"color": Color("#8d8aa0"), "hat": "top", "body": "robot"}).root
-	bt.position = BAR + Vector3(0, 0, -3.5)
+	bt.position = SALOON + Vector3(-1, f, -6.8)
 	bt.rotation.y = PI
 	root.add_child(bt)
-	Art.label(root, "MYSTERY SLOP BAR", BAR + Vector3(0, 4.6, -5.6), 0.025, Ui.YELLOW, false)
-	# VIP: raised platform + throne + velvet barrier that only the leader can pass
-	Art.solid_box(root, Vector3(7, 0.8, 6), Color("#ffcc33"), THRONE + Vector3(0, -0.4, 0))
-	Art.solid_box(root, Vector3(1.6, 0.8, 1.4), Color("#c44569"), THRONE + Vector3(0, 0.4, -1))
-	Art.solid_box(root, Vector3(1.6, 2.6, 0.4), Color("#c44569"), THRONE + Vector3(0, 1.3, -1.8))
-	Art.part(root, Art.cyl(0.0, 0.25, 0.5, 5), Art.GOLD, THRONE + Vector3(0, 2.9, -1.8))
-	var gate := Art.solid_box(root, Vector3(7, 3, 0.3), Color("#e63946"), VIP_GATE + Vector3(0, 1.5, 0), false)
-	(gate.get_child(0) as MeshInstance3D).transparency = 0.6
+	# stools along the bar
+	for i in 8:
+		Dress.put(root, b, "kk_restaurant_chair_stool", SALOON + Vector3(-8.0 + i * 2.0, f, -3.3), 15.0 * i, 0.95, Dress.COL_NONE, true)
+	# tables
+	for t: Vector3 in [Vector3(-7, 0, 2.5), Vector3(-1.5, 0, 4.8), Vector3(3.5, 0, 1.0), Vector3(-8.6, 0, 6.6)]:
+		var p := SALOON + t + Vector3(0, f, 0)
+		Dress.put(root, b, "kk_furniture_table_small", p, 20.0, 1.25, Dress.COL_BOX)
+		for k in 3:
+			var a := k * TAU / 3.0 + t.x
+			Dress.put(root, b, "kk_furniture_chair_A_wood", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0, 0.95, Dress.COL_NONE, true)
+		Dress.put(root, b, "food_mug", p + Vector3(0.1, 1.0, 0.15), 0.0, 0.5, Dress.COL_NONE, true)
+		Dress.put(root, b, "pirate_bottle", p + Vector3(-0.2, 1.0, -0.1), 0.0, 0.5, Dress.COL_NONE, true)
+	Dress.put(root, b, "kk_furniture_rug_oval_A", SALOON + Vector3(-3, f + 0.01, 3), 0.0, 3.0, Dress.COL_NONE, true)
+	# barrels behind the bar + on the porch
+	for i in 3:
+		Dress.put(root, b, "pirate_barrel", SALOON + Vector3(6.6 - i * 0.5, f, -7.5 + i * 0.2), 30.0 * i, 0.72, Dress.COL_BOX, true)
+	for x: float in [-11.4, -9.6, 8.0, 9.8]:
+		Dress.put(root, b, "pirate_barrel", SALOON + Vector3(x, f, 11.2), x * 40.0, 0.75, Dress.COL_BOX, true)
+	# VIP velvet gate: only the leader's collision is switched off, see Lobby
+	var gate := Art.solid_box(root, Vector3(0.25, 4.0, 4.4), Color("#e63946"), VIP_GATE + Vector3(0, 2.0, 0), false)
+	(gate.get_child(0) as MeshInstance3D).transparency = 0.9
 	out.vip_gate = gate.get_child(1) as CollisionShape3D
-	Art.label(root, "VIP: LEADER ONLY", VIP_GATE + Vector3(0, 3.6, 0), 0.015, Art.GOLD)
+	Art.label(root, "VIP: LEADER ONLY", VIP_GATE + Vector3(-1.4, 3.4, 0), 0.012, Art.GOLD)
 
 
-static func _build_wardrobe(root: Node3D) -> void:
-	Art.solid_box(root, Vector3(0.6, 5, 14), Color("#d8e2ff"), Vector3(-31, 2.5, 0))
-	Art.part(root, Art.box(Vector3(0.2, 4, 12)), Color("#aee6ff"), Vector3(-30.6, 2.5, 0), Vector3.ONE, Vector3.ZERO, false, 0.4)
-	var wl := Art.label(root, "WARDROBE", Vector3(-30, 5.6, 0), 0.025, Ui.YELLOW, false)
-	wl.rotation.y = PI * 0.5
-	# Paint buckets
+static func _casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
+	var reels: Array = []
+	for p: Vector3 in SLOTS:
+		reels.append((Kit.landmark(root, b, "slot_machine", p, 0.0) as Dictionary).dyn)
+	out.slots = reels
+	Kit.landmark(root, b, "crash_cabinet", CRASH, -90.0)
+	out.prize_wheel = (Kit.landmark(root, b, "prize_wheel", MINIWHEEL, -90.0) as Dictionary).dyn.get("rotor")
+	out.ducks = (Kit.landmark(root, b, "duck_track", DUCKS + Vector3(-0.3, 0, 0), -90.0) as Dictionary).dyn
+	var wheels: Array = []
+	for p: Vector3 in ROULETTE:
+		wheels.append((Kit.landmark(root, b, "roulette_table", p, 90.0 if p.x < 41.0 else -90.0) as Dictionary).dyn)
+	out.roulette = wheels
+	Kit.landmark(root, b, "poker_table", Vector3(38, 0, 6), 0.0)
+	Kit.landmark(root, b, "blackjack_table", Vector3(45, 0, 6), 180.0)
+	# stools + a dealer per table
+	var dealers := [[Vector3(38, 0, 7.5), PI, Color("#f2efe9"), "kid"], [Vector3(45, 0, 7.4), 0.0, Color("#f2efe9"), "cat"],
+		[Vector3(38, 0, -9.3), PI, Color("#f2efe9"), "robot"], [Vector3(45, 0, -9.3), PI, Color("#f2efe9"), "frog"]]
+	for d: Array in dealers:
+		var c: Node3D = Art.build_character({"color": d[2], "hat": "none", "body": d[3]}).root
+		c.position = d[0]
+		c.rotation.y = d[1]
+		root.add_child(c)
+	for t: Vector3 in [Vector3(38, 0, 6), Vector3(45, 0, 6)]:
+		for i in 4:
+			var x := -1.5 + i
+			Dress.put(root, b, "kk_furniture_chair_stool", t + Vector3(x, 0, -1.55), i * 30.0, 1.0, Dress.COL_NONE, true)
+	# VIP couch + plants, and the Crash wall label
+	Dress.put(root, b, "kk_furniture_couch_pillows", Vector3(30.6, 0, -13.0), 90.0, 1.3, Dress.COL_BOX, true)
+	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, -8.8), 0.0, 1.5, Dress.COL_BOX, true)
+	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, 6.0), 0.0, 1.5, Dress.COL_BOX, true)
+	Art.label(root, "CRASH", CRASH + Vector3(-0.2, 2.2, 0), 0.012, Ui.YELLOW)
+	Art.label(root, "LIL' WHEEL", MINIWHEEL + Vector3(-1.2, 6.6, 0), 0.012, Ui.YELLOW)
+	Art.label(root, "DUCK DERBY", DUCKS + Vector3(2.4, 2.2, 0), 0.012, Ui.YELLOW)
+	Art.label(root, "ROULETTE", Vector3(41.5, 2.8, -7.5), 0.012, Ui.YELLOW)
+	Art.label(root, "SLOTS", Vector3(35, 3.9, -18), 0.012, Ui.YELLOW)
+	Art.label(root, "SLOTS", Vector3(46, 3.9, -18), 0.012, Ui.YELLOW)
+
+
+static func _store_and_hotel(root: Node3D, b: Batch) -> void:
+	# Perk shop: a cat in a bucket hat runs the counter
+	var keeper: Node3D = Art.build_character({"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"}).root
+	keeper.position = SHOP + Vector3(0, 0, 2.6)
+	root.add_child(keeper)
+	Art.label(root, "PERK SHOP", SHOP + Vector3(0, 3.1, 1.2), 0.014, Ui.YELLOW)
+	for p: Vector3 in [Vector3(-23.6, 0.4, 24.6), Vector3(-21.8, 0.4, 24.8), Vector3(-11.2, 0.4, 24.6)]:
+		Dress.put(root, b, "pirate_crate", p, p.x * 11.0, 0.72, Dress.COL_BOX, true)
+	Dress.put(root, b, "pirate_barrel", Vector3(-9.8, 0.4, 24.6), 0.0, 0.72, Dress.COL_BOX, true)
+	Dress.put(root, b, "kk_restaurant_crate_tomatoes", Vector3(-14.0, 1.75, 35.0), 10.0, 0.42, Dress.COL_NONE, true)
+	Dress.put(root, b, "kk_restaurant_crate_potatoes", Vector3(-20.0, 1.75, 35.0), -14.0, 0.42, Dress.COL_NONE, true)
+	# Wardrobe in the hotel lobby: paint, hats, body swap
+	var base := Art.WOOD.darkened(0.2)
+	Art.solid_box(root, Vector3(1.8, 0.5, 1.8), base, PAINT + Vector3(0, 0.25, 0.1))
 	for i in 4:
-		Art.part(root, Art.cyl(0.35, 0.3, 0.6, 8), Art.SWATCHES[i], PAINT + Vector3(-0.6 + (i % 2) * 1.2, 0.3, -0.6 + (i / 2) * 1.2))
-	# Hat rack
+		Art.part(root, Art.cyl(0.35, 0.3, 0.6, 8), Art.SWATCHES[i], PAINT + Vector3(-0.42 + (i % 2) * 0.84, 0.8, -0.32 + (i / 2) * 0.84))
 	Art.solid_cyl(root, 0.1, 2.8, Art.WOOD, HATS + Vector3(0, 1.4, 0), -1.0, 6)
 	for i in 3:
 		var h := Art.build_hat(["party", "top", "chef"][i])
 		h.position = HATS + Vector3(0, 2.0 + i * 0.4, 0) + Vector3(cos(i * 2.0), 0, sin(i * 2.0)) * 0.35
 		root.add_child(h)
-	# Body swap booth
-	Art.solid_box(root, Vector3(2.2, 3.2, 0.3), Color("#b388ff"), BODY + Vector3(0, 1.6, -1.1))
-	Art.solid_box(root, Vector3(2.2, 3.2, 0.3), Color("#b388ff"), BODY + Vector3(0, 1.6, 1.1))
-	Art.part(root, Art.box(Vector3(2.4, 0.3, 2.6)), Color("#8a5fd1"), BODY + Vector3(0, 3.3, 0))
-	Art.label(root, "BODY SWAP", BODY + Vector3(0, 4.0, 0), 0.012)
+	Art.solid_box(root, Vector3(2.2, 3.2, 0.3), Color("#b388ff"), BODY + Vector3(0, 1.6, -1.1 + 0.9))
+	Art.part(root, Art.box(Vector3(2.4, 0.3, 1.6)), Color("#8a5fd1"), BODY + Vector3(0, 3.3, 0.5))
+	Art.label(root, "BODY SWAP", BODY + Vector3(0, 3.9, 0), 0.009)
+	Art.label(root, "PAINT", PAINT + Vector3(0, 2.0, 0), 0.009)
+	Art.label(root, "HATS", HATS + Vector3(0, 3.3, 0), 0.009)
+	Dress.put(root, b, "kk_furniture_couch", Vector3(10.4, 0.4, 30.5), 90.0, 1.3, Dress.COL_BOX, true)
+	Dress.put(root, b, "kk_furniture_lamp_standing", Vector3(10.2, 0.4, 28.2), 0.0, 1.3, Dress.COL_NONE, true)
+	Dress.put(root, b, "kk_furniture_shelf_B_large_decorated", Vector3(8.2, 0.4, 38.8), 180.0, 1.2, Dress.COL_NONE, true)
+	for x: float in [10.0, 14.0, 24.0, 28.0]:
+		Dress.put(root, b, "kk_furniture_chair_A", Vector3(x, 0.4, 23.8), x * 7.0, 1.0, Dress.COL_NONE, true)
 
 
-static func _build_casino(root: Node3D) -> void:
-	var cl := Art.label(root, "CASINO", Vector3(30.5, 5.6, 0), 0.03, Ui.ACCENT, false)
-	cl.rotation.y = -PI * 0.5
-	var machines := [[SLOTS, "SLOTS", Color("#e63946")], [CRASH, "CRASH", Color("#ff7a3d")],
-		[MINIWHEEL, "WHEEL", Color("#b388ff")], [DUCKS, "DUCK RACE", Color("#ffd23f")]]
-	for m: Array in machines:
-		var p: Vector3 = m[0]
-		var c: Color = m[2]
-		Art.solid_box(root, Vector3(1.4, 2.6, 2.2), c, p + Vector3(1.2, 1.3, 0))
-		Art.part(root, Art.box(Vector3(0.1, 1.0, 1.6)), Color("#1b1b2f"), p + Vector3(0.45, 1.8, 0), Vector3.ONE, Vector3.ZERO, false, 0.0)
-		Art.part(root, Art.box(Vector3(0.12, 0.8, 1.4)), c.lightened(0.4), p + Vector3(0.42, 1.8, 0), Vector3.ONE, Vector3.ZERO, false, 0.8)
-		Art.part(root, Art.sphere(0.25, 8), c.lightened(0.3), p + Vector3(1.2, 2.9, 0), Vector3.ONE, Vector3.ZERO, true, 1.0)
-		Art.label(root, str(m[1]), p + Vector3(0.5, 3.6, 0), 0.012)
-	# Rubber duck mascot
-	var duck := Node3D.new()
-	duck.position = DUCKS + Vector3(-1.5, 0, 2.5)
-	root.add_child(duck)
-	Art.part(duck, Art.sphere(0.7, 8), Ui.YELLOW, Vector3(0, 0.6, 0), Vector3(1.2, 0.9, 1))
-	Art.part(duck, Art.sphere(0.45, 8), Ui.YELLOW, Vector3(0, 1.4, -0.4))
-	Art.part(duck, Art.box(Vector3(0.3, 0.1, 0.35)), Color("#ff7a3d"), Vector3(0, 1.35, -0.85))
-
-
-static func _build_south(root: Node3D, out: Dictionary) -> void:
-	# Perk shop stall
-	Art.solid_box(root, Vector3(6, 1.2, 1.2), Color("#3ec1ff"), SHOP + Vector3(0, 0.6, 1.2))
-	for sx: float in [-1.0, 1.0]:
-		Art.solid_cyl(root, 0.12, 3.4, Art.WOOD, SHOP + Vector3(2.9 * sx, 1.7, 1.2), -1.0, 6)
-	for i in 6:
-		var c := Color("#ff5fa2") if i % 2 == 0 else Color.WHITE
-		Art.part(root, Art.box(Vector3(1.0, 0.15, 2.2)), c, SHOP + Vector3(-2.5 + i, 3.45, 1.0), Vector3.ONE, Vector3(-15, 0, 0))
-	Art.label(root, "PERK SHOP", SHOP + Vector3(0, 4.3, 1.0), 0.02, Ui.YELLOW)
-	var keeper: Node3D = Art.build_character({"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"}).root
-	keeper.position = SHOP + Vector3(0, 0, 2.6)
-	root.add_child(keeper)
-	# Bot kennel (doghouse)
-	Art.solid_box(root, Vector3(3, 2, 3), Color("#c96f4a"), KENNEL + Vector3(0, 1, 1.5))
-	Art.part(root, Art.box(Vector3(2.4, 0.2, 3.4)), Color("#e63946"), KENNEL + Vector3(-0.8, 2.4, 1.5), Vector3.ONE, Vector3(0, 0, 35))
-	Art.part(root, Art.box(Vector3(2.4, 0.2, 3.4)), Color("#e63946"), KENNEL + Vector3(0.8, 2.4, 1.5), Vector3.ONE, Vector3(0, 0, -35))
-	Art.part(root, Art.box(Vector3(1.0, 1.2, 0.1)), Art.INK, KENNEL + Vector3(0, 0.6, -0.02), Vector3.ONE, Vector3.ZERO, false)
-	Art.label(root, "BOT KENNEL", KENNEL + Vector3(0, 3.6, 0.5), 0.015)
-	# Toilet teleporter
-	Art.solid_box(root, Vector3(1.0, 0.8, 1.2), Color.WHITE, TOILET + Vector3(0, 0.4, 0))
-	Art.part(root, Art.cyl(0.55, 0.45, 0.2, 10), Color.WHITE, TOILET + Vector3(0, 0.9, -0.2))
-	Art.part(root, Art.box(Vector3(1.0, 1.2, 0.35)), Color.WHITE, TOILET + Vector3(0, 1.2, 0.6))
-	Art.label(root, "FLUSH", TOILET + Vector3(0, 2.4, 0), 0.012)
-	# Trampoline
-	Art.solid_cyl(root, 2.2, 0.5, Color("#1b1b2f"), TRAMPOLINE + Vector3(0, 0.25, 0), -1.0, 14)
-	Art.part(root, Art.cyl(2.0, 2.0, 0.06, 14), Color("#3ec1ff"), TRAMPOLINE + Vector3(0, 0.52, 0), Vector3.ONE, Vector3.ZERO, false, 0.3)
-	# Hall of fame board
-	Art.solid_box(root, Vector3(7, 5, 0.4), Color("#1b1b2f"), FAME + Vector3(0, 3, 1.5))
-	var fame := Art.label(root, "", FAME + Vector3(0, 3, 1.2), 0.008, Color.WHITE, false)
-	fame.rotation.y = PI
+static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
+	# Hall of Fame board on the sheriff's porch (facing the square)
+	Art.part(root, Art.box(Vector3(5.0, 3.0, 0.08)), Color("#3a2f2a"), FAME + Vector3(0, 0, -0.06))
+	var fame := Art.label(root, "", FAME + Vector3(0, -0.2, 0.02), 0.0052, Color.WHITE, false)
 	out.fame = fame
-	var fl := Art.label(root, "HALL OF FAME (and shame)", FAME + Vector3(0, 6, 1.2), 0.012, Art.GOLD, false)
-	fl.rotation.y = PI
+	Art.label(root, "HALL OF FAME (and shame)", FAME + Vector3(0, 1.8, 0.02), 0.0075, Art.GOLD, false)
+	Art.label(root, "ADOPT A BOT", KENNEL + Vector3(-3.2, 2.4, -1.2), 0.009, Ui.YELLOW)
+	Art.label(root, "RELEASE A BOT", KENNEL + Vector3(4.6, 2.4, -1.2), 0.009, Ui.YELLOW)
+	Dress.put(root, b, "kk_furniture_chair_B_wood", KENNEL + Vector3(-5.0, 0, 4.9), 200.0, 1.0, Dress.COL_NONE, true)
+	Dress.put(root, b, "kk_furniture_shelf_B_small_decorated", KENNEL + Vector3(7.5, 0, 7.5), 0.0, 1.1, Dress.COL_NONE, true)
+
+
+static func _streets(root: Node3D, b: Batch, props: PropSystem) -> void:
+	# Bulb strings + bunting across Main Street and around the square
+	var warm := [Color("#ffe6a8"), Color("#ffb45e")]
+	Dress.bulbs(b, Vector3(-7.8, 8.6, -23.6), Vector3(7.5, 8.6, -23.6), 20, 1.6, warm)
+	Dress.bulbs(b, Vector3(-8.2, 8.0, 23.0), Vector3(7.0, 8.0, 23.0), 20, 1.6, warm)
+	Dress.bunting(b, Vector3(-8.2, 11.0, -23.6), Vector3(26.0, 9.0, -23.6), 26, 1.8)
+	Dress.bunting(b, Vector3(-34.0, 10.5, -23.6), Vector3(-8.2, 11.0, 23.0), 34, 2.0)
+	Dress.bulbs(b, Vector3(7.0, 8.0, 23.0), Vector3(28.0, 11.0, 16.0), 20, 1.4, warm)
+	Dress.bulbs(b, Vector3(26.0, 9.0, -23.6), Vector3(28.0, 11.0, -13.0), 14, 1.2, warm)
+	# Lamp posts along the sidewalks
+	for p: Vector3 in [Vector3(-7.5, 0, -19), Vector3(7.5, 0, -19), Vector3(-7.5, 0, 20), Vector3(7.5, 0, 20),
+			Vector3(-26, 0, -14), Vector3(-26, 0, 12), Vector3(26, 0, -16), Vector3(26, 0, 13)]:
+		Playground.lamp(root, p)
+	# Wagons, market stalls, hay and clutter: makes the square feel used
+	Dress.put(root, b, "fantasytown_stall_red", Vector3(-22, 0, -13), 90.0, 2.4, Dress.COL_BOX)
+	Dress.put(root, b, "fantasytown_stall_green", Vector3(-22, 0, -5), 90.0, 2.4, Dress.COL_BOX)
+	Dress.put(root, b, "fantasytown_cart_high", Vector3(-25, 0, 14), 40.0, 2.0, Dress.COL_BOX)
+	Dress.put(root, b, "fantasytown_cart", Vector3(-30.5, 0, -18), -30.0, 2.0, Dress.COL_BOX)
+	Dress.put(root, b, "fantasytown_stall_bench", Vector3(-20, 0, 12), 90.0, 2.4, Dress.COL_NONE, true)
+	for z: float in [-10.0, -9.2, 0.8]:
+		Dress.put(root, b, "kk_city_box_A", Vector3(-20.2, 0, z), z * 30.0, 2.0, Dress.COL_NONE, true)
+	for i in 5:
+		Dress.put(root, b, "survival_fence", Vector3(-46.0, 0, -11.5 + i * 4.8), 90.0, 8.8, Dress.COL_BOX)
+	for p: Vector3 in [Vector3(-33, 0, 12), Vector3(-45, 0, 22), Vector3(-30, 0, 30), Vector3(32, 0, -28),
+			Vector3(42, 0, 28), Vector3(-44, 0, -24)]:
+		Dress.put(root, b, "nature_cactus_tall", p, p.x * 9.0, 3.2, Dress.COL_BOX)
+		Dress.put(root, b, "nature_cactus_short", p + Vector3(1.8, 0, 1.0), p.z * 9.0, 2.6, Dress.COL_NONE, true)
+	# Loose props you can actually grab, stack and throw
+	for p: Vector3 in [Vector3(-16, 0.6, -18), Vector3(-15, 0.6, -19), Vector3(16, 0.6, 19), Vector3(21, 0.6, 18)]:
+		props.spawn("barrel", p)
+	for p: Vector3 in [Vector3(-30, 0.5, 10), Vector3(-30, 1.5, 10), Vector3(-28.9, 0.5, 10.2), Vector3(12, 0.5, -18)]:
+		props.spawn("crate", p)
+	for i in 4:
+		props.spawn("stool", Vector3(-6 + i * 2.0, 0.9, -28.5 + 2.0 * (i % 2)))
+	for i in 3:
+		props.spawn("keg", SALOON + Vector3(9.0 + i * 0.9, 0.95, 12.6))

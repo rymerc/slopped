@@ -403,6 +403,10 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	env.glow_intensity = 0.35
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.15
+	# a touch of grading: kit colours are saturated, and this seats them in the light
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 0.9
+	env.adjustment_contrast = 1.04
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_DEPTH
 	env.fog_light_color = horizon
