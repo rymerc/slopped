@@ -55,8 +55,9 @@ func _process(_d: float) -> bool:
 				_check(_me.collision_layer == 2, "collision restored")
 				_me.push(Vector3(4, 0, 0))  # partial: no ragdoll
 				_check(_me.state == 0, "small hit stays standing (partial ragdoll)")
-				# shove the bot (server path)
-				_bot.place(_me.global_position + _me.forward() * 1.0)
+				# shove the bot (server path), on open ground so town props can't interfere
+				_me.place(Vector3(0, 0.5, 11))
+				_bot.place(Vector3(0, 0.5, 11) + _me.forward() * 1.0)
 				_w.do_shove(_me.pid, _me.forward())
 				_t0 = _t()
 				_stage = 2

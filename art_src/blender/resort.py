@@ -54,13 +54,16 @@ def beach_bar(out):
             c = jitter(WOOD_L, m.rng, 0.1)
             m.face([m.P(math.cos(a0) * r1, F, math.sin(a0) * r1), m.P(math.cos(a1) * r1, F, math.sin(a1) * r1),
                     m.P(math.cos(a1) * r0, F, math.sin(a1) * r0), m.P(math.cos(a0) * r0, F, math.sin(a0) * r0)][::-1], c)
-    m.cyl(0, 0, 0, R, F, R, WOOD_D, n=n, caps=False)
-    m.col(-R * 0.92, -0.3, -R * 0.92, R * 0.92, F, R * 0.92)
-    m.col_ramp((0, 0.0, R + 2.2), (0, F, R - 0.2), 5.0)
-    for i in range(6):
-        z0, z1 = R - 0.2 + 2.4 * i / 6, R - 0.2 + 2.4 * (i + 1) / 6
-        y0, y1 = F * (1 - i / 6), F * (1 - (i + 1) / 6)
-        m.quad(m.P(-2.5, y1, z1), m.P(2.5, y1, z1), m.P(2.5, y0, z0), m.P(-2.5, y0, z0), jitter(WOOD_L, m.rng, 0.1))
+    m.col(-4.9, -0.3, -4.9, 4.9, F, 4.9)
+    # the deck rim slopes to the sand all the way round: walk on from any side
+    m.cyl(0, 0, 0, R + 1.5, F, R, WOOD_D, n=n, caps=False)
+    for i in range(8):
+        a = i * math.tau / 8
+        x, z = math.sin(a), math.cos(a)
+        m.col_ramp((x * (R + 1.6), -0.05, z * (R + 1.6)), (x * (R - 1.2), F, z * (R - 1.2)), 7.2)
+        m.push(0, 0, 0, yaw=math.degrees(a))
+        m.col(-3.6, F - 0.3, 4.6, 3.6, F, R - 1.15)   # octagon of flat deck
+        m.pop()
     # roof on bamboo posts
     for i in range(8):
         a = (i + 0.5) * math.tau / 8

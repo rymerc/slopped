@@ -50,7 +50,7 @@ func _build_routes() -> void:
 		["hotel", [Vector3(-17, 0.4, 29), store_door, hotel_door, Vector3(19, 0.4, 28), c.BODY]],
 		["paint", [c.PAINT]],
 		["casino", [Vector3(19, 0.4, 28), hotel_door, casino_door, Vector3(31, 0, -1), Vector3(40, 0, -3), c.CRASH + Vector3(-1.4, 0, 0)]],
-		["slots", [Vector3(42, 0, -14), c.SLOTS[3] + Vector3(0, 0, 1.2)]],
+		["slots", [Vector3(47.5, 0, -14), c.SLOTS[3] + Vector3(0, 0, 1.2)]],
 		["ducks", [Vector3(40, 0, -2), c.DUCKS + Vector3(2.4, 0, 0)]],
 		["wheel", [Vector3(42, 0, 11), c.MINIWHEEL + Vector3(-3.6, -0.6, 0)]],
 		["casino side door", [Vector3(40, 0, 15), Vector3(40, 0, 21)]],
@@ -102,7 +102,9 @@ func _process(delta: float) -> bool:
 	else:
 		_stall += delta
 	if _stall > STUCK_SECS:
-		print("FAIL ", r[0], " stuck at ", _av.global_position.snappedf(0.1), " heading to ", goal)
+		var hit: KinematicCollision3D = _av.get_last_slide_collision()
+		print("FAIL ", r[0], " stuck at ", _av.global_position.snappedf(0.1), " heading to ", goal,
+			" against ", hit.get_collider() if hit else "nothing", " at ", hit.get_position().snappedf(0.1) if hit else Vector3.ZERO)
 		_fail += 1
 		_stall = 0.0
 		_av.place(pts[-1] + Vector3(0, 0.5, 0))

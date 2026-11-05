@@ -10,7 +10,8 @@ signal peer_left(id: int)
 
 const PORT := 24680
 const MAX_CLIENTS := 15
-const BOT_BASE := 1_000_000
+## Above every possible peer id (ENet ids are 1..2^31-1), so a real client can never read as a bot.
+const BOT_BASE := 1 << 31
 const START_COINS := 100
 const BOT_NAMES := ["Gorp", "Mildred", "Chungus", "Beebo", "Sir Wobble", "Tater", "Dweeb", "Slorp"]
 

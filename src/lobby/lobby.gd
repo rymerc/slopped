@@ -80,6 +80,7 @@ func build_world() -> void:
 	keep.append_array(_play.get("plates", []))
 	batch.absorb(self, keep)
 	batch.commit(self)
+	Ambience.build_island(self)
 
 	casino = Casino.new()
 	casino.name = "Casino"

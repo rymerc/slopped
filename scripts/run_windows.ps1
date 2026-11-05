@@ -27,11 +27,14 @@ if (-not (Test-Path $Exe)) {
     Remove-Item $Zip
 }
 
-# First run: import assets + build the global class cache (class_name scripts).
-if (-not (Test-Path (Join-Path $Root ".godot\global_script_class_cache.cfg"))) {
-    Write-Host "Importing project (first run only) ..."
-    & $ConsoleExe --headless --path $Root --import | Out-Host
+# Keep Godot out of tools\ (Blender ships files it would try to import).
+if (-not (Test-Path (Join-Path $Root "tools\.gdignore"))) {
+    New-Item -ItemType File -Path (Join-Path $Root "tools\.gdignore") | Out-Null
 }
+# Import assets + build the class cache. Fast when nothing changed, and new
+# models from a git pull would otherwise be missing at runtime.
+Write-Host "Importing project ..."
+& $ConsoleExe --headless --path $Root --import | Out-Null
 
 if ($Editor) {
     & $Exe --path $Root -e
