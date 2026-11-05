@@ -62,7 +62,7 @@ def casino(out):
             xc = (xa + xb) * 0.5
             m.box(xc - 0.22, 5.6, D + 0.9 + k * 0.35, xc + 0.22, top - 0.6, D + 0.98 + k * 0.35, NEON_PINK if k else NEON_CYAN, glow=0.9)
     # central tower: big sign with chase bulbs
-    m.box(-5.0, 5.6, D + 0.2, 5.0, 21.0, D + 1.3, hexc("#1b1030"), sub=3.0)
+    m.box(-5.0, 5.6, D + 0.2, 5.0, 21.0, D + 1.3, hexc("#33245a"), sub=3.0)
     m.box(-5.2, 20.9, D, 5.2, 21.4, D + 1.5, BRASS)
     for y in range(6, 21):
         for sx in (-1, 1):
@@ -90,7 +90,7 @@ def casino(out):
     m.cyl(0, 9.15, 2.2, 1.27, 9.55, 1.27, hexc("#e8372f"), n=12, caps=False)
     m.pop()
     # marquee canopy over the doors
-    m.box(-7.5, 5.0, D, 7.5, 5.6, D + 5.2, hexc("#1b1030"), sub=3.0)
+    m.box(-7.5, 5.0, D, 7.5, 5.6, D + 5.2, hexc("#33245a"), sub=3.0)
     m.box(-7.7, 5.6, D, 7.7, 5.8, D + 5.4, BRASS)
     m.box(-7.7, 4.8, D + 5.2, 7.7, 5.0, D + 5.4, BRASS)
     for x in range(-7, 8):

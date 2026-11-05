@@ -74,6 +74,19 @@ static func vcol_mat() -> ShaderMaterial:
 	return _mats["vcol"]
 
 
+## Grass and flowers: thin cross-blades would shade black with per-face normals, so
+## they keep the up-facing normal baked into the mesh.
+static func foliage_mat() -> ShaderMaterial:
+	if not _mats.has("foliage"):
+		var m := ShaderMaterial.new()
+		m.shader = TOON
+		m.set_shader_parameter("use_vertex_color", true)
+		m.set_shader_parameter("rim_strength", 0.0)
+		m.set_shader_parameter("faceted", false)
+		_mats["foliage"] = m
+	return _mats["foliage"]
+
+
 static func water_mat() -> ShaderMaterial:
 	if not _mats.has("water"):
 		var m := ShaderMaterial.new()

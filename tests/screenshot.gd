@@ -52,7 +52,7 @@ func _process(_d: float) -> bool:
 				["slide_hill", Vector3(5, 7, -22), Vector3(0, 18, -85)],
 				["chasm", Vector3(-42, 12, 34), Vector3(-80, 2, 0)],
 				["yard", Vector3(60, 8, 24), Vector3(95, 4, -10)],
-				["meadow", Vector3(-6, 7, 44), Vector3(14, 1, 85)],
+				["meadow", Vector3(-14, 5, 52), Vector3(14, 1, 92)],
 				["cove", Vector3(-62, 7, 70), Vector3(-104, 1.5, 96)],
 				["pier", Vector3(-100, 4, 88), Vector3(-130, 5, 122)],
 				["carnival", Vector3(64, 6, -62), Vector3(98, 9, -100)],
@@ -62,12 +62,28 @@ func _process(_d: float) -> bool:
 	if _wait > 0:
 		_wait -= 1
 		return false
-	if _stage > 1:
+	if _stage > 1 and _stage < 100:
 		var img := root.get_viewport().get_texture().get_image()
 		var n: String = _shots[_stage - 2][0]
 		img.save_png("%s/%s.png" % [_dir, n])
 		print("saved ", n)
 	if _stage - 1 >= _shots.size():
+		if w.get("_settings") != null and _dir.length() > 0 and _stage < 100:
+			_stage = 100
+			w.set_mouse_captured(false)
+			w._open_settings()
+			_wait = 10
+			return false
+		if _stage >= 100:
+			var tabs := ["Video", "Audio", "Controls", "Gameplay"]
+			var i := _stage - 100
+			if i > 0:
+				root.get_viewport().get_texture().get_image().save_png("%s/settings_%s.png" % [_dir, tabs[i - 1]])
+			if i < 4:
+				w._settings._show_tab(i)
+				_stage += 1
+				_wait = 6
+				return false
 		quit(0)
 		return false
 	var s: Array = _shots[_stage - 1]

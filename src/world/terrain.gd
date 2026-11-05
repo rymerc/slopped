@@ -104,7 +104,7 @@ static func scatter(root: Node3D, mesh: Mesh, count: int, half: float, height_fn
 		mm.set_instance_color(i, cols[i])
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
-	mmi.material_override = Art.vcol_mat()
+	mmi.material_override = Art.foliage_mat()
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(mmi)
 	return mmi

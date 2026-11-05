@@ -1,6 +1,8 @@
 """Beach district: bilge bar, tiki huts, boardwalk dock, diving tower, lighthouse."""
 import math
 
+from mathutils import Vector
+
 from lm import LM, hexc, jitter, scale_col
 from town import BRASS, CREAM, INK, NEON_CYAN, NEON_GOLD, NEON_PINK, WOOD, WOOD_D, WOOD_L
 
@@ -29,7 +31,8 @@ def thatch_cone(m, x, y, z, r, h, rows=5, n=14, col=THATCH):
             C = m.P(x + math.cos(a1) * r1, y1, z + math.sin(a1) * r1)
             D = m.P(x + math.cos(a0) * r1, y1, z + math.sin(a0) * r1)
             m.face([D, C, B, A], c)
-            m.face([A, B, C, D], scale_col(THATCH_D, 0.6))
+            drop = Vector((0.0, -0.16, 0.0))
+            m.face([A + drop, B + drop, C + drop, D + drop], scale_col(THATCH_D, 0.6))
 
 
 def bamboo_post(m, x, y0, z, y1, r=0.14):

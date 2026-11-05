@@ -48,6 +48,7 @@ func _ready() -> void:
 	Net.announced.connect(toast)
 	_reconcile()
 	world_started()
+	Settings.apply_world()
 	set_mouse_captured(true)
 	Progress.ensure_loaded()
 	_xp_cb = _on_xp
@@ -432,7 +433,6 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	sun.shadow_blur = 0.6
 	sun.add_to_group(Settings.GROUP_SUN)
 	add_child(sun)
-	Settings.apply_world()
 
 
 # --- progression HUD ---------------------------------------------------------

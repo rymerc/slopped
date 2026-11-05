@@ -175,11 +175,14 @@ class LM:
                     self.face([a, b, cc, d], c)
                 else:
                     self.face([b, a, d, cc], c)
-                # underside so interiors don't see through
+                # underside, held off the top skin so the AO bake doesn't read the
+                # pair as sealed (coincident faces bake solid black)
+                ua, ub, uc, ud = [self.P(px, py - 0.14, pz) for (px, py, pz) in (
+                    (x0 - over, ya - lip, za), (x1 + over, ya - lip, za), (x1 + over, yb, zb), (x0 - over, yb, zb))]
                 if side > 0:
-                    self.face([b, a, d, cc], scale_col(col, 0.5))
+                    self.face([ub, ua, ud, uc], scale_col(col, 0.5))
                 else:
-                    self.face([a, b, cc, d], scale_col(col, 0.5))
+                    self.face([ua, ub, uc, ud], scale_col(col, 0.5))
 
     def gable_end(self, x, y, z0, z1, h, col, flip=False):
         zm = (z0 + z1) * 0.5

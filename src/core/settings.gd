@@ -208,6 +208,9 @@ func apply_world() -> void:
 		var sun := n as DirectionalLight3D
 		sun.shadow_enabled = level > 0
 		sun.directional_shadow_max_distance = SHADOW_DIST[level]
+		# fewer cascades means fewer passes over the whole town
+		sun.directional_shadow_mode = [DirectionalLight3D.SHADOW_ORTHOGONAL, DirectionalLight3D.SHADOW_ORTHOGONAL,
+			DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS, DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS][level]
 	for n: Node in tree.get_nodes_in_group(GROUP_ENV):
 		var env: Environment = (n as WorldEnvironment).environment
 		env.glow_enabled = bool(v.glow)

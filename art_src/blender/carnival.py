@@ -210,7 +210,7 @@ def ticket_booth(out):
         c = RED if i % 2 else CREAM
         x0, x1 = -2.2 + i * 0.44, -2.2 + (i + 1) * 0.44
         m.quad(m.P(x0, 2.8, 2.5), m.P(x1, 2.8, 2.5), m.P(x1, 3.6, 1.4), m.P(x0, 3.6, 1.4), c)
-        m.quad(m.P(x1, 2.78, 2.5), m.P(x0, 2.78, 2.5), m.P(x0, 3.58, 1.4), m.P(x1, 3.58, 1.4), scale_col(c, 0.7))
+        m.quad(m.P(x1, 2.66, 2.5), m.P(x0, 2.66, 2.5), m.P(x0, 3.46, 1.4), m.P(x1, 3.46, 1.4), scale_col(c, 0.7))
     m.box(-1.5, 3.0, -0.8, 1.5, 4.3, -0.65, hexc("#3d2a55"))
     m.text("TICKETS", 0, 3.3, -0.65, 0.62, NEON_GOLD, font="Bungee-Regular", glow=0.8, depth=0.04, res=1)
     m.col(-1.95, 0, -1.75, 1.95, 3.0, 1.75)

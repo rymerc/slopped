@@ -33,7 +33,7 @@ def porch(m, x0, x1, z0, z1, y, deck=WOOD, posts=5, roof_y=4.6, roof_col=None, r
             yb = roof_y + 0.65 - 0.65 * (i + 1) / rows
             c = jitter(rc, m.rng, 0.1)
             m.quad(m.P(x0 - 0.3, yb, b), m.P(x1 + 0.3, yb, b), m.P(x1 + 0.3, ya, a), m.P(x0 - 0.3, ya, a), c)
-            m.quad(m.P(x1 + 0.3, yb - 0.03, b), m.P(x0 - 0.3, yb - 0.03, b), m.P(x0 - 0.3, ya - 0.03, a), m.P(x1 + 0.3, ya - 0.03, a), scale_col(WOOD_D, 0.8))
+            m.quad(m.P(x1 + 0.3, yb - 0.16, b), m.P(x0 - 0.3, yb - 0.16, b), m.P(x0 - 0.3, ya - 0.16, a), m.P(x1 + 0.3, ya - 0.16, a), WOOD)
         m.box(x0 - 0.3, roof_y - 0.18, z1 - 0.28, x1 + 0.3, roof_y, z1 - 0.12, WOOD_D)
     # Boardwalks must never stop a running player: the whole front and both ends
     # are ramps, dressed as two broad steps.
@@ -215,16 +215,16 @@ def sheriff(out):
     """Sheriff's office + Bot Jail. Stone lower storey, adobe upper, barred cells."""
     m = LM("sheriff", 21)
     W, D, F = 9.5, 8.0, 0.4
-    sand = hexc("#d9ae74")
+    sand = hexc("#cdb189")
     stone = hexc("#8d8791")
     teal = hexc("#2f8f8a")
     m.floor_boards(-W, -D, W, D, F, WOOD)
     m.col(-W, -0.3, -D, W, F, D)
     ops = [(W - 2.0, 4.0, 0.0, 4.3), (2.4, 2.6, 1.7, 3.7), (W + 6.5, 2.6, 1.7, 3.7)]
-    m.wall((-W, D), (W, D), 0, 9.4, sand, ops, glass=GLASS, frame=teal, inner=WOOD_L, board=0.42)
-    m.wall((W, D), (W, -D), 0, 6.6, sand, [(6.5, 3.0, 1.9, 3.8)], glass=GLASS, frame=teal, inner=WOOD_L, board=0.42)
+    m.wall((-W, D), (W, D), 0, 9.4, sand, ops, glass=GLASS, frame=teal, inner=WOOD_L, board=0.42, jit=0.045)
+    m.wall((W, D), (W, -D), 0, 6.6, sand, [(6.5, 3.0, 1.9, 3.8)], glass=GLASS, frame=teal, inner=WOOD_L, board=0.42, jit=0.045)
     m.wall((W, -D), (-W, -D), 0, 6.6, sand, [(8.0, 3.0, 2.6, 3.7)], glass=(*hexc("#8fa4b8"), 0.05), frame=stone, inner=WOOD_L, board=0.42)
-    m.wall((-W, -D), (-W, D), 0, 6.6, sand, [(6.5, 3.0, 1.9, 3.8)], glass=GLASS, frame=teal, inner=WOOD_L, board=0.42)
+    m.wall((-W, -D), (-W, D), 0, 6.6, sand, [(6.5, 3.0, 1.9, 3.8)], glass=GLASS, frame=teal, inner=WOOD_L, board=0.42, jit=0.045)
     # rough stone plinth along the front and back
     for (x0, z0, x1, z1) in ((-W - 0.1, D - 0.1, W + 0.1, D + 0.24), (-W - 0.1, -D - 0.24, W + 0.1, -D + 0.1)):
         gaps = [(x0, -2.2), (2.2, x1)] if z0 > 0 else [(x0, x1)]
@@ -321,7 +321,7 @@ def store(out):
         x1 = -W - 0.2 + (2 * W + 0.4) * (i + 1) / n
         c = hexc("#e5484d") if i % 2 == 0 else hexc("#fbe9c8")
         m.quad(m.P(x0, 4.3, D + 3.3), m.P(x1, 4.3, D + 3.3), m.P(x1, 5.2, D), m.P(x0, 5.2, D), c)
-        m.quad(m.P(x1, 4.28, D + 3.3), m.P(x0, 4.28, D + 3.3), m.P(x0, 5.18, D), m.P(x1, 5.18, D), scale_col(c, 0.75))
+        m.quad(m.P(x1, 4.16, D + 3.3), m.P(x0, 4.16, D + 3.3), m.P(x0, 5.06, D), m.P(x1, 5.06, D), scale_col(c, 0.75))
         m.quad(m.P(x0, 3.95, D + 3.32), m.P(x1, 3.95, D + 3.32), m.P(x1, 4.3, D + 3.32), m.P(x0, 4.3, D + 3.32), c)
     # interior: counter + shelves of merchandise
     m.box(-5, F, -3.2, 5, F + 1.2, -2.2, WOOD_D)
