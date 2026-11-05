@@ -39,13 +39,13 @@ The original game had **no model, texture or audio files**. Everything was GDScr
 
 - **Retained**: all gameplay systems, characters, Big Wheel, Slide Hill, Gauntlet, Narrow Bridge, crane, wrecking ball, Giant Hunt.
 - **Replaced**: everything marked above.
-- **Added**: 21 custom landmarks, 102 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
+- **Added**: 26 custom landmarks, 102 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
 
 ## 3 and 4. Sources and licences
 
 See [ASSET_CREDITS.md](ASSET_CREDITS.md). All third-party models are CC0 and all fonts are OFL.
 
-## 5. Custom models (21)
+## 5. Custom models (26)
 
 No Meshy or Tripo API keys were available, so these are procedural Blender builds. Run `art_src/blender/build_landmarks.py` to regenerate them.
 
