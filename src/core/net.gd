@@ -20,6 +20,7 @@ var world := "menu"
 var world_args: Dictionary = {}
 var _pending_profile: Dictionary = {}
 var _bot_seq := 0
+var next_game := "giant"
 
 
 func _ready() -> void:
@@ -104,6 +105,7 @@ func _register(profile: Dictionary) -> void:
 	players[id] = make_profile(profile, false)
 	broadcast()
 	announce("%s joined the slop" % players[id].name)
+	set_next_game.rpc_id(id, next_game)
 	_load_world.rpc_id(id, world, world_args)
 
 
@@ -125,7 +127,7 @@ func make_profile(raw: Dictionary, bot: bool) -> Dictionary:
 		body = "kid"
 	return {
 		"name": n, "color": c, "hat": hat, "body": body, "bot": bot, "level": lvl,
-		"coins": START_COINS, "score": 0, "perks": [], "giant_count": 0,
+		"coins": START_COINS, "score": 0, "perks": [], "giant_count": 0, "bag": [], "ward": 0, "mirror": 0,
 	}
 
 
@@ -273,6 +275,16 @@ func rank_of(id: int) -> String:
 	if is_equal_approx(mine, lo):
 		return "loser"
 	return "mid"
+
+
+## Match payout: same as give_coins, but perks scale it.
+func reward(id: int, n: int) -> void:
+	give_coins(id, int(n * PerkDB.coin_mult(perks_of(id))))
+
+
+@rpc("authority", "call_local", "reliable")
+func set_next_game(g: String) -> void:
+	next_game = g
 
 
 func give_coins(id: int, n: int) -> void:

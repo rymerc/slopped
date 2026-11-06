@@ -56,6 +56,12 @@ var stun_t := 0.0
 var input_locked := false
 var glow := false
 var holding: Node3D  # Prop currently carried (set by PropSystem)
+var hexes: Dictionary = {}  # kind -> expiry in ms. Everyone tracks them; the owner obeys them.
+var air_jumps := 0
+var knock_resist := 1.0
+var ghost_speed := 12.0
+var hiccup_perk := false
+var squeak_perk := false
 
 var cam: CamRig
 var bot_move := Vector3.ZERO
@@ -70,6 +76,12 @@ var floor_vis := true
 var anim_phase := 0.0
 var move_amt := 0.0
 
+var _base_size := 1.0
+var _base_head := 1.0
+var _air_left := 0
+var _hiccup_t := 2.0
+var _drunk_t := 0.0
+var _drunk_dir := Vector2.ZERO
 var _look: Dictionary = {}
 var _look_key := ""
 var _shape: CapsuleShape3D
@@ -206,6 +218,7 @@ func apply_look(data: Dictionary) -> void:
 
 
 func set_size(s: float) -> void:
+	_base_size = s
 	size = s
 	_shape.radius = 0.36 * s
 	_shape.height = 1.6 * s
@@ -219,10 +232,80 @@ func set_size(s: float) -> void:
 
 
 func set_head_scale(s: float) -> void:
+	_base_head = s
 	head_scale = s
 	if parts.has("head"):
 		(parts.head as Node3D).scale = Vector3.ONE * s
 	set_size(size)
+
+
+# --- hexes (see Tricks + TrickSystem) ---------------------------------------------
+
+func hexed(kind: String) -> bool:
+	return hexes.has(kind) and int(hexes[kind]) > Time.get_ticks_msec()
+
+
+func add_hex(kind: String, secs: float) -> void:
+	hexes[kind] = Time.get_ticks_msec() + int(secs * 1000.0)
+	_apply_hex_body()
+	get_tree().create_timer(secs + 0.05).timeout.connect(func() -> void:
+		if is_instance_valid(self):
+			_apply_hex_body())
+
+
+func _apply_hex_body() -> void:
+	var s := _base_size * (0.45 if hexed("tiny") else 1.0)
+	if not is_equal_approx(s, size):
+		var keep := _base_size
+		set_size(s)
+		_base_size = keep
+	var h := _base_head * (2.6 if hexed("balloon") else 1.0)
+	if not is_equal_approx(h, head_scale):
+		var keep_h := _base_head
+		set_head_scale(h)
+		_base_head = keep_h
+
+
+## Rewrites the owner's move input. y is negative for forward.
+func _hex_input(iv: Vector2, delta: float) -> Vector2:
+	if hexed("no_w"):
+		iv.y = maxf(iv.y, 0.0)
+	if hexed("swap_ad"):
+		iv.x = -iv.x
+	if hexed("reverse"):
+		iv = -iv
+	if hexed("drunk_drive"):
+		_drunk_t -= delta
+		if _drunk_t <= 0.0:
+			_drunk_t = 1.0
+			_drunk_dir = Vector2.from_angle(randf() * TAU)
+		iv = _drunk_dir
+	return iv
+
+
+## Bots steer in world space, so hexes bend the vector instead of rewriting keys.
+func _hex_bot(d: Vector3, delta: float) -> Vector3:
+	if hexed("no_w"):
+		d *= 0.2
+	if hexed("reverse"):
+		d = -d
+	if hexed("swap_ad"):
+		d = Vector3(-d.x, 0, d.z)
+	if hexed("drunk_drive"):
+		var v := _hex_input(Vector2.ZERO, delta)
+		d = Vector3(v.x, 0, v.y)
+	return d
+
+
+func _hiccup(delta: float) -> void:
+	if not (hiccup_perk or hexed("hiccup")):
+		return
+	_hiccup_t -= delta
+	if _hiccup_t <= 0.0:
+		_hiccup_t = randf_range(1.2, 2.6)
+		if is_on_floor() and state == St.NORMAL:
+			velocity += Vector3(randf_range(-3, 3), 7.5, randf_range(-3, 3))
+			Sfx.at(self, "pop", global_position, -2.0, 0.2, 0.7)
 
 
 func set_glow(on: bool) -> void:
@@ -366,6 +449,7 @@ func teleport(p: Vector3) -> void:
 func _hit(v: Vector3) -> void:
 	if dead:
 		return
+	v /= knock_resist
 	var m := v.length() / maxf(1.0, size * size * 0.8)
 	# partial ragdoll: spring kick in local space (pitch from front/back, roll from sides)
 	var local := (parts.root as Node3D).global_transform.basis.inverse() * v if parts.has("root") else v
@@ -542,7 +626,7 @@ func _simulate(delta: float) -> void:
 	var sprint := false
 	var want_dive := false
 	if is_bot:
-		dir = bot_move
+		dir = _hex_bot(bot_move, delta)
 		want_jump = bot_jump
 		sprint = bot_sprint
 		if bot_jump:
@@ -552,6 +636,7 @@ func _simulate(delta: float) -> void:
 		hold_jump = _bot_hold > 0.0
 	elif not input_locked and cam:
 		var iv := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+		iv = _hex_input(iv, delta)
 		dir = cam.yaw_basis() * Vector3(iv.x, 0.0, iv.y)
 		want_jump = Input.is_action_just_pressed("jump")
 		hold_jump = Input.is_action_pressed("jump")
@@ -559,9 +644,13 @@ func _simulate(delta: float) -> void:
 		want_dive = Input.is_action_just_pressed("dive")
 	if dir.length() > 1.0:
 		dir = dir.normalized()
+	if hexed("no_jump"):
+		want_jump = false
+	if hexed("no_sprint"):
+		sprint = false
 
 	if dead:  # ghost: free flight, no collision
-		var gv := dir * 12.0
+		var gv := dir * ghost_speed
 		if hold_jump:
 			gv.y = 8.0
 		elif sprint:
@@ -579,7 +668,10 @@ func _simulate(delta: float) -> void:
 	_dive_cd -= delta
 	_bump_cd -= delta
 	_prop_bump_cd -= delta
-	if stun_t > 0.0:
+	_hiccup(delta)
+	if hexed("dance"):
+		facing += delta * 14.0
+	if stun_t > 0.0 or hexed("freeze") or hexed("dance"):
 		stun_t -= delta
 		dir = Vector3.ZERO
 		want_jump = false
@@ -624,7 +716,8 @@ func _simulate(delta: float) -> void:
 			_jumping = true
 			_on_jump()
 	elif on_floor:
-		if slippery:
+		_air_left = air_jumps
+		if slippery or hexed("butter"):
 			hv = hv.move_toward(dir * spd, 5.0 * delta)
 		elif moving:
 			var a := ACCEL * weight
@@ -642,6 +735,10 @@ func _simulate(delta: float) -> void:
 	velocity.x = hv.x
 	velocity.z = hv.z
 
+	if state == St.NORMAL and _jump_buf > 0.0 and _coyote <= 0.0 and _air_left > 0 and jump_vel > 0.0:
+		_air_left -= 1
+		_coyote = 0.1
+		Fx.dust(world(), global_position, 0.4)
 	if state == St.NORMAL and _jump_buf > 0.0 and _coyote > 0.0 and jump_vel > 0.0:
 		velocity.y = jump_vel
 		_jump_buf = 0.0
@@ -1022,6 +1119,8 @@ func _footstep() -> void:
 	var p := global_position
 	var loud := -22.0 + sprint_k * 3.0 + 4.0 * log(size + 0.01)
 	Sfx.at(w, "step", p, loud, 0.18, (1.0 + sprint_k * 0.15) / sqrt(size))
+	if squeak_perk or hexed("squeak"):
+		Sfx.at(w, "fart", p, -2.0, 0.2, 1.8)
 	if sprint_k > 0.6 or size > 2.0:
 		Fx.step(w, p)
 	if size > 2.0 and cam == null:

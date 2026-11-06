@@ -71,6 +71,7 @@ func _process(_delta: float) -> bool:
 				_finish()
 		10:  # lobby: press start, expect the wheel to launch the minigame
 			if _elapsed() - _t0 > 2.0:
+				root.get_node("Net").set_next_game("giant")  # the lobby picks at random
 				w.req_start()
 				_stage = 11
 		11:

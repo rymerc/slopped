@@ -83,6 +83,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		var m := event as InputEventMouseMotion
 		var sens: float = Settings.sensitivity()
 		var inv := -1.0 if Settings.g("controls", "invert_y") else 1.0
+		var hex := target as Avatar
+		if hex and is_instance_valid(hex):
+			if hex.hexed("invert"):
+				inv = -inv
+			if hex.hexed("espresso"):
+				sens *= 4.0
 		yaw -= m.relative.x * sens
 		pitch = clampf(pitch - m.relative.y * sens * inv, -1.35, 0.7)
 

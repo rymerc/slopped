@@ -95,6 +95,20 @@ static func landmark(parent: Node3D, batch: Batch, id: String, pos: Vector3, yaw
 	return {"root": root, "dyn": dyn, "body": body}
 
 
+## One DYN_ part of a custom model as a plain mesh (card pips and the like).
+static func part_mesh(id: String, part: String) -> Mesh:
+	var key := "%s/%s" % [id, part]
+	if not _meshes.has(key):
+		var inst: Node = _packed(id).instantiate()
+		var list: Array[MeshInstance3D] = []
+		_gather(inst, list)
+		for mi: MeshInstance3D in list:
+			if String(mi.name) == "DYN_" + part:
+				_meshes[key] = mi.mesh
+		inst.free()
+	return _meshes.get(key)
+
+
 static func _gather(n: Node, out: Array[MeshInstance3D]) -> void:
 	if n is MeshInstance3D:
 		out.append(n)

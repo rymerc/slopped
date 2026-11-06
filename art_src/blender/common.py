@@ -86,7 +86,8 @@ def warm_foliage(ob):
     c = c.reshape(-1, 4)
     leaf = c[:, 1] > c[:, 0] * 1.15
     c[leaf, 2] *= 0.42
-    c[leaf, 0] *= 1.25
+    c[leaf, 0] *= 1.15
+    c[leaf, 1] *= 0.72
     a.data.foreach_set("color", c.ravel())
 
 

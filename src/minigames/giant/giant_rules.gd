@@ -411,20 +411,20 @@ func _end(side: String, msg: String) -> void:
 		if side == "littles":
 			var survived: bool = alive.get(id, false)
 			p.score = int(p.score) + (2 if survived else 1)
-			Net.give_coins(id, 60 if survived else 40)
+			Net.reward(id, 60 if survived else 40)
 			Net.award(id, 120 if survived else 90, "Littles win!", "giant_win")
 		else:
-			Net.give_coins(id, 15)
+			Net.reward(id, 15)
 			Net.award(id, 40, "Good effort")
 		p.perks = []
 	if Net.players.has(g):
 		var gp: Dictionary = Net.players[g]
 		if side == "giant":
 			gp.score = int(gp.score) + 3
-			Net.give_coins(g, 80)
+			Net.reward(g, 80)
 			Net.award(g, 150, "Giant wins!", "giant_win")
 		else:
-			Net.give_coins(g, 15)
+			Net.reward(g, 15)
 			Net.award(g, 40, "Good effort")
 		gp.perks = []
 	Net.broadcast()

@@ -151,6 +151,22 @@
 ],
 "tris": 200
 },
+"food_burger": {
+"tris": 0,
+"size": [
+0,
+0,
+0
+]
+},
+"food_donut_sprinkles": {
+"tris": 0,
+"size": [
+0,
+0,
+0
+]
+},
 "food_mug": {
 "size": [
 0.344,
@@ -158,6 +174,22 @@
 0.285
 ],
 "tris": 232
+},
+"food_pizza": {
+"tris": 0,
+"size": [
+0,
+0,
+0
+]
+},
+"food_plate_dinner": {
+"tris": 0,
+"size": [
+0,
+0,
+0
+]
 },
 "kk_city_box_A": {
 "size": [

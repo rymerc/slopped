@@ -703,10 +703,6 @@ static func _plaza(root: Node3D, props: PropSystem) -> void:
 static func _cove_district(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) -> void:
 	Kit.landmark(root, b, "beach_bar", BAR2, 40.0)
 	Art.label(root, "MYSTERY SLOP", BAR2 + Vector3(0, 4.4, 0), 0.01, Ui.YELLOW)
-	var bt: Node3D = Art.build_character({"color": Color("#ff5fa2"), "hat": "party", "body": "frog"}).root
-	bt.position = BAR2 + Vector3(1.0, 0, 1.0)
-	bt.rotation.y = -0.7
-	root.add_child(bt)
 	sign_post(root, _on_ground(-66, 62), "SLOP COVE ->", 130.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 404

@@ -9,6 +9,7 @@ var _stage := 0
 var _wait := 0
 var _cam: Camera3D
 var _shots: Array = []
+var _bj_w: Node
 
 
 func _initialize() -> void:
@@ -56,7 +57,26 @@ func _process(_d: float) -> bool:
 				["cove", Vector3(-62, 7, 70), Vector3(-104, 1.5, 96)],
 				["pier", Vector3(-100, 4, 88), Vector3(-130, 5, 122)],
 				["carnival", Vector3(64, 6, -62), Vector3(98, 9, -100)],
+				["deeds", Vector3(36, 2.4, -11), Vector3(31, 2.6, -13.4)],
+				["npc_stare", Vector3(0, 2.0, 12), Vector3(-3, 1.6, 3)],
+				["slot_view", Vector3(34, 1.95, -16.1), Vector3(34, 1.72, -18.4)],
+				["slot_row", Vector3(40, 2.6, -13.5), Vector3(33, 2.0, -18.4)],
+				["wheel_view", Vector3(42.8, 3.8, 7), Vector3(49.8, 4, 7)],
+				["crash_view", Vector3(46.2, 2.7, -10.5), Vector3(51.8, 2.9, -10.5)],
+				["bj_view", Vector3(41.5, 3.4, 3.2), Vector3(41.5, 0.9, 6.6)],
+				["casino_wide", Vector3(30, 4.6, -3), Vector3(46, 1.0, 3)],
 			]
+			w.casino.req_slots(1)
+			w.casino.req_wheel()
+			w.casino.req_crash_start(10)
+			w.casino.req_bj_bet(10, 2)
+			_bj_w = w
+		elif name == "PocketGod":
+			_shots = [["pocket", Vector3(34, 24, 60), Vector3(0, 3, 0)], ["pocket_low", Vector3(14, 6, 26), Vector3(0, 7, 0)]]
+		elif name == "SoupGame":
+			_shots = [["soup", Vector3(0, 46, 40), Vector3(0, 6, 0)], ["soup_low", Vector3(8, 3, 11), Vector3(-14, 6, -8)]]
+		elif name == "CursedCasino":
+			_shots = [["cursed", Vector3(31, 3, -2), Vector3(46, 1.5, -4)]]
 		else:
 			_shots = [["arena", Vector3(30, 26, 60), Vector3(0, 0, 0)], ["arena_low", Vector3(10, 3, 22), Vector3(0, 3, 0)]]
 	if _wait > 0:
@@ -86,6 +106,11 @@ func _process(_d: float) -> bool:
 				return false
 		quit(0)
 		return false
+	if _bj_w and _stage == _shots.size() - 1:  # hold the last shots until cards are out
+		var st: String = str(_bj_w.casino.bj.state)
+		if st == "betting" or st == "idle":
+			_wait = 150  # then let the whole deal land
+			return false
 	var s: Array = _shots[_stage - 1]
 	_cam.global_position = s[1]
 	_cam.look_at(s[2])

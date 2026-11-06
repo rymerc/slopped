@@ -11,11 +11,14 @@ const RANK_FX := {
 }
 const DRINKS := ["giant", "tiny", "zoom", "floaty", "drunk", "burp"]
 const SMITE_COOLDOWN := 6.0
+const GAMES := {"giant": "GIANT HUNT", "pocket": "POCKET GOD", "soup": "LAVA SOUP", "cursed": "CURSED CASINO NIGHT"}
+static var _last_game := ""
 const CANNON_VEL := Vector3(-5.8, 21.0, -24.0)
 const CANNON_MOUTH := Vector3(0, 6.0, -3.8)
 
 var casino: Casino
 var casino_ui: CasinoUI
+var tables: CasinoTables
 var wheel: BigWheel
 var _refs: Dictionary = {}
 var _drink: Dictionary = {}  # id -> {kind, until}
@@ -33,12 +36,8 @@ var _gauntlet_start := -1.0
 var _slide_from_top := false
 var _session_done: Dictionary = {}
 var _door_a := 0.0
-var _slot_spin: Dictionary = {}
-var _wheel_v := 0.0
-var _roul_v := 0.0
-var _duck_t := 0.0
-var _duck_win := 0
 var _dive_top := 0.0
+var floor_fx: CasinoFloorFx
 
 
 ## Golden hour: low sun from the south-west rakes long shadows down Main Street
@@ -78,10 +77,17 @@ func build_world() -> void:
 		for pad: Dictionary in d.get("pads", []):
 			keep.append(pad.node)
 	keep.append_array(_play.get("plates", []))
+	for v: Variant in (_refs.slots as Array) + (_refs.roulette as Array) + [_refs.ducks, _refs.saloon_doors]:
+		keep.append_array((v as Dictionary).values())
+	for v: Variant in (_play.ferris as Dictionary).values():
+		keep.append(v)
 	batch.absorb(self, keep)
 	batch.commit(self)
 	Ambience.build_island(self)
 
+	floor_fx = CasinoFloorFx.new()
+	floor_fx.refs = _refs
+	add_child(floor_fx)
 	casino = Casino.new()
 	casino.name = "Casino"
 	add_child(casino)
@@ -89,14 +95,21 @@ func build_world() -> void:
 	casino_ui.casino = casino
 	hud.add_child(casino_ui)
 	casino_ui.closed.connect(close_ui)
+	tables = CasinoTables.new()
+	tables.name = "Tables"
+	tables.game = self
+	tables.casino = casino
+	tables.floor_fx = floor_fx
+	add_child(tables)
+	LobbyBuilder.populate(_refs.npcs)
 
 	_hud_info = Ui.label("", 20)
 	_hud_info.position = Vector2(16, 12)
 	hud.add_child(_hud_info)
 	var k := func(a: String) -> String: return InputSetup.label(a)
-	var help := Ui.label("%s%s%s%s move   %s sprint   %s jump   %s dive/slide   %s grab/use   %s shove/throw   %s smite (leader)   %s menu" % [
+	var help := Ui.label("%s%s%s%s move   %s sprint   %s jump   %s dive/slide   %s grab/use   %s shove/throw   %s smite (leader)   %s dirty trick   %s menu" % [
 		k.call("move_forward"), k.call("move_left"), k.call("move_back"), k.call("move_right"), k.call("sprint"), k.call("jump"),
-		k.call("dive"), k.call("interact"), k.call("primary"), k.call("god"), k.call("menu")], 16)
+		k.call("dive"), k.call("interact"), k.call("primary"), k.call("god"), k.call("trick"), k.call("menu")], 16)
 	Ui.anchor(help, Control.PRESET_BOTTOM_LEFT, 12)
 	hud.add_child(help)
 	_wire_stations()
@@ -104,6 +117,31 @@ func build_world() -> void:
 
 func world_started() -> void:
 	banner("WELCOME TO SLOPSVILLE\nhit the big red button to spin", 4.0)
+	if multiplayer.is_server():
+		_roll_next_game()
+
+
+## Picks the next minigame at random, never the same one twice running.
+func _roll_next_game() -> void:
+	var options: Array = GAMES.keys()
+	options.erase(_last_game)
+	Net.set_next_game.rpc(options.pick_random())
+
+
+func _next_text() -> String:
+	return "Next game: %s (host: change)" % GAMES.get(Net.next_game, "?")
+
+
+func _cycle_game() -> void:
+	_server_call("req_next_game", [])
+
+
+@rpc("any_peer", "reliable")
+func req_next_game() -> void:
+	if not multiplayer.is_server() or Net.sender() != 1 or _starting:
+		return
+	var keys: Array = GAMES.keys()
+	Net.set_next_game.rpc(keys[(keys.find(Net.next_game) + 1) % keys.size()])
 
 
 func _wire_stations() -> void:
@@ -114,13 +152,9 @@ func _wire_stations() -> void:
 	add_interact(LobbyBuilder.PAINT, 2.2, "Dunk yourself in paint", _cycle.bind("color"))
 	add_interact(LobbyBuilder.HATS, 2.0, "Grab a different hat", _cycle.bind("hat"))
 	add_interact(LobbyBuilder.BODY, 2.2, "Swap your body", _cycle.bind("body"))
-	for p: Vector3 in LobbyBuilder.SLOTS:
-		add_interact(p + Vector3(0, 0, 1.2), 1.7, "Play SLOTS", _open_casino.bind("slots"))
-	add_interact(LobbyBuilder.CRASH + Vector3(-1.4, 0, 0), 2.2, "Play CRASH", _open_casino.bind("crash"))
-	add_interact(LobbyBuilder.MINIWHEEL + Vector3(-3.6, -0.6, 0), 3.0, "Spin LIL' WHEEL", _open_casino.bind("wheel"))
-	add_interact(LobbyBuilder.DUCKS + Vector3(2.4, 0, 0), 3.2, "Bet on DUCKS", _open_casino.bind("ducks"))
-	for p: Vector3 in LobbyBuilder.ROULETTE:
-		add_interact(p + Vector3(0, 0, 2.2), 2.4, "Play ROULETTE", _open_casino.bind("roulette"))
+	LobbyBuilder.wire_casino(self, tables.sit)
+	add_interact(LobbyBuilder.DEEDS, 3.2, "Browse DIRTY DEEDS DEPT.", _open_casino.bind("deeds"))
+	add_interact(LobbyBuilder.START_BTN + Vector3(0, 0, 2.6), 1.6, _next_text, _cycle_game)
 	add_interact(LobbyBuilder.SHOP, 3.5, "Browse the PERK SHOP", _open_casino.bind("shop"))
 	add_interact(LobbyBuilder.KENNEL + Vector3(-3, 0, -0.9), 2.4, "Adopt a bot (host)", _server_call.bind("req_bot", [true]))
 	add_interact(LobbyBuilder.KENNEL + Vector3(5, 0, -0.9), 2.4, "Release a bot (host)", _server_call.bind("req_bot", [false]))
@@ -153,6 +187,7 @@ func _open_casino(kind: String) -> void:
 
 func close_ui() -> void:
 	casino_ui.visible = false
+	tables.leave()
 	super.close_ui()
 
 
@@ -197,6 +232,7 @@ func configure_avatar(av: Avatar) -> void:
 			"zoom": av.speed_mult *= 1.8
 			"floaty": av.gravity_mult = 0.25
 	av.set_size(s)
+	PerkDB.apply(av, Net.perks_of(av.pid))
 	av.set_glow(Net.perks_of(av.pid).has("glow_stick"))
 
 
@@ -222,21 +258,31 @@ func _spin(index: int, who: String) -> void:
 
 func _on_wheel_done(index: int) -> void:
 	var mod: Dictionary = PerkDB.MODIFIERS[index]
-	banner("%s\nstarting GIANT HUNT..." % mod.name, 3.5)
+	banner("%s\nstarting %s..." % [mod.name, GAMES.get(Net.next_game, "?")], 3.5)
 	if multiplayer.is_server():
 		get_tree().create_timer(3.0).timeout.connect(_launch.bind(str(mod.id)))
 
 
 func _launch(mod_id: String) -> void:
-	# Giant = whoever has been giant the fewest times (ties random).
+	var g := Net.next_game
+	_last_game = g
+	# Boss = whoever has been boss the fewest times (ties random). Pocket God's
+	# god is the lobby leader, when there is one.
 	var ids: Array = Net.players.keys()
 	ids.shuffle()
 	ids.sort_custom(func(a: int, b: int) -> bool: return int(Net.players[a].giant_count) < int(Net.players[b].giant_count))
-	var giant: int = ids[0]
-	Net.players[giant].giant_count = int(Net.players[giant].giant_count) + 1
+	var boss: int = ids[0]
+	if g == "pocket":
+		for id: int in ids:
+			if Net.rank_of(id) == "leader":
+				boss = id
+	Net.players[boss].giant_count = int(Net.players[boss].giant_count) + 1
 	Net.broadcast()
-	var littles: Array = ids.slice(1)
-	Net.request_world("giant", {"giant": giant, "littles": littles, "modifier": mod_id, "seed": randi()})
+	ids.erase(boss)
+	if g == "giant":
+		Net.request_world("giant", {"giant": boss, "littles": ids, "modifier": mod_id, "seed": randi()})
+	else:
+		Net.request_world(g, {"boss": boss, "players": [boss] + ids, "modifier": mod_id, "seed": randi()})
 
 
 @rpc("any_peer", "reliable")
@@ -342,7 +388,10 @@ func world_process(delta: float) -> void:
 		line += " (press G to smite peasants)"
 	elif rank == "loser":
 		line += " (feeble)"
-	_hud_info.text = line + "\nperks next match: " + PerkDB.summary(p.get("perks", []))
+	var bag: int = (p.get("bag", []) as Array).size()
+	_hud_info.text = line + "\nnext game: %s   perks: %s" % [GAMES.get(Net.next_game, "?"), PerkDB.summary(p.get("perks", []))]
+	if bag > 0:
+		_hud_info.text += "\ndirty bag: %d  (press %s)" % [bag, InputSetup.label("trick")]
 	_update_fame()
 
 
@@ -473,62 +522,11 @@ func _update_town(delta: float) -> void:
 			var car: Node3D = ferris.get("car%d" % i)
 			var ca := TAU * i / 12.0 + a
 			car.position = hub + Vector3(cos(ca), sin(ca), 0) * 13.0
-	var slots: Array = _refs.get("slots", [])
-	for i in slots.size():
-		var t := float(_slot_spin.get(i, 0.0))
-		if t <= 0.0:
-			continue
-		_slot_spin[i] = t - delta
-		var dyn: Dictionary = slots[i]
-		for r in 3:
-			if t > 0.5 + r * 0.5 - 0.4:
-				(dyn["reel%d" % r] as Node3D).rotate_x(delta * 22.0)
-		(dyn.lever as Node3D).rotation.x = -0.9 * clampf((t - 1.6) * 3.0, 0.0, 1.0)
-	var rw := _refs.get("prize_wheel") as Node3D
-	if rw and _wheel_v > 0.0:
-		rw.rotation.z += _wheel_v * delta
-		_wheel_v = move_toward(_wheel_v, 0.0, delta * 3.2)
-	var roul: Array = _refs.get("roulette", [])
-	for dyn: Dictionary in roul:
-		(dyn.rotor as Node3D).rotation.y += delta * (0.25 + _roul_v)
-		(dyn.ball as Node3D).rotation.y -= delta * (0.0 + _roul_v * 2.0)
-	_roul_v = move_toward(_roul_v, 0.0, delta * 1.8)
-	var ducks: Dictionary = _refs.get("ducks", {})
-	if _duck_t > 0.0 and not ducks.is_empty():
-		_duck_t -= delta
-		var p := 1.0 - _duck_t / 3.5
-		for i in 4:
-			var speed := 1.0 if i == _duck_win else 0.8 + 0.12 * sin(i * 7.3)
-			var dn := ducks["duck%d" % i] as Node3D
-			dn.position.x = -3.9 + 7.8 * clampf(p * speed, 0.0, 1.0)
-			dn.position.y = 1.05 + absf(sin(_duck_t * 14.0 + i)) * 0.08
-		if _duck_t <= 0.0:
-			get_tree().create_timer(1.5).timeout.connect(_reset_ducks)
-
-
-func _reset_ducks() -> void:
-	var ducks: Dictionary = _refs.get("ducks", {})
-	for i in 4:
-		if ducks.has("duck%d" % i):
-			(ducks["duck%d" % i] as Node3D).position.x = -3.9
 
 
 ## Called on every peer when anyone plays a machine (see Casino._fx).
-func casino_fx(kind: String, a: int) -> void:
-	match kind:
-		"slots":
-			var slots: Array = _refs.get("slots", [])
-			if not slots.is_empty():
-				var m: int = a % slots.size()
-				_slot_spin[m] = 2.0
-				Sfx.at(self, "click", LobbyBuilder.SLOTS[m], 0.0, 0.1, 0.7)
-		"wheel":
-			_wheel_v = 13.0 + randf() * 6.0
-		"roulette":
-			_roul_v = 7.0
-		"ducks":
-			_duck_t = 3.5
-			_duck_win = a
+func casino_fx(kind: String, seat: int, data: Dictionary) -> void:
+	floor_fx.fx(kind, seat, data)
 
 
 ## Owner-side hazard + bounce-pad checks (players and host-run bots).

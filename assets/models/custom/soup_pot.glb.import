@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cy738rttetc1a"
-path="res://.godot/imported/slot_machine.glb-fb1a204eda37d0efdf040dff62574abe.scn"
+uid="uid://cqqe7gfohpt0v"
+path="res://.godot/imported/soup_pot.glb-8969abca3595ccb37ceb929638a621e5.scn"
 
 [deps]
 
-source_file="res://assets/models/custom/slot_machine.glb"
-dest_files=["res://.godot/imported/slot_machine.glb-fb1a204eda37d0efdf040dff62574abe.scn"]
+source_file="res://assets/models/custom/soup_pot.glb"
+dest_files=["res://.godot/imported/soup_pot.glb-8969abca3595ccb37ceb929638a621e5.scn"]
 
 [params]
 

@@ -31,6 +31,11 @@ const CRASH := Vector3(49.6, 0, -10.5)
 const MINIWHEEL := Vector3(49.8, 0.6, 7.0)
 const DUCKS := Vector3(30.8, 0, 10.0)
 const ROULETTE: Array[Vector3] = [Vector3(38, 0, -7.5), Vector3(45, 0, -7.5)]
+const DEEDS := Vector3(31.2, 0, -13.4)
+const BJ_TABLE := Vector3(41.5, 0, 7.4)
+const BJ_SEATS := 5
+const POKER := Vector3(35.0, 0, 2.9)
+const SLOT_MODELS := ["slot_duck", "slot_skull", "slot_soup"]
 const SHOP := Vector3(-17, 0.4, 34.2)
 const KENNEL := Vector3(17, 0.4, -32)
 const TOILET := Vector3(-37, 0, 25)
@@ -52,7 +57,7 @@ static func build(root: Node3D, b: Batch, props: PropSystem) -> Dictionary:
 
 	_square(root, b, out)
 	_saloon_interior(root, b, out)
-	_casino_floor(root, b, out)
+	casino_floor(root, b, out)
 	_store_and_hotel(root, b)
 	_jail(root, b, out)
 	_streets(root, b, props)
@@ -84,11 +89,6 @@ static func _square(root: Node3D, b: Batch, out: Dictionary) -> void:
 
 static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
 	var f := 0.4
-	# bartender (never moves, judges you)
-	var bt: Node3D = Art.build_character({"color": Color("#8d8aa0"), "hat": "top", "body": "robot"}).root
-	bt.position = SALOON + Vector3(-1, f, -6.8)
-	bt.rotation.y = PI
-	root.add_child(bt)
 	# stools along the bar
 	for i in 8:
 		Dress.put(root, b, "kk_restaurant_chair_stool", SALOON + Vector3(-8.0 + i * 2.0, f, -3.3), 15.0 * i, 0.95, Dress.COL_NONE, true)
@@ -114,10 +114,98 @@ static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
 	Art.label(root, "VIP: LEADER ONLY", VIP_GATE + Vector3(-1.4, 3.4, 0), 0.012, Art.GOLD)
 
 
-static func _casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
-	var reels: Array = []
+## Where seat i's cards land on the felt.
+static func bj_spot(i: int) -> Vector3:
+	var a := deg_to_rad(-60.0 + i * 30.0)
+	return BJ_TABLE + Vector3(sin(a) * 2.15, 1.0, -cos(a) * 1.65)
+
+
+## Where a player sits, outside the rail.
+static func bj_stool(i: int) -> Vector3:
+	var a := deg_to_rad(-60.0 + i * 30.0)
+	return BJ_TABLE + Vector3(sin(a) * 3.75, 0, -cos(a) * 3.0)
+
+
+## Interact points for the machines. open(kind, seat) sits you down at one.
+## Shared by the lobby and Cursed Casino Night.
+static func wire_casino(w: WorldBase, open: Callable, cond: Callable = Callable()) -> void:
+	for i in SLOTS.size():
+		w.add_interact(SLOTS[i] + Vector3(0, 0, 1.2), 1.7, "Play SLOTS", open.bind("slots", i), cond)
+	w.add_interact(CRASH + Vector3(-1.4, 0, 0), 2.2, "Play CRASH", open.bind("crash", 0), cond)
+	w.add_interact(MINIWHEEL + Vector3(-3.6, -0.6, 0), 3.0, "Spin LIL' WHEEL", open.bind("wheel", 0), cond)
+	w.add_interact(DUCKS + Vector3(2.4, 0, 0), 3.2, "Bet on DUCKS", open.bind("ducks", 0), cond)
+	for i in ROULETTE.size():
+		w.add_interact(ROULETTE[i] + Vector3(0, 0, 2.2), 2.4, "Play ROULETTE", open.bind("roulette", i), cond)
+	for i in BJ_SEATS:
+		w.add_interact(bj_stool(i), 1.15, "Sit down at BLACKJACK", open.bind("blackjack", i), cond)
+
+
+static func _seat(root: Node3D, pos: Vector3, yaw: float, px: float, view: Vector3, look: Vector3, text := "") -> Dictionary:
+	var l := Art.label(root, text, pos, px, Ui.YELLOW, false)
+	l.rotation.y = yaw
+	return {"label": l, "view": [view, look]}
+
+
+## The readouts that replace the old popup windows: each game draws on its machine.
+static func _seats(root: Node3D, out: Dictionary) -> void:
+	var slots: Array = []
 	for p: Vector3 in SLOTS:
-		reels.append((Kit.landmark(root, b, "slot_machine", p, 0.0) as Dictionary).dyn)
+		slots.append(_seat(root, p + Vector3(0, 1.36, 0.56), 0.0, 0.0018, p + Vector3(0, 1.95, 2.3), p + Vector3(0, 1.72, 0), "INSERT REGRET"))
+	var roul: Array = []
+	for p: Vector3 in ROULETTE:
+		var r := _seat(root, p + Vector3(0, 2.0, 0), 0.0, 0.006, p + Vector3(0, 2.6, 2.5), p + Vector3(0, 0.9, 0), "PLACE BETS")
+		(r.label as Label3D).billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		roul.append(r)
+	var bj: Array = []
+	for i in BJ_SEATS:
+		var c := bj_spot(i)
+		var st := bj_stool(i)
+		var b := _seat(root, c + Vector3(0, 0.62, 0), 0.0, 0.0044, st + Vector3(0, 2.25, 0) + (st - c).normalized() * 0.3, c.lerp(BJ_TABLE + Vector3(0, 1, 0.3), 0.3), "")
+		(b.label as Label3D).billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		bj.append(b)
+	out.bj_head = Art.label(root, "", BJ_TABLE + Vector3(0, 2.4, 0.3), 0.007, Ui.YELLOW)
+	out.seats = {
+		"slots": slots, "roulette": roul, "blackjack": bj,
+		"crash": [_seat(root, Vector3(51.72, 3.1, -10.5), -PI * 0.5, 0.02, Vector3(46.2, 2.7, -10.5), Vector3(51.8, 2.9, -10.5), "x1.00")],
+		"wheel": [_seat(root, MINIWHEEL + Vector3(-0.2, 7.4, 0), -PI * 0.5, 0.009, Vector3(42.8, 3.8, 7.0), Vector3(49.8, 4.0, 7.0), "SPIN ME")],
+		"ducks": [_seat(root, DUCKS + Vector3(-0.3, 2.9, 0), PI * 0.5, 0.008, Vector3(35.0, 3.6, 10.0), Vector3(30.4, 1.0, 10.0), "PLACE BETS")],
+	}
+
+
+## Everyone who lives here. Casino staff are added by casino_floor.
+static func populate(npcs: Npcs) -> void:
+	var f := 0.4
+	npcs.add_still(SALOON + Vector3(-1, f, -6.8), PI, {"color": Color("#8d8aa0"), "hat": "top", "body": "robot"})
+	npcs.add_still(SHOP + Vector3(0, 0, 2.6), 0.0, {"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"})
+	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog"})
+	npcs.add_still(SALOON + Vector3(-9.8, f, -0.9), -PI * 0.5, {"color": Color("#4a4e69"), "hat": "top", "body": "wizard"})  # the pianist
+	npcs.add_still(HOTEL + Vector3(-6, f, 3.0), PI, {"color": Color("#c44569"), "hat": "none", "body": "kid"})  # hotel desk
+	npcs.add_still(SHERIFF + Vector3(-4.8, f, 6.4), PI, {"color": Color("#2f8f8a"), "hat": "bucket", "body": "kid"})  # the sheriff
+	var loops := [
+		[Vector3(-16, 0, -16), Vector3(16, 0, -16), Vector3(20, 0, 16), Vector3(-16, 0, 16)],
+		[Vector3(20, 0, -14), Vector3(-20, 0, -14), Vector3(-22, 0, 10), Vector3(-6, 0, 20)],
+		[Vector3(-3, 0, 20), Vector3(-3, 0, -18)],
+		[Vector3(5, 0, 44), Vector3(4, 0, 62), Vector3(-10, 0, 58)],
+		[Vector3(-20, 0, -18), Vector3(-30, 0, 2), Vector3(-34, 0, 18)],
+	]
+	var kinds := ["kid", "cat", "wizard", "frog", "robot"]
+	var cols := [Color("#7ccf4e"), Color("#ffd23f"), Color("#3ec1ff"), Color("#8b5cf6"), Color("#ff8a3d")]
+	var hats := ["top", "bucket", "none", "traffic", "party"]
+	for i in loops.size():
+		npcs.add_walker(loops[i], {"color": cols[i], "hat": hats[i], "body": kinds[i]})
+	var o := Vector3(Playground.BEACH_DIR.x, 0, Playground.BEACH_DIR.y) * 98.0
+	npcs.add_walker([o + Vector3(-8, Playground.height(o.x, o.z), 6), o + Vector3(10, Playground.height(o.x, o.z), -6)],
+		{"color": Color("#f2efe9"), "hat": "party", "body": "banana"})
+	var c := Playground.CARNIVAL
+	npcs.add_walker([c + Vector3(-6, 0, 6), c + Vector3(8, 0, -6), c + Vector3(-10, 0, -10)],
+		{"color": Color("#ff5fa2"), "hat": "party", "body": "cat"})
+	npcs.add_walker([c + Vector3(12, 0, 8), c + Vector3(-4, 0, 12)], {"color": Color("#3ec1ff"), "hat": "propeller", "body": "kid"})
+
+
+static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
+	var reels: Array = []
+	for i in SLOTS.size():
+		reels.append((Kit.landmark(root, b, SLOT_MODELS[i % SLOT_MODELS.size()], SLOTS[i], 0.0) as Dictionary).dyn)
 	out.slots = reels
 	Kit.landmark(root, b, "crash_cabinet", CRASH, -90.0)
 	out.prize_wheel = (Kit.landmark(root, b, "prize_wheel", MINIWHEEL, -90.0) as Dictionary).dyn.get("rotor")
@@ -126,37 +214,55 @@ static func _casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
 	for p: Vector3 in ROULETTE:
 		wheels.append((Kit.landmark(root, b, "roulette_table", p, 90.0 if p.x < 41.0 else -90.0) as Dictionary).dyn)
 	out.roulette = wheels
-	Kit.landmark(root, b, "poker_table", Vector3(38, 0, 6), 0.0)
-	Kit.landmark(root, b, "blackjack_table", Vector3(45, 0, 6), 180.0)
+	Kit.landmark(root, b, "poker_table", POKER, 0.0)
+	Kit.landmark(root, b, "blackjack_table", BJ_TABLE, 0.0)
 	# stools + a dealer per table
-	var dealers := [[Vector3(38, 0, 7.5), PI, Color("#f2efe9"), "kid"], [Vector3(45, 0, 7.4), 0.0, Color("#f2efe9"), "cat"],
-		[Vector3(38, 0, -9.3), PI, Color("#f2efe9"), "robot"], [Vector3(45, 0, -9.3), PI, Color("#f2efe9"), "frog"]]
-	for d: Array in dealers:
-		var c: Node3D = Art.build_character({"color": d[2], "hat": "none", "body": d[3]}).root
-		c.position = d[0]
-		c.rotation.y = d[1]
-		root.add_child(c)
-	for t: Vector3 in [Vector3(38, 0, 6), Vector3(45, 0, 6)]:
-		for i in 4:
-			var x := -1.5 + i
-			Dress.put(root, b, "kk_furniture_chair_stool", t + Vector3(x, 0, -1.55), i * 30.0, 1.0, Dress.COL_NONE, true)
+	for i in BJ_SEATS:
+		Dress.put(root, b, "kk_furniture_chair_stool", bj_stool(i) + (BJ_TABLE - bj_stool(i)).normalized() * 0.1, i * 30.0, 0.62, Dress.COL_NONE, true)
 	# VIP couch + plants, and the Crash wall label
-	Dress.put(root, b, "kk_furniture_couch_pillows", Vector3(30.6, 0, -13.0), 90.0, 1.3, Dress.COL_BOX, true)
+	Kit.landmark(root, b, "back_room", DEEDS + Vector3(0.6, 0, 0), 90.0)
+	_seats(root, out)
+	_wheel_labels(out.prize_wheel)
+	var npcs := Npcs.new()
+	npcs.name = "Npcs"
+	npcs.game = root as WorldBase
+	root.add_child(npcs)
+	out.npcs = npcs
+	npcs.add_still(DEEDS + Vector3(-0.2, 0, 0), PI * 0.5, {"color": Color("#3d3550"), "hat": "top", "body": "frog"})
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, -8.8), 0.0, 1.5, Dress.COL_BOX, true)
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, 6.0), 0.0, 1.5, Dress.COL_BOX, true)
 	Art.label(root, "CRASH", CRASH + Vector3(-0.2, 2.2, 0), 0.012, Ui.YELLOW)
+	Art.label(root, "BLACKJACK", BJ_TABLE + Vector3(0, 3.1, 1.0), 0.009, Ui.YELLOW)
+	Art.label(root, "POKER", POKER + Vector3(0, 2.8, 0), 0.008, Ui.YELLOW)
+	var staff := [[POKER + Vector3(0, 0, 2.1), 0.0, "kid"], [BJ_TABLE + Vector3(0, 0, 1.5), 0.0, "cat"],
+		[Vector3(38, 0, -10.0), PI, "robot"], [Vector3(45, 0, -10.0), PI, "frog"]]
+	for d: Array in staff:
+		npcs.add_still(d[0], d[1], {"color": Color("#f2efe9"), "hat": "none", "body": d[2]})
+	# regulars: a full poker game, and one who never leaves the slots
+	var regulars := [[POKER + Vector3(-3.0, 0, 0), PI * 0.5, "wizard", Color("#4a4e69")], [POKER + Vector3(3.0, 0, 0), -PI * 0.5, "robot", Color("#ff8a3d")],
+		[POKER + Vector3(0, 0, -2.1), PI, "banana", Color("#f2efe9")], [SLOTS[4] + Vector3(0, 0, 1.3), PI, "frog", Color("#7ccf4e")]]
+	for d: Array in regulars:
+		npcs.add_still(d[0], d[1], {"color": d[3], "hat": "top", "body": d[2]})
+	npcs.add_walker([Vector3(34, 0, -3), Vector3(47, 0, -3), Vector3(47, 0, 1.5), Vector3(34, 0, 1.5)],
+		{"color": Color("#2a2030"), "hat": "top", "body": "kid"})
+	npcs.add_walker([Vector3(42, 0, -15), Vector3(33, 0, -15), Vector3(33, 0, -4)], {"color": Color("#7a2336"), "hat": "none", "body": "wizard"})
 	Art.label(root, "LIL' WHEEL", MINIWHEEL + Vector3(-1.2, 6.6, 0), 0.012, Ui.YELLOW)
 	Art.label(root, "DUCK DERBY", DUCKS + Vector3(2.4, 2.2, 0), 0.012, Ui.YELLOW)
-	Art.label(root, "ROULETTE", Vector3(41.5, 2.8, -7.5), 0.012, Ui.YELLOW)
+	Art.label(root, "ROULETTE", Vector3(41.5, 2.8, -7.5), 0.008, Ui.YELLOW)
 	Art.label(root, "SLOTS", Vector3(35, 3.9, -18), 0.012, Ui.YELLOW)
 	Art.label(root, "SLOTS", Vector3(46, 3.9, -18), 0.012, Ui.YELLOW)
 
 
+## Prize names printed on the wheel itself, so it lands on something you can read.
+static func _wheel_labels(rotor: Node3D) -> void:
+	var seg := TAU / Casino.WHEEL_SEGMENTS.size()
+	for i in Casino.WHEEL_SEGMENTS.size():
+		var mid := seg * (i + 0.5)
+		var l := Art.label(rotor, str(Casino.WHEEL_SEGMENTS[i].label), Vector3(sin(mid), cos(mid), 0) * 1.65 + Vector3(0, 0, 0.1), 0.0042, Color.WHITE, false)
+		l.rotation.z = PI * 0.5 - mid
+
+
 static func _store_and_hotel(root: Node3D, b: Batch) -> void:
-	# Perk shop: a cat in a bucket hat runs the counter
-	var keeper: Node3D = Art.build_character({"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"}).root
-	keeper.position = SHOP + Vector3(0, 0, 2.6)
-	root.add_child(keeper)
 	Art.label(root, "PERK SHOP", SHOP + Vector3(0, 3.1, 1.2), 0.014, Ui.YELLOW)
 	for p: Vector3 in [Vector3(-23.6, 0.4, 24.6), Vector3(-21.8, 0.4, 24.8), Vector3(-11.2, 0.4, 24.6)]:
 		Dress.put(root, b, "pirate_crate", p, p.x * 11.0, 0.72, Dress.COL_BOX, true)

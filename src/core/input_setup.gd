@@ -17,6 +17,7 @@ const KEYS := {
 	"ability_1": [KEY_Q],
 	"ability_2": [KEY_F],
 	"god": [KEY_G],
+	"trick": [KEY_T],
 	"scoreboard": [KEY_TAB],
 	"menu": [KEY_ESCAPE],
 }
@@ -34,6 +35,7 @@ const PAD_BUTTONS := {
 	"ability_2": JOY_BUTTON_LEFT_SHOULDER,
 	"sprint": JOY_BUTTON_LEFT_STICK,
 	"god": JOY_BUTTON_RIGHT_SHOULDER,
+	"trick": JOY_BUTTON_RIGHT_STICK,
 	"scoreboard": JOY_BUTTON_BACK,
 	"menu": JOY_BUTTON_START,
 }
@@ -57,7 +59,7 @@ const REBINDABLE := [
 	["move_forward", "Move forward"], ["move_back", "Move back"], ["move_left", "Move left"],
 	["move_right", "Move right"], ["jump", "Jump"], ["sprint", "Sprint"], ["dive", "Dive / slide"],
 	["interact", "Use / grab"], ["primary", "Shove / throw"], ["secondary", "Secondary"],
-	["ability_1", "Ability 1"], ["ability_2", "Ability 2"], ["god", "Smite (leader)"],
+	["ability_1", "Ability 1"], ["ability_2", "Ability 2"], ["god", "Smite (leader)"], ["trick", "Use dirty trick"],
 	["scoreboard", "Scoreboard"],
 ]
 

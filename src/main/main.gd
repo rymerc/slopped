@@ -3,6 +3,7 @@ extends Node
 ## RPC node paths (/root/Main/World/...) match on every peer.
 ##
 ## Command line (after `--`):  --host [--bots=N] [--giant[=modifier]]  |  --join=IP  |  --name=Bob
+## --game=pocket|soup|cursed skips the lobby; add --bot-boss for a bot overlord.
 ## --giant skips the lobby and starts GIANT HUNT immediately (dev shortcut);
 ## add --bot-giant to play as a little against a bot giant.
 
@@ -42,6 +43,12 @@ func _on_world(w: String, args: Dictionary) -> void:
 			node = Lobby.new()
 		"giant":
 			node = GiantGame.new()
+		"pocket":
+			node = PocketGod.new()
+		"soup":
+			node = SoupGame.new()
+		"cursed":
+			node = CursedCasino.new()
 		_:
 			push_error("Unknown world %s" % w)
 			return
@@ -70,6 +77,10 @@ func _handle_cmdline() -> void:
 			host = true
 		elif a == "--bot-giant":
 			_dev_bot_giant = true
+		elif a.begins_with("--game="):
+			_dev_game = a.get_slice("=", 1)
+		elif a == "--bot-boss":
+			_dev_bot_giant = true
 		elif a.begins_with("--giant"):
 			_dev_giant = a.get_slice("=", 1) if a.contains("=") else "none"
 		elif a.begins_with("--bots="):
@@ -84,6 +95,7 @@ func _handle_cmdline() -> void:
 
 
 var _dev_giant := ""
+var _dev_game := ""
 var _dev_bot_giant := false
 
 
@@ -93,6 +105,11 @@ func _host() -> void:
 	if err != OK:
 		_status.text = "Could not host (error %d). Port %d busy?" % [err, Net.PORT]
 		return
+	if _dev_game != "":
+		var all: Array = Net.players.keys()
+		var boss: int = all[-1] if _dev_bot_giant and all.size() > 1 else 1
+		all.erase(boss)
+		Net.request_world(_dev_game, {"boss": boss, "players": [boss] + all, "modifier": "none", "seed": randi()})
 	if _dev_giant != "":
 		var ids: Array = Net.players.keys()
 		var giant: int = ids[-1] if _dev_bot_giant and ids.size() > 1 else 1

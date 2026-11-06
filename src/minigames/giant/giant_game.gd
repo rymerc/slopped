@@ -124,6 +124,7 @@ func configure_avatar(av: Avatar) -> void:
 	av.speed_mult = PerkDB.speed_mult(perks) * (1.3 if modifier == "zoomies" else 1.0)
 	av.jump_vel *= PerkDB.jump_mult(perks)
 	av.gravity_mult = 0.45 if modifier == "low_gravity" else 1.0
+	PerkDB.apply(av, perks)
 	av.set_head_scale(2.0 if modifier == "big_heads" else 1.0)
 	av.set_glow(perks.has("glow_stick"))
 	if av.pid != giant_id and not littles.has(av.pid) and not av.dead:

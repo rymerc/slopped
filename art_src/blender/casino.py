@@ -4,15 +4,16 @@ import math
 from lm import LM, hexc, jitter, scale_col
 from town import BRASS, CREAM, INK, NEON_CYAN, NEON_GOLD, NEON_PINK, WOOD_D, WOOD_L
 
-FELT = hexc("#0f7a4f")
-FELT_B = hexc("#1b4fa0")
+FELT = hexc("#1f9a68")
+FELT_B = hexc("#2a66c4")
 CARPET_A = hexc("#6a2a80")
 CARPET_B = hexc("#8f2f76")
 CARPET_C = hexc("#2f9a96")
 DARK = hexc("#3d2a55")
 PLUM = hexc("#7a3a8a")
 STUCCO = hexc("#ece0c6")
-SYMBOLS = [hexc(c) for c in ("#e8372f", "#f3c62f", "#f6f0e0", "#3fb24a", "#2f6be0", "#e8372f", "#f3c62f", "#9a3fd0")]
+# face order matches CasinoFloorFx.SYMBOL_FACE: 0 cherry, 1 bell, 3 lemon, 4 seven, 7 skull
+SYMBOLS = [hexc(c) for c in ("#e8372f", "#f3c62f", "#f6f0e0", "#c8e03f", "#2f6be0", "#e8372f", "#f3c62f", "#9a3fd0")]
 
 
 def casino(out):
@@ -142,73 +143,159 @@ def casino(out):
     m.finish(out)
 
 
-def slot_machine(out):
-    m = LM("slot_machine", 91)
-    red = hexc("#c4284f")
-    # cabinet: faces +z, 1.5 wide
-    m.box(-0.75, 0, -0.55, 0.75, 1.05, 0.55, red)
-    m.box(-0.8, 0, -0.6, 0.8, 0.14, 0.6, BRASS)
-    m.box(-0.75, 1.05, -0.55, 0.75, 2.5, 0.28, red)
-    m.quad(m.P(-0.75, 1.05, 0.55), m.P(0.75, 1.05, 0.55), m.P(0.75, 1.3, 0.28), m.P(-0.75, 1.3, 0.28), scale_col(red, 0.8))
-    m.box(-0.8, 2.5, -0.6, 0.8, 2.66, 0.34, BRASS)
-    m.box(-0.62, 1.42, 0.28, 0.62, 2.28, 0.31, DARK)
-    m.box(-0.7, 1.34, 0.26, 0.7, 1.42, 0.33, BRASS)
-    m.box(-0.7, 2.28, 0.26, 0.7, 2.36, 0.33, BRASS)
-    m.box(-0.7, 1.34, 0.26, -0.62, 2.36, 0.33, BRASS)
-    m.box(0.62, 1.34, 0.26, 0.7, 2.36, 0.33, BRASS)
-    # marquee top
-    m.box(-0.68, 2.66, -0.5, 0.68, 3.34, 0.25, DARK)
-    m.text("777", 0, 2.76, 0.25, 0.55, NEON_GOLD, font="Bungee-Regular", glow=0.95, depth=0.03, res=1)
-    for x in (-0.6, -0.3, 0.0, 0.3, 0.6):
-        m.ball(x, 3.42, 0.2, 0.07, NEON_PINK, n=5, rings=3, glow=1.0)
-    # coin tray + buttons
-    m.box(-0.5, 0.42, 0.55, 0.5, 0.66, 0.68, hexc("#3a3a48"))
-    m.box(-0.45, 0.48, 0.56, 0.45, 0.64, 0.685, DARK)
-    for i, x in enumerate((-0.4, 0.0, 0.4)):
-        m.cyl(x, 1.16, 0.46, 0.09, 1.2, 0.09, [NEON_GOLD, NEON_CYAN, NEON_PINK][i], n=8, glow=0.6)
-    m.col(-0.8, 0, -0.6, 0.8, 3.3, 0.6)
-    # three independently spinning reels (axis = local x)
-    for r, x in enumerate((-0.39, 0.0, 0.39)):
+def _symbol(p, i):
+    """Draws reel symbol i on a face. Frame: +z out of the reel, y up the symbol.
+    Face order matches CasinoFloorFx.SYMBOL_FACE."""
+    red, gold, green = hexc("#e8272f"), hexc("#f7c531"), hexc("#3fa84a")
+    kind = ("cherry", "bell", "bar", "lemon", "seven", "cherry", "bell", "skull")[i]
+    if kind == "cherry":
+        p.ball(-0.07, -0.05, 0.04, 0.075, red, n=7, rings=4, glow=0.12)
+        p.ball(0.07, -0.07, 0.04, 0.075, red, n=7, rings=4, glow=0.12)
+        p.beam((-0.07, 0.0, 0.05), (0.02, 0.11, 0.03), 0.009, green)
+        p.beam((0.07, -0.02, 0.05), (0.02, 0.11, 0.03), 0.009, green)
+        p.ball(0.07, 0.11, 0.03, 0.04, green, n=6, rings=3, sy=0.5)
+    elif kind == "bell":
+        p.cyl(0, -0.08, 0.03, 0.115, 0.03, 0.065, gold, n=9, glow=0.1)
+        p.cyl(0, 0.03, 0.03, 0.065, 0.1, 0.02, gold, n=9, glow=0.1)
+        p.ball(0, -0.1, 0.03, 0.028, hexc("#a8701f"), n=6, rings=3)
+    elif kind == "bar":
+        p.box(-0.125, -0.06, 0.012, 0.125, 0.06, 0.03, hexc("#16121c"))
+        p.text("BAR", 0, -0.04, 0.03, 0.105, hexc("#f7c531"), font="Bungee-Regular", depth=0.006, glow=0.2, res=1)
+    elif kind == "lemon":
+        p.push(0, 0, 0.04, roll=25)
+        p.ball(0, 0, 0, 0.1, hexc("#f4e13a"), n=8, rings=5, sy=0.74, glow=0.12)
+        p.ball(0, 0.085, 0, 0.022, hexc("#c8a81f"), n=5, rings=3)
+        p.pop()
+    elif kind == "seven":
+        p.text("7", 0, -0.115, 0.016, 0.33, red, font="Bungee-Regular", depth=0.02, glow=0.3, back=hexc("#7a1016"), res=1)
+    else:  # skull
+        bone = hexc("#f3efe4")
+        p.ball(0, 0.025, 0.035, 0.09, bone, n=8, rings=5, glow=0.08)
+        p.box(-0.05, -0.095, 0.03, 0.05, -0.045, 0.085, bone)
+        for sx in (-1, 1):
+            p.ball(sx * 0.038, 0.02, 0.112, 0.024, INK, n=6, rings=3)
+        for k in range(3):
+            p.box(-0.032 + k * 0.024, -0.095, 0.085, -0.022 + k * 0.024, -0.05, 0.088, INK)
+
+
+def _slot(out, name, seed, body, trim, title, tag, title_col, tag_col):
+    """A full slot cabinet with modelled reel symbols. Faces +z, 1.7 m wide."""
+    m = LM(name, seed)
+    dark = hexc("#241a2e")
+    W = 0.85
+    # base, kick plate, belly, angled deck
+    m.box(-W, 0, -0.6, W, 0.16, 0.62, hexc("#16121c"))
+    m.box(-W + 0.02, 0.16, -0.58, W - 0.02, 1.08, 0.58, body)
+    m.box(-W, 1.08, -0.6, W, 1.14, 0.64, trim)
+    m.quad(m.P(-W, 1.14, 0.64), m.P(W, 1.14, 0.64), m.P(W, 1.42, 0.3), m.P(-W, 1.42, 0.3), scale_col(body, 0.75))
+    # belly glass with the pay table
+    m.box(-0.66, 0.34, 0.58, 0.66, 0.98, 0.6, dark)
+    m.box(-0.7, 0.3, 0.57, 0.7, 0.34, 0.62, trim)
+    m.box(-0.7, 0.98, 0.57, 0.7, 1.02, 0.62, trim)
+    for i, (t, c) in enumerate((("7 7 7   JACKPOT", NEON_GOLD), ("BAR BAR BAR   20", NEON_PINK), ("ANY PAIR   15", NEON_CYAN))):
+        m.text(t, 0, 0.81 - i * 0.19, 0.6, 0.125, c, font="Bungee-Regular", depth=0.006, glow=0.75, res=1)
+    # upper cabinet + reel window, deep bezel so the reels sit inside it
+    m.box(-W + 0.02, 1.42, -0.58, W - 0.02, 2.5, 0.26, body)
+    m.box(-0.74, 1.4, 0.2, 0.74, 2.42, 0.24, hexc("#0c0910"))
+    for (x0, y0, x1, y1) in ((-0.8, 1.32, 0.8, 1.42), (-0.8, 2.36, 0.8, 2.48), (-0.8, 1.32, -0.7, 2.48), (0.7, 1.32, 0.8, 2.48)):
+        m.box(x0, y0, 0.2, x1, y1, 0.5, trim)
+    for x in (-0.205, 0.205):
+        m.box(x - 0.012, 1.42, 0.24, x + 0.012, 2.36, 0.46, hexc("#16121c"))
+    m.box(-0.7, 1.84, 0.46, 0.7, 1.858, 0.47, hexc("#ff3b3b"), glow=0.8)  # pay line
+    # credit meter, buttons, coin tray
+    m.box(-0.6, 1.2, 0.5, -0.1, 1.31, 0.53, hexc("#0a200f"))
+    m.text("CREDIT", -0.35, 1.215, 0.53, 0.08, hexc("#5dff7a"), font="Bungee-Regular", depth=0.004, glow=0.9, res=1)
+    for i, x in enumerate((0.1, 0.32, 0.54)):
+        m.cyl(x, 1.27, 0.46, 0.08, 1.31, 0.08, [NEON_GOLD, NEON_CYAN, NEON_PINK][i], n=9, glow=0.8)
+    m.box(-0.5, 0.1, 0.58, 0.5, 0.28, 0.76, hexc("#8d93a0"))
+    m.box(-0.45, 0.16, 0.6, 0.45, 0.28, 0.72, hexc("#16121c"))
+    for k in range(7):
+        x = -0.34 + k * 0.11
+        m.cyl(x, 0.16 + (k % 2) * 0.02, 0.66, 0.05, 0.18 + (k % 2) * 0.02, 0.05, hexc("#ffd257"), n=7)
+    # LED edge strips
+    for sx in (-1, 1):
+        for k in range(12):
+            m.ball(sx * (W + 0.005), 0.25 + k * 0.19, 0.46, 0.035, title_col if k % 2 else tag_col, n=5, rings=3, glow=1.0)
+    # topper: backlit sign and a dome
+    m.box(-W, 2.5, -0.6, W, 2.58, 0.3, trim)
+    m.box(-0.8, 2.58, -0.5, 0.8, 3.38, 0.24, hexc("#33245a"))
+    m.box(-0.84, 3.38, -0.54, 0.84, 3.46, 0.28, trim)
+    m.text(title, 0, 2.86, 0.24, 0.34, title_col, font="Limelight-Regular", glow=0.95, depth=0.03)
+    m.text(tag, 0, 2.64, 0.24, 0.15, tag_col, font="Bungee-Regular", glow=0.9, depth=0.02, res=1)
+    m.cyl(0, 3.46, -0.1, 0.42, 3.56, 0.42, trim, n=12)
+    m.ball(0, 3.56, -0.1, 0.36, title_col, n=10, rings=5, sy=0.75, glow=0.65)
+    m.col(-W, 0, -0.6, W, 3.46, 0.64)
+    # three reels, every symbol a real shape
+    for r, x in enumerate((-0.41, 0.0, 0.41)):
         p = m.part(f"reel{r}")
-        p.origin = (x, 1.85, 0.14)
+        p.origin = (x, 1.85, 0.02)
         n = 8
-        R = 0.3
-        w = 0.17
+        RR, w = 0.37, 0.19
         for i in range(n):
             a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
-            A = (0.0, math.cos(a0) * R, math.sin(a0) * R)
-            B = (0.0, math.cos(a1) * R, math.sin(a1) * R)
-            p.face([p.P(-w, A[1], A[2]), p.P(-w, B[1], B[2]), p.P(w, B[1], B[2]), p.P(w, A[1], A[2])], hexc("#f6efe0"), 0.12)
+            A = (math.cos(a0) * RR, math.sin(a0) * RR)
+            B = (math.cos(a1) * RR, math.sin(a1) * RR)
+            p.face([p.P(-w, A[0], A[1]), p.P(-w, B[0], B[1]), p.P(w, B[0], B[1]), p.P(w, A[0], A[1])], hexc("#f6efe0"), 0.05)
             am = (a0 + a1) * 0.5
-            # symbol: a chunky gem on each face
-            ym, zm = math.cos(am) * (R + 0.012), math.sin(am) * (R + 0.012)
-            ty, tz = -math.sin(am), math.cos(am)
-            s = 0.075
-            p.face([p.P(-s, ym - ty * s, zm - tz * s), p.P(-s, ym + ty * s, zm + tz * s),
-                    p.P(s, ym + ty * s, zm + tz * s), p.P(s, ym - ty * s, zm - tz * s)], SYMBOLS[i], 0.3)
-    # the arm
+            ap = RR * math.cos(math.pi / n)
+            p.push(0, math.cos(am) * ap, math.sin(am) * ap, pitch=math.degrees(am) - 90.0)
+            _symbol(p, i)
+            p.pop()
     p = m.part("lever")
-    p.origin = (0.86, 1.25, 0.05)
-    p.cyl(0, -0.08, 0, 0.09, 0.08, 0.09, hexc("#5a6068"), n=8)
-    p.beam((0, 0, 0), (0.06, 0.82, 0), 0.03, hexc("#c0c6d0"))
-    p.ball(0.06, 0.9, 0, 0.1, hexc("#e8372f"), n=8, rings=5)
+    p.origin = (0.95, 1.3, 0.05)
+    p.cyl(0, -0.09, 0, 0.1, 0.09, 0.1, hexc("#8d93a0"), n=8)
+    p.beam((0, 0, 0), (0.06, 0.95, 0), 0.032, hexc("#d5dae3"))
+    p.ball(0.06, 1.03, 0, 0.12, hexc("#e8272f"), n=9, rings=5)
     m.finish(out)
 
 
-def table_base(m, w, d, felt, rail=hexc("#5a2f1e"), oval=True):
-    """Oval (or kidney-ish) casino table with padded rail, felt and a pedestal."""
-    n = 26
-    rim = [(math.cos(i * math.tau / n) * w, math.sin(i * math.tau / n) * d) for i in range(n)]
+def slot_duck(out):
+    _slot(out, "slot_duck", 91, hexc("#c4284f"), BRASS, "LUCKY DUCK", "quack for cash", NEON_GOLD, NEON_CYAN)
+
+
+def slot_skull(out):
+    _slot(out, "slot_skull", 92, hexc("#3a2a6a"), hexc("#c0c6d0"), "BONE ZONE", "dead certain", NEON_CYAN, NEON_PINK)
+
+
+def slot_soup(out):
+    _slot(out, "slot_soup", 93, hexc("#1f8a6a"), BRASS, "HOT SOUP", "extra ladle", NEON_PINK, NEON_GOLD)
+
+
+def table_base(m, w, d, felt, rail=hexc("#5a2f1e"), half=False):
+    """Casino table: padded rail, felt, pedestal. half=True is the blackjack shape:
+    an arc on the players' side (-z) and a straight dealer edge at z=+1."""
+    n = 30
+    if half:
+        rim = [(math.cos(math.pi * i / n) * w, -math.sin(math.pi * i / n) * d) for i in range(n + 1)]
+        rim = [(w, 1.0)] + rim + [(-w, 1.0)]
+        rim = rim[::-1]
+    else:
+        rim = [(math.cos(i * math.tau / n) * w, math.sin(i * math.tau / n) * d) for i in range(n)]
     h = 0.92
-    for i in range(n):
+    k = len(rim)
+    for i in range(k):
         ax, az = rim[i]
-        bx, bz = rim[(i + 1) % n]
-        for (y0, y1, s0, s1, c) in ((h - 0.18, h, 1.0, 1.0, rail), (h, h + 0.09, 1.0, 0.86, hexc("#2a1c28"))):
+        bx, bz = rim[(i + 1) % k]
+        for (y0, y1, s0, s1, c) in ((h - 0.2, h, 1.0, 1.0, rail), (h, h + 0.1, 1.0, 0.9, hexc("#3a2030"))):
             m.face([m.P(ax * s1, y1, az * s1), m.P(bx * s1, y1, bz * s1), m.P(bx * s0, y0, bz * s0), m.P(ax * s0, y0, az * s0)][::-1], c)
-    m.face([m.P(x * 0.86, h + 0.05, z * 0.86) for (x, z) in rim][::-1], felt)
-    m.cyl(0, 0, 0, w * 0.45, 0.06, w * 0.45, INK, n=10)
-    m.cyl(0, 0.06, 0, w * 0.2, h - 0.15, w * 0.3, WOOD_D, n=10)
-    m.col(-w * 0.86, 0, -d * 0.86, w * 0.86, h + 0.1, d * 0.86)
+    # felt in rings, so the bake darkens the edge under the rail and not the whole cloth
+    ring = (0.9, 0.84, 0.6, 0.3, 0.02)
+    for j in range(len(ring) - 1):
+        s0, s1 = ring[j], ring[j + 1]
+        for i in range(k):
+            ax, az = rim[i]
+            bx, bz = rim[(i + 1) % k]
+            m.face([m.P(ax * s0, h + 0.06, az * s0), m.P(ax * s1, h + 0.06, az * s1),
+                    m.P(bx * s1, h + 0.06, bz * s1), m.P(bx * s0, h + 0.06, bz * s0)], felt, 0.05)
+    m.face([m.P(x, h - 0.2, z) for (x, z) in rim], rail)
+    if half:
+        m.box(-w * 0.45, 0, -d * 0.5, w * 0.45, h - 0.2, 0.7, WOOD_D)
+        m.col(-w * 0.9, 0, -d * 0.72, w * 0.9, h + 0.1, 1.0)
+        m.col(-w * 0.5, 0, -d * 0.96, w * 0.5, h + 0.1, -d * 0.7)
+    else:
+        m.cyl(0, 0, 0, w * 0.45, 0.06, w * 0.45, INK, n=10)
+        m.cyl(0, 0.06, 0, w * 0.2, h - 0.15, w * 0.3, WOOD_D, n=10)
+        m.col(-w * 0.86, 0, -d * 0.86, w * 0.86, h + 0.1, d * 0.86)
 
 
 def chips(m, x, z, y=1.0, n=4, col=None):
@@ -219,7 +306,7 @@ def chips(m, x, z, y=1.0, n=4, col=None):
 
 def roulette_table(out):
     m = LM("roulette_table", 101)
-    table_base(m, 2.1, 1.2, FELT)
+    table_base(m, 2.7, 1.5, FELT)
     F = 0.98
     # betting grid
     cols = (hexc("#b5202f"), hexc("#1a1a22"))
@@ -253,7 +340,7 @@ def roulette_table(out):
 
 def poker_table(out):
     m = LM("poker_table", 111)
-    table_base(m, 2.0, 1.15, FELT_B)
+    table_base(m, 2.6, 1.5, FELT_B)
     F = 0.98
     for i in range(5):
         x = -0.6 + i * 0.3
@@ -271,18 +358,68 @@ def poker_table(out):
 
 
 def blackjack_table(out):
+    """Five seats on the arc (-z); the dealer works the straight edge (+z)."""
     m = LM("blackjack_table", 121)
-    table_base(m, 2.0, 1.0, FELT)
-    F = 0.98
-    for a in range(5):
-        ang = math.radians(25 + a * 32)
-        x, z = math.cos(ang) * 1.3, math.sin(ang) * 0.66 - 0.05
-        m.cyl(x, F, z, 0.16, F + 0.004, 0.16, CREAM, n=12, caps=True)
-        m.cyl(x, F + 0.004, z, 0.13, F + 0.006, 0.13, FELT, n=12)
-        chips(m, x, z, y=F + 0.006, n=m.rng.randint(2, 5))
-    m.box(-0.5, F, -0.6, 0.5, F + 0.2, -0.3, hexc("#2a1c28"))
-    m.box(-0.45, F + 0.2, -0.56, 0.45, F + 0.22, -0.34, hexc("#b5202f"))
-    m.text("BLACKJACK PAYS 3 TO 2", 0, F + 0.003, 0.28, 0.13, BRASS, font="Bungee-Regular", depth=0.004, res=1, yaw=0)
+    table_base(m, 3.3, 2.5, FELT, half=True)
+    F = 0.985
+    for a in (-60, -30, 0, 30, 60):
+        r = math.radians(a)
+        x, z = math.sin(r) * 2.15, -math.cos(r) * 1.65
+        m.cyl(x, F, z, 0.28, F + 0.004, 0.28, CREAM, n=16)
+        m.cyl(x, F + 0.004, z, 0.25, F + 0.006, 0.25, FELT, n=16)
+    # printed flat on the felt, reading from the players' side
+    m.push(0, F + 0.004, -0.42, yaw=180, pitch=-90)
+    m.text("BLACKJACK PAYS 3 TO 2", 0, 0, 0, 0.2, BRASS, font="Limelight-Regular", depth=0.004, res=1)
+    m.pop()
+    m.push(0, F + 0.004, -0.14, yaw=180, pitch=-90)
+    m.text("DEALER STANDS ON 17", 0, 0, 0, 0.13, CREAM, font="Bungee-Regular", depth=0.004, res=1)
+    m.pop()
+    # chip tray along the dealer edge
+    m.box(-1.3, F, 0.58, 1.1, F + 0.05, 0.82, hexc("#2a1c28"))
+    cols = [hexc("#e8372f"), hexc("#2f6be0"), hexc("#3fb24a"), hexc("#111118"), hexc("#f3c62f")]
+    for i in range(10):
+        x = -1.2 + i * 0.24
+        for k in range(2):
+            m.cyl(x, F + 0.05, 0.64 + k * 0.12, 0.05, F + 0.1, 0.05, cols[i % 5], n=7)
+    # the shoe
+    m.push(2.0, F, 0.5, yaw=-20)
+    m.box(-0.2, 0, -0.42, 0.2, 0.26, 0.42, hexc("#16121c"))
+    m.box(-0.17, 0.03, -0.46, 0.17, 0.2, -0.42, hexc("#b5202f"))
+    m.pop()
+    m.finish(out)
+
+
+def cards(out):
+    """Suit pips + card back. The game builds cards from these parts."""
+    m = LM("cards", 125)
+    red, blk = hexc("#d3202f"), hexc("#16121c")
+    def lobe(p, x, z, r, c):
+        p.disc(x, 0.0, z, r, c, n=10, axis="y")
+    def tri(p, a, b, c, col):
+        p.face([p.P(*a), p.P(*b), p.P(*c)], col)
+    h = m.part("s0")  # hearts
+    lobe(h, -0.05, -0.04, 0.056, red)
+    lobe(h, 0.05, -0.04, 0.056, red)
+    tri(h, (-0.102, 0, -0.02), (0.102, 0, -0.02), (0, 0, 0.12), red)
+    t = m.part("s1")  # spades
+    lobe(t, -0.05, 0.03, 0.056, blk)
+    lobe(t, 0.05, 0.03, 0.056, blk)
+    tri(t, (0.102, 0, 0.01), (-0.102, 0, 0.01), (0, 0, -0.12), blk)
+    tri(t, (0.03, 0, 0.12), (-0.03, 0, 0.12), (0, 0, 0.02), blk)
+    d = m.part("s2")  # diamonds
+    tri(d, (-0.085, 0, 0), (0.085, 0, 0), (0, 0, 0.12), red)
+    tri(d, (0.085, 0, 0), (-0.085, 0, 0), (0, 0, -0.12), red)
+    c = m.part("s3")  # clubs
+    lobe(c, 0, -0.055, 0.052, blk)
+    lobe(c, -0.058, 0.03, 0.052, blk)
+    lobe(c, 0.058, 0.03, 0.052, blk)
+    tri(c, (0.028, 0, 0.12), (-0.028, 0, 0.12), (0, 0, -0.02), blk)
+    b = m.part("back")
+    b.box(-0.21, 0, -0.3, 0.21, 0.002, 0.3, hexc("#b5202f"), faces="Y")
+    for i in range(5):
+        for j in range(7):
+            b.ball(-0.16 + i * 0.08, 0.003, -0.24 + j * 0.08, 0.018, hexc("#ffd257"), n=4, rings=2)
+    m.box(-0.1, 0, -0.1, 0.1, 0.01, 0.1, hexc("#ffffff"))
     m.finish(out)
 
 
@@ -365,4 +502,5 @@ def duck_track(out):
     m.finish(out)
 
 
-ALL = ["casino", "slot_machine", "roulette_table", "poker_table", "blackjack_table", "prize_wheel", "crash_cabinet", "duck_track"]
+ALL = ["casino", "slot_duck", "slot_skull", "slot_soup", "roulette_table", "poker_table", "blackjack_table", "cards",
+       "prize_wheel", "crash_cabinet", "duck_track"]

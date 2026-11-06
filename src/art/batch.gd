@@ -95,7 +95,7 @@ func absorb(root: Node, keep: Array) -> void:
 
 
 func _collect(n: Node, skip: Dictionary, out: Array[MeshInstance3D]) -> void:
-	if skip.has(n) or n is PropSystem or n is Avatar:
+	if skip.has(n) or n is PropSystem or n is Avatar or n is Npcs:
 		return
 	if n is MeshInstance3D:
 		var mi := n as MeshInstance3D

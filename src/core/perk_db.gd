@@ -8,11 +8,20 @@ const PERKS := {
 	"thick_skull": {"name": "Thick Skull", "good": true, "desc": "Survive one fatal hit"},
 	"spring_legs": {"name": "Spring Legs", "good": true, "desc": "+35% jump height"},
 	"knot_master": {"name": "Knot Master", "good": true, "desc": "+50% rope tying strength"},
+	"double_jump": {"name": "Double Jump", "good": true, "desc": "One extra jump in the air"},
+	"feather": {"name": "Featherweight", "good": true, "desc": "-30% gravity, floaty falls"},
+	"big_bones": {"name": "Big Bones", "good": true, "desc": "Hits knock you half as far"},
+	"pickpocket": {"name": "Sticky Fingers", "good": true, "desc": "Shoving someone steals 5 coins"},
+	"coin_magnet": {"name": "Offshore Account", "good": true, "desc": "+25% coins from this match"},
 	"lead_boots": {"name": "Lead Boots", "good": false, "desc": "-15% move speed"},
 	"butterfingers": {"name": "Butterfingers", "good": false, "desc": "Weak throws. Giant: +20% cooldowns"},
 	"glow_stick": {"name": "Glow Stick", "good": false, "desc": "You glow. Everyone sees you."},
 	"tiny_legs": {"name": "Tiny Legs", "good": false, "desc": "-40% jump height"},
 	"wet_noodle": {"name": "Wet Noodle", "good": false, "desc": "-35% rope tying strength"},
+	"hiccups": {"name": "Hiccups", "good": false, "desc": "You hop at random all match"},
+	"loud_shoes": {"name": "Clown Shoes", "good": false, "desc": "Every step honks"},
+	"glass_bones": {"name": "Glass Bones", "good": false, "desc": "Hits knock you twice as far"},
+	"tax_debt": {"name": "Tax Debt", "good": false, "desc": "-50% coins from this match"},
 }
 
 ## Big-wheel segments. Each spin picks one; it changes the whole next match.
@@ -81,6 +90,19 @@ static func throw_mult(perks: Array) -> float:
 
 static func extra_spears(perks: Array) -> int:
 	return 2 * count(perks, "extra_quiver")
+
+
+## Perks that work the same in every world.
+static func apply(av: Avatar, perks: Array) -> void:
+	av.air_jumps = count(perks, "double_jump")
+	av.gravity_mult *= pow(0.7, count(perks, "feather"))
+	av.knock_resist = pow(2.0, count(perks, "big_bones")) * pow(0.5, count(perks, "glass_bones"))
+	av.hiccup_perk = perks.has("hiccups")
+	av.squeak_perk = perks.has("loud_shoes")
+
+
+static func coin_mult(perks: Array) -> float:
+	return pow(1.25, count(perks, "coin_magnet")) * pow(0.5, count(perks, "tax_debt"))
 
 
 static func modifier(id: String) -> Dictionary:

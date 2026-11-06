@@ -52,8 +52,9 @@ func _build_routes() -> void:
 		["casino", [Vector3(19, 0.4, 28), hotel_door, casino_door, Vector3(31, 0, -1), Vector3(40, 0, -3), c.CRASH + Vector3(-1.4, 0, 0)]],
 		["slots", [Vector3(47.5, 0, -14), c.SLOTS[3] + Vector3(0, 0, 1.2)]],
 		["ducks", [Vector3(40, 0, -2), c.DUCKS + Vector3(2.4, 0, 0)]],
-		["wheel", [Vector3(42, 0, 11), c.MINIWHEEL + Vector3(-3.6, -0.6, 0)]],
-		["casino side door", [Vector3(40, 0, 15), Vector3(40, 0, 21)]],
+		["blackjack seat", [Vector3(37.8, 0, 5.0), Vector3(38.2, 0, 1.2), Vector3(41.5, 0, 1.5), c.BJ_TABLE + Vector3(0, 0, -3.0)]],
+		["wheel", [Vector3(45.8, 0, 3.5), c.MINIWHEEL + Vector3(-3.6, -0.6, 0)]],
+		["casino side door", [Vector3(46.4, 0, 11.5), Vector3(44, 0, 13), Vector3(40, 0, 15), Vector3(40, 0, 21)]],
 		["chaos yard", [Vector3(60, 0.3, 21)]],
 		["run along the storefronts", [Vector3(26, 0, 21), Vector3(-30, 0, 21)]],
 		["outhouse", [c.TOILET]],
@@ -65,7 +66,7 @@ func _build_routes() -> void:
 
 func _process(delta: float) -> bool:
 	if (Time.get_ticks_msec() - _start) / 1000.0 > 170.0:
-		print("TIMEOUT at route ", _i)
+		print("TIMEOUT at route ", _i, " leg ", _leg, " pos ", _av.global_position, " goal ", _routes[_i][1][_leg], " hexes ", _av.hexes, " perks ", root.get_node("Net").perks_of(_av.pid), " stall ", _stall)
 		quit(1)
 		return false
 	_w = root.get_node_or_null("Main/World")
@@ -76,6 +77,7 @@ func _process(delta: float) -> bool:
 		for a: Node3D in _w.avatars.values():
 			if a.is_bot:
 				_av = a
+				root.get_node("Net").players[a.pid].coins = 0  # no bot tricks: same walk every run
 		_build_routes()
 		_next_route()
 		return false

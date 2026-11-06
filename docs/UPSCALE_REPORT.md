@@ -39,21 +39,22 @@ The original game had **no model, texture or audio files**. Everything was GDScr
 
 - **Retained**: all gameplay systems, characters, Big Wheel, Slide Hill, Gauntlet, Narrow Bridge, crane, wrecking ball, Giant Hunt.
 - **Replaced**: everything marked above.
-- **Added**: 26 custom landmarks, 102 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
+- **Added**: 33 custom models, 106 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
 
 ## 3 and 4. Sources and licences
 
 See [ASSET_CREDITS.md](ASSET_CREDITS.md). All third-party models are CC0 and all fonts are OFL.
 
-## 5. Custom models (26)
+## 5. Custom models (33)
 
 No Meshy or Tripo API keys were available, so these are procedural Blender builds. Run `art_src/blender/build_landmarks.py` to regenerate them.
 
 | District | Models |
 |---|---|
 | Western | `saloon`, `sheriff`, `store`, `hotel`, `water_tower`, `outhouse`, `town_arch` |
-| Casino | `casino`, `slot_machine`, `roulette_table`, `poker_table`, `blackjack_table`, `prize_wheel`, `crash_cabinet`, `duck_track` |
+| Casino | `casino`, `slot_duck`, `slot_skull`, `slot_soup`, `cards`, `back_room`, `roulette_table`, `poker_table`, `blackjack_table`, `prize_wheel`, `crash_cabinet`, `duck_track` |
 | Beach | `beach_bar`, `tiki_hut`, `dock_section`, `dive_tower`, `lighthouse` |
+| Minigames | `soup_pot`, `rocket`, `shrine` |
 | Chaos | `ferris_wheel`, `carousel`, `big_cannon`, `giant_duck`, `spiral_slide`, `ticket_booth` |
 
 Collision is box shapes (`COL_*`), moving parts are separate nodes (`DYN_*`), and AO and lamp light are baked into vertex colours. Each is one material, and buildings run 5–26k triangles.
@@ -91,7 +92,7 @@ There are no `.tscn` changes: worlds are built in code, and all node names and R
 - **Town ground** is flat dirt. Ruts, cobbles and plank crossings would add a lot up close.
 - **Interiors are sparse**: the hotel upstairs doesn't exist, and the jail has no prisoners.
 - **Some Nature kit bushes** still read too neon from far away.
-- **Poker and blackjack tables are decorative**, with static dealers. Only roulette is playable.
+- **Poker is decorative**, played by NPCs. Blackjack and every other table game is playable.
 - **The coaster and Ferris wheel can't be ridden.**
 - **Avatars walk through saloon doors and stools**; these have no collision by design.
 - **Music passes through walls.** There's no occlusion.
@@ -130,7 +131,7 @@ python art_src/make_audio.py
 python art_src/make_grain.py
 ```
 
-`bake_kit.py` needs the source packs downloaded and laid out as in `art_src/kit_manifest.py`. Only 102 of the 321 baked models are committed; re-bake to get others. Don't name a node ending in `_wheel`, `_col`, `_rigid` or similar: Godot's importer treats those suffixes as hints.
+`bake_kit.py` needs the source packs downloaded and laid out as in `art_src/kit_manifest.py`. Only 106 of the 321 baked models are committed; re-bake to get others. Don't name a node ending in `_wheel`, `_col`, `_rigid` or similar: Godot's importer treats those suffixes as hints.
 
 ## Tests
 
@@ -144,4 +145,4 @@ godot --headless --path . -- --host --bots=1                             # then,
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
 ```
 
-All pass on the final build.
+`scripts/test_all.ps1` runs all of these one at a time and cleans up after each.

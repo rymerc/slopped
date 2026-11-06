@@ -70,6 +70,16 @@ The giant never full-ragdolls (gameplay needs his pose); littles do. A death lea
 
 Falling into the goo or the sea respawns you, and whoever knocked you in gets "YEETED" credit.
 
+## 2d. Minigames, casino and tricks
+
+- **Match frame** (`src/minigames/mini_game.gd`): roster, clock, scoreboard sync, payouts, return to lobby. `overlord_game.gd` adds the flying boss with telegraphed, aimed powers. The lobby picks the next game at random (never twice running); the host can change it at the START button.
+- **POCKET GOD** (`pocket_god.gd`): the leader is god. Mortals carry scrap to the rocket or stand in shrine circles to dethrone them. The god can secretly anoint one prophet.
+- **THE FLOOR IS LAVA SOUP** (`soup_game.gd`): the soup starts under the pot floor, so the opening is a safe scramble, then the floor goes. Last vegetable wins. The chef chops, tastes, stirs, salts and turns up the heat.
+- **CURSED CASINO NIGHT** (`cursed_casino.gd`): the real casino floor, locked. One player is the house, banks every loss and rigs the odds. Rig too long and suspicion exposes them. Shoving steals chips.
+- **Casino games are played on the machines** (`casino_tables.gd`, `casino_floor_fx.gd`). Sitting down moves the camera in; there are no game windows, and results show on the physical machine for everyone. Blackjack is one shared table: five seats, one dealer hand, a betting countdown, cards dealt from the shoe, turns in seat order. Townsfolk fill empty seats.
+- **DIRTY DEEDS DEPT.** (`src/core/tricks.gd`, `src/world/trick_system.gd`): a five-tier shop in the casino. Items go in a bag that follows you, and the trick key fires them in any world. Effects are hexes on the avatar (`Avatar.hexed`), plus one-off actions. Lawyers block a trick; Uno Reverse makes the victim the caster.
+- **NPCs** (`src/world/npcs.gd`): dealers, bartenders and walkers. Stare logic runs per peer against that peer's own player, with no network traffic, so everyone sees the town staring at them specifically.
+
 ## 3. Structure
 
 - **Lobby (Slopsville)**: wardrobe (paint / hat / body swap), mystery-slop bars, VIP throne (leader only), perk shop, casino (slots, crash, lil' wheel, duck race, roulette), bot jail, outhouse teleporter, trampoline, hall of fame. **Big Wheel + START button** in the centre: spin picks the match **modifier**, then the minigame launches.
@@ -136,6 +146,6 @@ Principles:
 1. GodotSteam: Steam lobbies/invites + P2P transport (replace ENet, keep the same RPCs).
 2. Proximity voice chat.
 3. Audio pass: synthesised sounds and music exist; record real .wav files (`res://audio/<name>.wav` overrides).
-4. POCKET GOD minigame (uses the lobby leader as god).
+4. FAKE SHEEP or another minigame from section 4.
 5. Glb character pipeline + palette texture (procedural costumes + ragdoll are done).
 6. Betrayal systems: giant deals, Rope Lord bonus, anonymous curse reveal at match end.

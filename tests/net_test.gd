@@ -26,7 +26,7 @@ func _check(c: bool, msg: String) -> void:
 func _process(_d: float) -> bool:
 	var t := (Time.get_ticks_msec() - _start) / 1000.0
 	var w := root.get_node_or_null("Main/World")
-	if t > 30.0:
+	if t > 55.0:
 		_check(false, "timed out at stage %d" % _stage)
 		_stage = 9
 	match _stage:
@@ -39,18 +39,30 @@ func _process(_d: float) -> bool:
 				_check(w.props.list.size() > 90, "props built (%d)" % w.props.list.size())
 				w.casino.result.connect(func(k: String, d: Dictionary) -> void:
 					_result = k + ": " + str(d.get("msg", "")))
-				w.casino.rpc_id(1, "req_roulette", "red")
+				w.casino.rpc_id(1, "req_roulette", "red", 0)
 				_stage = 1
 		1:
 			if _result != "":
 				_check(_result.begins_with("roulette"), "roulette round trip: " + _result)
 				_result = ""
-				w.casino.rpc_id(1, "req_slots")
+				w.casino.rpc_id(1, "req_slots", 2)
 				_stage = 2
 		2:
 			if _result != "":
 				_check(_result.begins_with("slots"), "slots round trip: " + _result)
-				_check(not w._slot_spin.is_empty(), "slot machine animation reached this client")
+				_check(w.floor_fx.spinning_slots(), "slot machine animation reached this client")
+				_result = ""
+				w.casino.rpc_id(1, "req_bj_bet", 10, 1)
+				_stage = 3
+		3:  # keep standing until the shared round reaches this seat and pays out
+			var view: Dictionary = w.floor_fx.bj_view
+			if not view.is_empty() and int(view.get("turn", -1)) == 1:
+				w.casino.rpc_id(1, "req_bj_stand")
+			if _result != "":
+				_check(_result.begins_with("bj"), "shared blackjack round through the host: " + _result)
+				_check(not w.floor_fx._felt.is_empty(), "cards are on this client's table")
+				var seats: Dictionary = view.get("seats", {})
+				_check(seats.has(1), "this client's seat is on the table (%d seats dealt)" % seats.size())
 				_stage = 9
 		9:
 			print("NET ", "FAILED" if _fail else "OK")

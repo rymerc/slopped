@@ -12,7 +12,7 @@ import lm  # noqa: F401
 import town
 
 MODULES = [town]
-for name in ("casino", "resort", "carnival"):
+for name in ("casino", "resort", "carnival", "gamesets"):
     if os.path.exists(os.path.join(HERE, name + ".py")):
         MODULES.append(importlib.import_module(name))
 

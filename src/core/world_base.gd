@@ -12,6 +12,7 @@ var cam: CamRig
 var hud: CanvasLayer
 var ui_open := false
 var props: PropSystem
+var tricks: TrickSystem
 var water_y := -1000.0
 var allow_shove := false  # LMB shoves when not holding anything
 var _shove_cd: Dictionary = {}
@@ -43,6 +44,10 @@ func _ready() -> void:
 	props.name = "Props"
 	props.game = self
 	add_child(props)
+	tricks = TrickSystem.new()
+	tricks.name = "Tricks"
+	tricks.game = self
+	add_child(tricks)
 	build_world()
 	Net.players_changed.connect(_reconcile)
 	Net.announced.connect(toast)
@@ -146,10 +151,21 @@ func do_shove(pid: int, dir: Vector3) -> void:
 		if d.length() < 1.4 * av.size + 0.6 and Vector3(d.x, 0, d.z).normalized().dot(dir) > 0.3:
 			o.push.rpc(dir * power + Vector3.UP * 3.5)
 			props.last_hit[o.pid] = {"by": pid, "t": now}
+			on_shove_hit(pid, o.pid)
 	for p: Prop in props.list:
 		var d := p.global_position - av.global_position
 		if p.holder == 0 and d.length() < 1.4 * av.size + p.radius + 0.4 and Vector3(d.x, 0, d.z).normalized().dot(dir) > 0.2:
 			props.bump(p, (dir * power + Vector3.UP * 3.0) * minf(p.mass, 4.0) * 0.6, p.global_position)
+
+
+## Host: a shove connected. Sticky Fingers lifts coins; Cursed Casino lifts chips.
+func on_shove_hit(pid: int, victim: int) -> void:
+	if Net.perks_of(pid).has("pickpocket") and Net.players.has(victim):
+		var n := mini(5, int(Net.players[victim].coins))
+		if n > 0:
+			Net.give_coins(victim, -n)
+			Net.give_coins(pid, n)
+			Net.broadcast()
 
 
 @rpc("authority", "call_local", "reliable")
@@ -282,12 +298,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			if allow_shove and not me.dead:
 				Net.to_server(self, "req_shove", [cam.aim_dir()])
+		if event.is_action_pressed("trick"):
+			tricks.open_menu()
+			return
 		world_input(event)
 
 
 ## Subclasses with modal UIs override this and call super.
 func close_ui() -> void:
 	ui_open = false
+	tricks.menu.visible = false
 	set_mouse_captured(true)
 
 
@@ -365,12 +385,7 @@ func toast(msg: String) -> void:
 	_toasts.add_child(l)
 	if _toasts.get_child_count() > 7:
 		_toasts.get_child(0).queue_free()
-	get_tree().create_timer(5.0).timeout.connect(_expire.bind(l))
-
-
-func _expire(n: Node) -> void:
-	if is_instance_valid(n):
-		n.queue_free()
+	get_tree().create_timer(5.0).timeout.connect(l.queue_free)
 
 
 func banner(msg: String, secs := 3.0) -> void:
