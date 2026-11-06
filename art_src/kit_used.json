@@ -7,30 +7,6 @@
 ],
 "tris": 112
 },
-"coaster_coaster_train": {
-"size": [
-0.7,
-0.617,
-1.3
-],
-"tris": 668
-},
-"coaster_coaster_wood_looping": {
-"size": [
-2.0,
-4.092,
-4.109
-],
-"tris": 2276
-},
-"coaster_coaster_wood_straight": {
-"size": [
-1.0,
-0.35,
-4.0
-],
-"tris": 800
-},
 "coaster_park_entrance": {
 "size": [
 3.085,
@@ -70,22 +46,6 @@
 1.06
 ],
 "tris": 211
-},
-"coaster_support_large": {
-"size": [
-0.479,
-1.0,
-0.479
-],
-"tris": 44
-},
-"coaster_support_large_bottom": {
-"size": [
-0.7,
-1.0,
-0.7
-],
-"tris": 112
 },
 "fantasytown_cart": {
 "size": [

@@ -31,6 +31,7 @@ const PLATE_A := Vector3(30, 0.5, 80)
 const PLATE_B := Vector3(60, 0.5, 80)
 const LEDGE := Vector3(-62, 0.5, 48)
 const CAVE := Vector3(-24, 0.5, 104)
+const CAVE_CHEST := CAVE + Vector3(9, 0.3, 0)
 const CAMPFIRE := Vector3(0, 0.5, 64)
 const BEACH_DIR := Vector2(-0.75, 0.66)
 const BAR2 := Vector3(-82, 0, 80)
@@ -38,7 +39,7 @@ const PIER_START := Vector3(-97, 1.6, 95)
 const PIER_DIR := Vector3(-0.72, 0, 0.69)
 const PIER_LEN := 4
 const DIVE := PIER_START + PIER_DIR * (12.0 * PIER_LEN + 6.0) + Vector3(0, -1.6, 0)
-const CANNON := Vector3(92, 0.3, -34)
+const CANNON := Vector3(92, 0.3, -30)
 const CARNIVAL := Vector3(80, 0.5, -80)
 const NE_DIR := Vector2(0.707, -0.707)
 const FERRIS := CARNIVAL + Vector3(16, 0, -16)
@@ -49,7 +50,7 @@ const LANDING := CARNIVAL + Vector3(2, 0, 2)
 # (centre xz, radius, height): spots flattened for buildings / play areas
 const FLATS := [
 	[Vector2(0, 64), 11.0, 0.5], [Vector2(-40, 66), 19.0, 0.5], [Vector2(45, 88), 21.0, 0.5],
-	[Vector2(-62, 48), 8.0, 0.5], [Vector2(-24, 104), 12.0, 0.5], [Vector2(8, 96), 16.0, 0.5],
+	[Vector2(-62, 48), 8.0, 0.5], [Vector2(-20, 104), 17.0, 0.3], [Vector2(8, 96), 16.0, 0.5],
 	[Vector2(84, 84), 9.0, 1.0], [Vector2(80, -80), 40.0, 0.5], [Vector2(-82, 80), 14.0, 0.0],
 ]
 
@@ -226,16 +227,31 @@ static func ramp(root: Node3D, a: Vector3, b: Vector3, w: float, t: float, color
 	return body
 
 
+## Beach scatter has to stay out of the cave: sand patches and palms come through its floor.
+static func _in_cave(x: float, z: float) -> bool:
+	return absf(x - CAVE.x - 1.0) < 15.0 and absf(z - CAVE.z) < 11.0
+
+
 static func sign_post(root: Node3D, pos: Vector3, text: String, yaw_deg := 0.0, color := Ui.YELLOW) -> void:
 	var n := Node3D.new()
 	root.add_child(n)
 	n.position = pos
 	n.rotation_degrees.y = yaw_deg
-	Art.solid_cyl(n, 0.09, 2.2, Art.WOOD, Vector3(0, 1.1, 0), -1.0, 5)
-	Art.part(n, Art.bbox(Vector3(2.4, 0.6, 0.12), 0.2), Color("#d9a865"), Vector3(0, 2.0, 0))
-	var l := Art.label(n, text, Vector3(0, 2.0, -0.08), 0.0085, color, false)
+	# the board is cut to fit the words and hung between two posts, so nothing crosses
+	# the lettering; each face carries its own one-sided text
+	var longest := 0
+	for line: String in text.split("\n"):
+		longest = maxi(longest, line.length())
+	var extra := text.count("\n") * 0.42
+	var board := maxf(1.6, longest * 0.2 + 0.4)
+	var mid := 2.0 + extra * 0.5
+	var post := mid + 0.3 + extra * 0.5 + 0.12
+	for sx: float in [-1.0, 1.0]:
+		Art.solid_cyl(n, 0.09, post, Art.WOOD, Vector3(sx * (board * 0.5 + 0.09), post * 0.5, 0), -1.0, 5)
+	Art.part(n, Art.bbox(Vector3(board, 0.6 + extra, 0.12), 0.2), Color("#8f5a35"), Vector3(0, mid, 0))
+	var l := Art.label(n, text, Vector3(0, mid, -0.07), 0.0062, color, false)
 	l.rotation.y = PI
-	var l2 := Art.label(n, text, Vector3(0, 2.0, 0.08), 0.0085, color, false)
+	var l2 := Art.label(n, text, Vector3(0, mid, 0.07), 0.0062, color, false)
 	l2.rotation.y = 0.0
 
 
@@ -348,7 +364,6 @@ static func _slide_hill(root: Node3D, out: Dictionary, b: Batch) -> void:
 		for k in 8:
 			var zz := -88.0 + k * 5.5
 			Art.part(root, Art.cyl(0.08, 0.08, 1.0, 5), Color.WHITE, Vector3(3.3 * sx, height(3.3 * sx, zz) + 0.9, zz))
-	sign_post(root, Vector3(-5, height(-5, -47) , -47), "SLIDE HILL  [C] to belly-slide", 0.0)
 	# summit: flag + giant rubber duck landmark (visible from everywhere)
 	var top := SUMMIT
 	Art.solid_box(root, Vector3(14, 0.6, 14), Color("#d9cfb0"), top + Vector3(0, -0.25, 0))
@@ -612,16 +627,15 @@ static func _meadow(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) 
 	Art.label(root, "BOWL A FRIEND", lane + Vector3(0, 3.0, 0), 0.016, Ui.YELLOW)
 	# co-op vault: needs two plates held at once (players or heavy crates!)
 	var v := VAULT
-	for sx: float in [-1.0, 1.0]:
-		Art.solid_box(root, Vector3(3.5, 6, 0.8), Color("#8a8a96"), v + Vector3(3.25 * sx, 3, -3.6))
-	Art.solid_box(root, Vector3(3.0, 2.0, 0.8), Color("#8a8a96"), v + Vector3(0, 5.0, -3.6))
-	Art.solid_box(root, Vector3(0.8, 6, 8), Color("#8a8a96"), v + Vector3(-4.6, 3, 0.4))
-	Art.solid_box(root, Vector3(0.8, 6, 8), Color("#8a8a96"), v + Vector3(4.6, 3, 0.4))
-	Art.solid_box(root, Vector3(10, 6, 0.8), Color("#8a8a96"), v + Vector3(0, 3, 4.4))
-	Art.solid_box(root, Vector3(10.4, 0.6, 9.2), Color("#6e6e7a"), v + Vector3(0, 6.3, 0.4))
+	Kit.landmark(root, b, "bank", v, 180.0)
 	var door := Art.solid_box(root, Vector3(3.0, 4.0, 0.4), Art.GOLD.darkened(0.2), v + Vector3(0, 2.0, -4.1))
 	out.vault_door = door
-	Art.label(root, "THE VAULT\n(needs 2 plates)", v + Vector3(0, 7.6, -4.2), 0.016, Art.GOLD, false).rotation.y = PI
+	# the door is a round safe door on a slab: it lifts when both plates are held
+	Art.part(door, Art.cyl(1.55, 1.55, 0.3, 16), Art.GOLD, Vector3(0, 0, -0.3), Vector3.ONE, Vector3(90, 0, 0))
+	Art.part(door, Art.cyl(0.6, 0.6, 0.2, 10), Art.P_STEEL, Vector3(0, 0, -0.5), Vector3.ONE, Vector3(90, 0, 0))
+	for i in 3:
+		Art.part(door, Art.box(Vector3(2.0, 0.14, 0.14)), Art.P_STEEL, Vector3(0, 0, -0.6), Vector3.ONE, Vector3(0, 0, 60.0 * i))
+	sign_post(root, v + Vector3(9.5, 0, -9.0), "THE VAULT\nhold both plates", 0.0, Art.GOLD)
 	chest(root, v + Vector3(0, 0, 1.5), PI)
 	var plates: Array = []
 	for pp: Vector3 in [PLATE_A, PLATE_B]:
@@ -637,31 +651,12 @@ static func _meadow(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) 
 	Art.label(root, "FRIEND LEDGE\n(too tall? stand on a friend)", LEDGE + Vector3(0, 5.2, 0), 0.012, Ui.YELLOW)
 	for i in 2:
 		props.spawn("crate", LEDGE + Vector3(8.0 + i * 3.0, 0.5, 6.0))
-	# cave: rock tunnel with glowing mushrooms + loot
-	var c := CAVE
-	var rock := Art.P_ROCK_DARK
-	for sz: float in [-1.0, 1.0]:
-		Art.solid_box(root, Vector3(14, 3.6, 1.6), rock, c + Vector3(0, 1.8, 2.8 * sz))
-	Art.solid_box(root, Vector3(14, 1.6, 7.2), rock, c + Vector3(0, 4.3, 0))
-	Art.solid_box(root, Vector3(1.6, 3.6, 4.0), rock, c + Vector3(7.8, 1.8, 0))
+	# cave: a mouth, a low tunnel, then a treasure chamber
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 9
-	for i in 14:
-		var p := c + Vector3(rng.randf_range(-7, 7), rng.randf_range(2.5, 5.2), rng.randf_range(-4, 4))
-		Art.part(root, Art.sphere(rng.randf_range(1.4, 2.4), 5), Art.P_ROCK.lerp(rock, rng.randf()), p,
-			Vector3(1.2, 0.8, 1.0), Vector3(0, rng.randf() * 360.0, 0))
-	for i in 6:
-		var p := c + Vector3(rng.randf_range(-5, 6), 0.0, rng.randf_range(-1.6, 1.6))
-		Art.part(root, Art.cyl(0.05, 0.06, 0.3, 5), Color.WHITE, p + Vector3(0, 0.15, 0))
-		Art.part(root, Art.sphere(0.2, 6), Color("#7af0ff"), p + Vector3(0, 0.35, 0), Vector3(1, 0.5, 1), Vector3.ZERO, false, 2.0)
-	var cl := OmniLight3D.new()
-	cl.light_color = Color("#7af0ff")
-	cl.light_energy = 1.2
-	cl.omni_range = 7.0
-	cl.position = c + Vector3(3, 1.5, 0)
-	root.add_child(cl)
-	chest(root, c + Vector3(6.2, 0, 0), -PI * 0.5)
-	Art.label(root, "SPOOKY CAVE", c + Vector3(-7.5, 4.5, 0), 0.014, Color("#7af0ff"))
+	Kit.landmark(root, b, "cave", CAVE, 0.0)
+	chest(root, CAVE_CHEST, -PI * 0.5)
+	Art.label(root, "SPOOKY CAVE", CAVE + Vector3(-11.5, 4.2, 0), 0.012, Color("#7af0ff"))
 	# lighthouse landmark
 	var lh := Vector3(84, 1.0, 84)
 	Kit.landmark(root, b, "lighthouse", lh, 225.0)
@@ -691,7 +686,7 @@ static func _meadow(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) 
 
 static func _plaza(root: Node3D, props: PropSystem) -> void:
 	# signposts at the edges of town
-	sign_post(root, Vector3(-4, 0, -44), "^ SLIDE HILL ^", 0.0)
+	sign_post(root, Vector3(-6.5, 0, -44), "SLIDE HILL\n[C] to belly-slide", 0.0)
 	sign_post(root, Vector3(-44, 0, 9), "<- CHASM / GAUNTLET", 90.0)
 	sign_post(root, Vector3(29, 0, -22), "THE CARNIVAL ^", 40.0)
 	for i in 4:
@@ -735,7 +730,7 @@ static func _cove_district(root: Node3D, out: Dictionary, props: PropSystem, b: 
 		var dir := Vector2(BEACH_DIR).rotated(a)
 		var x := dir.x * d
 		var z := dir.y * d
-		if Vector2(x, z).distance_to(Vector2(BAR2.x, BAR2.z)) < 13.0:
+		if Vector2(x, z).distance_to(Vector2(BAR2.x, BAR2.z)) < 13.0 or _in_cave(x, z):
 			continue
 		if height(x, z) < SEA_Y + 1.2:
 			continue
@@ -747,7 +742,10 @@ static func _cove_district(root: Node3D, out: Dictionary, props: PropSystem, b: 
 		var d := rng.randf_range(90.0, 126.0)
 		var dir := Vector2(BEACH_DIR).rotated(a)
 		var id: String = ["pirate_rocks_sand_a", "pirate_rocks_sand_b", "pirate_patch_sand_foliage", "survival_rock_sand_a", "pirate_grass_plant"][i % 5]
-		Dress.put(root, b, id, _on_ground(dir.x * d, dir.y * d), rng.randf() * 360.0, rng.randf_range(1.2, 2.2), Dress.COL_NONE, true)
+		var spin := rng.randf() * 360.0
+		var size := rng.randf_range(1.2, 2.2)
+		if not _in_cave(dir.x * d, dir.y * d):
+			Dress.put(root, b, id, _on_ground(dir.x * d, dir.y * d), spin, size, Dress.COL_NONE, true)
 	# beach bits to throw at people
 	for i in 6:
 		var p := c + side * rng.randf_range(-22, 22) + fwd * rng.randf_range(2, 14)
@@ -793,18 +791,14 @@ static func _carnival(root: Node3D, out: Dictionary, props: PropSystem, b: Batch
 	Dress.put(root, b, "coaster_stall_information", c + Vector3(-4, 0, -30), 20.0, 3.2, Dress.COL_BOX)
 	Dress.put(root, b, "coaster_stall_toilets", c + Vector3(30, 0, -6), -90.0, 3.2, Dress.COL_BOX)
 	# the human cannon lives at the north end of the Chaos Yard and fires up here
-	Kit.landmark(root, b, "big_cannon", CANNON, 180.0)
-	Art.label(root, "WARNING: LAUNCHES NORTH", CANNON + Vector3(0, 5.6, 5.4), 0.012, Art.P_RED)
-	# wooden coaster sculpture: runs along the back of the fairground
-	var seg := 8.0
-	var track_y := 5.0
-	for i in 8:
-		var p := c + Vector3(-34.0 + i * seg, track_y, 34.0)
-		Dress.put(root, b, "coaster_coaster_wood_straight", p, 90.0, 2.0)
-		Dress.put(root, b, "coaster_support_large", p + Vector3(0, -track_y, 0), 0.0, 2.0)
-		Dress.put(root, b, "coaster_support_large_bottom", p + Vector3(0, -track_y - 0.1, 0), 0.0, 2.0)
-	Dress.put(root, b, "coaster_coaster_wood_looping", c + Vector3(30.0, track_y - 0.2, 34.0), 90.0, 2.2)
-	Dress.put(root, b, "coaster_coaster_train", c + Vector3(-18.0, track_y + 0.3, 34.0), 90.0, 2.0)
+	out.cannon = ((Kit.landmark(root, b, "big_cannon", CANNON, 180.0) as Dictionary).dyn as Dictionary).get("barrel")
+	Art.label(root, "HUMAN CANNON", CANNON + Vector3(0, 3.2, 8.2), 0.009, Ui.YELLOW)
+	# the real coaster: its track goes in the batch, the train stays live
+	var coaster := Coaster.new()
+	coaster.name = "Coaster"
+	root.add_child(coaster)
+	coaster.build(root, b)
+	out.coaster = coaster
 	# the cannon landing pad: a giant bouncy target
 	var l := LANDING
 	Art.part(root, Art.cyl(7.0, 7.4, 0.5, 20), Art.P_RED, l + Vector3(0, 0.25, 0))

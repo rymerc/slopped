@@ -136,6 +136,8 @@ static func wire_casino(w: WorldBase, open: Callable, cond: Callable = Callable(
 	w.add_interact(DUCKS + Vector3(2.4, 0, 0), 3.2, "Bet on DUCKS", open.bind("ducks", 0), cond)
 	for i in ROULETTE.size():
 		w.add_interact(ROULETTE[i] + Vector3(0, 0, 2.2), 2.4, "Play ROULETTE", open.bind("roulette", i), cond)
+	for i in 2:
+		w.add_interact(POKER + Vector3(-1.0 + i * 2.0, 0, -2.0), 1.3, "Sit down at POKER", open.bind("poker", i), cond)
 	for i in BJ_SEATS:
 		w.add_interact(bj_stool(i), 1.15, "Sit down at BLACKJACK", open.bind("blackjack", i), cond)
 
@@ -150,7 +152,7 @@ static func _seat(root: Node3D, pos: Vector3, yaw: float, px: float, view: Vecto
 static func _seats(root: Node3D, out: Dictionary) -> void:
 	var slots: Array = []
 	for p: Vector3 in SLOTS:
-		slots.append(_seat(root, p + Vector3(0, 1.36, 0.56), 0.0, 0.0018, p + Vector3(0, 1.95, 2.3), p + Vector3(0, 1.72, 0), "INSERT REGRET"))
+		slots.append(_seat(root, p + Vector3(0, 1.36, 0.56), 0.0, 0.0012, p + Vector3(0, 1.95, 2.3), p + Vector3(0, 1.72, 0), "INSERT REGRET"))
 	var roul: Array = []
 	for p: Vector3 in ROULETTE:
 		var r := _seat(root, p + Vector3(0, 2.0, 0), 0.0, 0.006, p + Vector3(0, 2.6, 2.5), p + Vector3(0, 0.9, 0), "PLACE BETS")
@@ -164,9 +166,15 @@ static func _seats(root: Node3D, out: Dictionary) -> void:
 		(b.label as Label3D).billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		bj.append(b)
 	out.bj_head = Art.label(root, "", BJ_TABLE + Vector3(0, 2.4, 0.3), 0.007, Ui.YELLOW)
+	var poker: Array = []
+	for i in 2:
+		var c := POKER + Vector3(-1.0 + i * 2.0, 0, 0)
+		var pl := _seat(root, c + Vector3(0, 1.75, 0), 0.0, 0.0044, c + Vector3(0, 2.3, -2.7), c + Vector3(0, 0.95, -0.3), "")
+		(pl.label as Label3D).billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		poker.append(pl)
 	out.seats = {
-		"slots": slots, "roulette": roul, "blackjack": bj,
-		"crash": [_seat(root, Vector3(51.72, 3.1, -10.5), -PI * 0.5, 0.02, Vector3(46.2, 2.7, -10.5), Vector3(51.8, 2.9, -10.5), "x1.00")],
+		"slots": slots, "roulette": roul, "blackjack": bj, "poker": poker,
+		"crash": [_seat(root, Vector3(51.72, 3.55, -12.1), -PI * 0.5, 0.011, Vector3(46.2, 2.7, -10.5), Vector3(51.8, 2.9, -10.5), "x1.00")],
 		"wheel": [_seat(root, MINIWHEEL + Vector3(-0.2, 7.4, 0), -PI * 0.5, 0.009, Vector3(42.8, 3.8, 7.0), Vector3(49.8, 4.0, 7.0), "SPIN ME")],
 		"ducks": [_seat(root, DUCKS + Vector3(-0.3, 2.9, 0), PI * 0.5, 0.008, Vector3(35.0, 3.6, 10.0), Vector3(30.4, 1.0, 10.0), "PLACE BETS")],
 	}
@@ -175,10 +183,10 @@ static func _seats(root: Node3D, out: Dictionary) -> void:
 ## Everyone who lives here. Casino staff are added by casino_floor.
 static func populate(npcs: Npcs) -> void:
 	var f := 0.4
-	npcs.add_still(SALOON + Vector3(-1, f, -6.8), PI, {"color": Color("#8d8aa0"), "hat": "top", "body": "robot"})
+	npcs.add_still(SALOON + Vector3(-1, f, -6.8), PI, {"color": Color("#8d8aa0"), "hat": "top", "body": "robot"}, "wipe")
 	npcs.add_still(SHOP + Vector3(0, 0, 2.6), 0.0, {"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"})
-	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog"})
-	npcs.add_still(SALOON + Vector3(-9.8, f, -0.9), -PI * 0.5, {"color": Color("#4a4e69"), "hat": "top", "body": "wizard"})  # the pianist
+	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog"}, "wipe")
+	npcs.add_still(SALOON + Vector3(-9.8, f, -0.9), -PI * 0.5, {"color": Color("#4a4e69"), "hat": "top", "body": "wizard"}, "piano")  # the pianist
 	npcs.add_still(HOTEL + Vector3(-6, f, 3.0), PI, {"color": Color("#c44569"), "hat": "none", "body": "kid"})  # hotel desk
 	npcs.add_still(SHERIFF + Vector3(-4.8, f, 6.4), PI, {"color": Color("#2f8f8a"), "hat": "bucket", "body": "kid"})  # the sheriff
 	var loops := [
@@ -228,19 +236,20 @@ static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
 	npcs.game = root as WorldBase
 	root.add_child(npcs)
 	out.npcs = npcs
-	npcs.add_still(DEEDS + Vector3(-0.2, 0, 0), PI * 0.5, {"color": Color("#3d3550"), "hat": "top", "body": "frog"})
+	npcs.add_still(DEEDS + Vector3(-0.2, 0, 0), PI * 0.5, {"color": Color("#7fbf6a"), "hat": "top", "body": "frog"})
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, -8.8), 0.0, 1.5, Dress.COL_BOX, true)
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, 6.0), 0.0, 1.5, Dress.COL_BOX, true)
-	Art.label(root, "CRASH", CRASH + Vector3(-0.2, 2.2, 0), 0.012, Ui.YELLOW)
+	# bottom right of the screen: the chart climbs from bottom left to top right
+	Art.label(root, "CRASH", Vector3(51.72, 1.75, -8.4), 0.008, Ui.YELLOW, false).rotation.y = -PI * 0.5
 	Art.label(root, "BLACKJACK", BJ_TABLE + Vector3(0, 3.1, 1.0), 0.009, Ui.YELLOW)
 	Art.label(root, "POKER", POKER + Vector3(0, 2.8, 0), 0.008, Ui.YELLOW)
 	var staff := [[POKER + Vector3(0, 0, 2.1), 0.0, "kid"], [BJ_TABLE + Vector3(0, 0, 1.5), 0.0, "cat"],
 		[Vector3(38, 0, -10.0), PI, "robot"], [Vector3(45, 0, -10.0), PI, "frog"]]
 	for d: Array in staff:
-		npcs.add_still(d[0], d[1], {"color": Color("#f2efe9"), "hat": "none", "body": d[2]})
+		npcs.add_still(d[0], d[1], {"color": Color("#f2efe9"), "hat": "none", "body": d[2]}, "deal")
 	# regulars: a full poker game, and one who never leaves the slots
 	var regulars := [[POKER + Vector3(-3.0, 0, 0), PI * 0.5, "wizard", Color("#4a4e69")], [POKER + Vector3(3.0, 0, 0), -PI * 0.5, "robot", Color("#ff8a3d")],
-		[POKER + Vector3(0, 0, -2.1), PI, "banana", Color("#f2efe9")], [SLOTS[4] + Vector3(0, 0, 1.3), PI, "frog", Color("#7ccf4e")]]
+		[SLOTS[4] + Vector3(0, 0, 1.3), PI, "frog", Color("#7ccf4e")]]
 	for d: Array in regulars:
 		npcs.add_still(d[0], d[1], {"color": d[3], "hat": "top", "body": d[2]})
 	npcs.add_walker([Vector3(34, 0, -3), Vector3(47, 0, -3), Vector3(47, 0, 1.5), Vector3(34, 0, 1.5)],
@@ -303,7 +312,45 @@ static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
 	Dress.put(root, b, "kk_furniture_shelf_B_small_decorated", KENNEL + Vector3(7.5, 0, 7.5), 0.0, 1.1, Dress.COL_NONE, true)
 
 
+## Wheel ruts, plank crossings, loose stones and a trough: the ground has a history.
+static func _ground(root: Node3D, b: Batch) -> void:
+	var rut := Color("#8f7a5c").srgb_to_linear()
+	var strip := Art.box(Vector3(0.45, 0.03, 1.0))
+	for sx: float in [-2.7, 2.7, -3.9, 3.9]:
+		for i in 88:
+			var z := -44.0 + i + sin(i * 0.3 + sx) * 0.2
+			if z > -14.0 and z < 11.0:  # the plaza stone covers these
+				continue
+			b.add(strip, Transform3D(Basis.IDENTITY, Vector3(sx + sin(i * 0.17) * 0.25, 0.015, z)), true, rut)
+	var plank := Art.box(Vector3(7.0, 0.05, 0.42))
+	for z0: float in [-20.0, 21.4]:
+		for i in 8:
+			var t := Color("#a87a4c").darkened(float(i % 3) * 0.1).srgb_to_linear()
+			b.add(plank, Transform3D(Basis(Vector3.UP, (i % 2) * 0.02), Vector3(0, 0.03, z0 + i * 0.46)), true, t)
+	var stone := Art.cyl(0.28, 0.34, 0.1, 6)
+	var cob := Color("#9c9288")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 55
+	for i in 110:  # cobbles around the wheel plaza
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(11.4, 14.0)
+		var s := rng.randf_range(0.8, 1.5)
+		var c := cob.darkened(rng.randf() * 0.2).srgb_to_linear()
+		b.add(stone, Transform3D(Basis(Vector3.UP, a).scaled(Vector3(s, 1, s)), Vector3(cos(a) * r, 0.05, -1.5 + sin(a) * r)), true, c)
+	for i in 60:  # loose stones on the dirt
+		var p := Vector3(rng.randf_range(-44, 44), 0.04, rng.randf_range(-44, 44))
+		if maxf(absf(p.x), absf(p.z)) < 14.0:
+			continue
+		var s := rng.randf_range(0.3, 0.6)
+		b.add(stone, Transform3D(Basis.IDENTITY.scaled(Vector3(s, 1, s)), p), true, cob.darkened(0.15).srgb_to_linear())
+	Art.solid_box(root, Vector3(3.2, 0.9, 1.0), Color("#6e4326"), Vector3(-24, 0.45, -19))
+	Art.part(root, Art.box(Vector3(2.9, 0.06, 0.74)), Color("#46a8c8"), Vector3(-24, 0.86, -19), Vector3.ONE, Vector3.ZERO, false, 0.1)
+	Art.solid_box(root, Vector3(3.2, 0.9, 1.0), Color("#6e4326"), Vector3(24, 0.45, 19.6))
+	Art.part(root, Art.box(Vector3(2.9, 0.06, 0.74)), Color("#46a8c8"), Vector3(24, 0.86, 19.6), Vector3.ONE, Vector3.ZERO, false, 0.1)
+
+
 static func _streets(root: Node3D, b: Batch, props: PropSystem) -> void:
+	_ground(root, b)
 	# Bulb strings + bunting across Main Street and around the square
 	var warm := [Color("#ffe6a8"), Color("#ffb45e")]
 	Dress.bulbs(b, Vector3(-7.8, 8.6, -23.6), Vector3(7.5, 8.6, -23.6), 20, 1.6, warm)

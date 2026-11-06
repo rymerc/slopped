@@ -13,6 +13,7 @@ var hud: CanvasLayer
 var ui_open := false
 var props: PropSystem
 var tricks: TrickSystem
+var results: ResultsPanel
 var water_y := -1000.0
 var allow_shove := false  # LMB shoves when not holding anything
 var _shove_cd: Dictionary = {}
@@ -49,6 +50,9 @@ func _ready() -> void:
 	tricks.game = self
 	add_child(tricks)
 	build_world()
+	results = ResultsPanel.new()
+	hud.add_child(results)
+	Net.results.connect(results.show_match)
 	Net.players_changed.connect(_reconcile)
 	Net.announced.connect(toast)
 	_reconcile()
@@ -279,6 +283,12 @@ func set_mouse_captured(on: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _settings and _settings.visible:
 		return
+	if event.is_action_pressed("scoreboard"):
+		results.show_standings()
+		return
+	if event.is_action_released("scoreboard"):
+		results.hide()
+		return
 	if event.is_action_pressed("menu"):
 		if ui_open:
 			close_ui()
@@ -400,6 +410,11 @@ func banner(msg: String, secs := 3.0) -> void:
 func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energy := 1.3,
 		fog_from := 90.0, fog_to := 320.0, sun_rot := Vector3(-50, 38, 0), sun_col := Color("#fff4dc"),
 		bounce := Color("#c9a27a")) -> void:
+	build_env(self, sky_top, horizon, ambient, sun_energy, fog_from, fog_to, sun_rot, sun_col, bounce)
+
+
+static func build_env(host: Node, sky_top: Color, horizon: Color, ambient: float, sun_energy: float,
+		fog_from: float, fog_to: float, sun_rot: Vector3, sun_col: Color, bounce: Color) -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
@@ -435,7 +450,7 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	var we := WorldEnvironment.new()
 	we.environment = env
 	we.add_to_group(Settings.GROUP_ENV)
-	add_child(we)
+	host.add_child(we)
 	# hemispheric ambient: sky tint from above, warm bounce from below
 	RenderingServer.global_shader_parameter_set("sky_ambient", sky_top.lerp(Color.WHITE, 0.55) * ambient)
 	RenderingServer.global_shader_parameter_set("ground_ambient", bounce * ambient * 0.7)
@@ -447,7 +462,7 @@ func make_environment(sky_top: Color, horizon: Color, ambient := 0.55, sun_energ
 	sun.shadow_opacity = 0.75
 	sun.shadow_blur = 0.6
 	sun.add_to_group(Settings.GROUP_SUN)
-	add_child(sun)
+	host.add_child(sun)
 
 
 # --- progression HUD ---------------------------------------------------------

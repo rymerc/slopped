@@ -113,27 +113,28 @@ def big_cannon(out):
             a = k * math.tau / 6
             m.beam((0, 0, 0), (0, math.cos(a) * 1.45, math.sin(a) * 1.45), 0.07, YEL)
         m.pop()
-    m.push(0, 1.9, 0, pitch=-42.0)
-    n = 14
-    # barrel: runs along local +z
-    ring = lambda z, r: [m.P(math.cos(i * math.tau / n) * r, math.sin(i * math.tau / n) * r, z) for i in range(n)]
-    prof = [(-2.8, 1.25), (-1.2, 1.35), (2.6, 1.0), (4.6, 0.95), (4.7, 1.25), (5.3, 1.25)]
+    # the barrel is its own part so it can swing onto a target
+    p = m.part("barrel")
+    p.origin = (0, 2.3, 0)
+    n = 16
+    bronze = hexc("#c98a3f")
+    ring = lambda z, r: [p.P(math.cos(i * math.tau / n) * r, math.sin(i * math.tau / n) * r, z) for i in range(n)]
+    prof = [(-3.0, 1.2, RED), (-1.6, 1.34, bronze), (2.4, 1.02, bronze), (4.6, 0.96, RED), (4.72, 1.28, YEL), (5.4, 1.28, YEL)]
     for k in range(len(prof) - 1):
-        A, B = ring(*prof[k]), ring(*prof[k + 1])
-        col = hexc("#3a3a48") if k != 3 else BRASS
+        A, B = ring(prof[k][0], prof[k][1]), ring(prof[k + 1][0], prof[k + 1][1])
         for i in range(n):
             j = (i + 1) % n
-            m.face([A[i], A[j], B[j], B[i]][::-1], col)
-    m.face(ring(*prof[0])[::-1], hexc("#3a3a48"))
-    m.face(ring(5.3, 0.95), INK)
-    for z in (-1.8, 0.5, 2.4):
-        A, B = ring(z, 1.42), ring(z + 0.35, 1.42)
+            p.face([A[i], A[j], B[j], B[i]][::-1], prof[k][2] if i % 2 else scale_col(prof[k][2], 0.82))
+    p.face(ring(-3.0, 1.2)[::-1], RED)
+    p.face(ring(5.4, 0.92), INK)
+    for z in (-1.9, 0.4, 2.2):
+        A, B = ring(z, 1.4), ring(z + 0.3, 1.4)
         for i in range(n):
             j = (i + 1) % n
-            m.face([A[i], A[j], B[j], B[i]][::-1], YEL)
-    m.pop()
-    m.box(-2.2, 0.7, 2.2, 2.2, 3.2, 2.5, hexc("#6e4326"))
-    m.text("HUMAN CANNON", 0, 1.1, 2.5, 0.52, YEL, font="Bungee-Regular", depth=0.05, res=1)
+            p.face([A[i], A[j], B[j], B[i]][::-1], YEL)
+    p.ball(0, 0, -3.3, 0.5, hexc("#3a3a48"), n=8, rings=4)
+    m.box(-2.6, 0.7, 2.4, 2.6, 1.7, 2.7, hexc("#b5402f"))
+    m.text("HUMAN CANNON", 0, 0.95, 2.7, 0.52, YEL, font="Bungee-Regular", depth=0.05, res=1)
     # step up to the breech
     m.col_ramp((0, 0, -6.4), (0, 0.7, -3.2), 3.0)
     for i in range(6):

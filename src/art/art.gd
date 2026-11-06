@@ -326,6 +326,12 @@ static func label(parent: Node3D, text: String, pos: Vector3, px := 0.01,
 	l.outline_modulate = INK
 	if billboard:
 		l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	else:
+		l.double_sided = false  # Label3D draws both faces by default: signs read mirrored
+	# small text disappears before it can pile up into a mess at range
+	l.visibility_range_end = 16.0 + px * 1400.0
+	l.visibility_range_end_margin = 3.0
+	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	parent.add_child(l)
 	return l
 

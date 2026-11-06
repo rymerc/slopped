@@ -367,7 +367,48 @@ def hotel(out):
     m.wall((W, D), (W, -D), 0, 13.8, pink, side, glass=G, frame=trim, inner=hexc("#e8cfa8"))
     m.wall((W, -D), (-W, -D), 0, 13.8, pink, [(a, 2.2, s, s + 2.2) for a in (4.0, 11.0, 18.0) for s in (6.0, 10.0)], glass=G, frame=trim, inner=hexc("#e8cfa8"))
     m.wall((-W, -D), (-W, D), 0, 13.8, pink, side, glass=G, frame=trim, inner=hexc("#e8cfa8"))
-    m.box(-W, 6.0, -D, W, 6.15, D, hexc("#c9a06e"), sub=2.2)
+    # upstairs is real: a floor, and a long ramp up the east wall to reach it
+    SX = 8.6
+    m.floor_boards(-W, -D, SX, D, 6.15, hexc("#8c5a3c"), depth=0.15)
+    m.col(-W, 5.9, -D, SX, 6.15, D)
+    m.floor_boards(SX, -D, W, -D + 2.0, 6.15, hexc("#8c5a3c"), depth=0.15)
+    m.col(SX, 5.9, -D, W, 6.15, -D + 2.0)
+    m.col_ramp((10.3, F, D - 0.6), (10.3, 6.15, -D + 2.0), 3.2)
+    steps = 26
+    for i in range(steps):
+        t0, t1 = i / steps, (i + 1) / steps
+        z0, z1 = (D - 0.6) + (-2 * D + 2.6) * t0, (D - 0.6) + (-2 * D + 2.6) * t1
+        y0, y1 = F + (6.15 - F) * t0, F + (6.15 - F) * t1
+        c = jitter(hexc("#7a2336"), m.rng, 0.08)
+        m.quad(m.P(8.7, y0, z0), m.P(11.9, y0, z0), m.P(11.9, y1, z1), m.P(8.7, y1, z1), c)
+        m.quad(m.P(11.9, y0 - 0.2, z0), m.P(8.7, y0 - 0.2, z0), m.P(8.7, y1 - 0.2, z1), m.P(11.9, y1 - 0.2, z1), WOOD_D)
+    for k in range(13):
+        z = D - 1.0 - k * 1.0
+        y = F + (6.15 - F) * ((D - 0.6 - z) / (2 * D - 2.6))
+        m.box(8.62, y, z - 0.04, 8.7, y + 1.1, z + 0.04, BRASS)
+    m.col(8.5, F, -D + 2.2, 8.7, 7.4, 3.6)  # stops short so the foot of the ramp is open
+    # ground-floor ceiling sits under the boards: above them it blocks the AO bake and blacks out the floor
+    m.box(-W, 5.94, -D, SX, 5.96, D, hexc("#c9a06e"), faces="y", sub=2.6)
+    m.box(SX, 5.94, -D, W, 5.96, -D + 2.0, hexc("#c9a06e"), faces="y", sub=2.6)
+    # corridor wall + three rooms along the back
+    wallc = hexc("#d9b98a")
+    for x0, x1 in ((-W, -8.6), (-6.2, -1.6), (0.8, 5.4)):
+        m.box(x0, 6.15, -0.2, x1, 11.5, 0.0, wallc)
+        m.col(x0, 6.15, -0.2, x1, 11.5, 0.0)
+    for x in (-5.0, 2.2):
+        m.box(x - 0.1, 6.15, -D, x + 0.1, 11.5, -0.2, wallc)
+        m.col(x - 0.1, 6.15, -D, x + 0.1, 11.5, -0.2)
+    for x0, x1, c in ((-11.6, -5.3, "#8a3a5a"), (-4.8, 1.9, "#3a6a8a"), (2.5, 8.2, "#6a8a3a")):
+        xm = (x0 + x1) * 0.5
+        m.box(xm - 1.4, 6.15, -7.2, xm + 1.4, 6.65, -4.2, WOOD_D)      # bed frame
+        m.box(xm - 1.3, 6.65, -7.1, xm + 1.3, 6.95, -4.3, hexc(c))    # blanket
+        m.box(xm - 1.1, 6.95, -7.05, xm + 1.1, 7.15, -6.3, CREAM)      # pillow
+        m.col(xm - 1.4, 6.15, -7.2, xm + 1.4, 6.95, -4.2)
+    m.text("NO. 1", -8.0, 9.2, 0.02, 0.4, BRASS, depth=0.02, res=1)
+    m.text("MINIBAR: 900c", -1.0, 9.2, 0.02, 0.32, BRASS, font="Bungee-Regular", depth=0.02, res=1)
+    m.text("DO NOT DISTURB", 3.1, 9.2, 0.02, 0.26, BRASS, font="Bungee-Regular", depth=0.02, res=1)
+    m.lamp(-3, 10.0, 3.5, radius=14.0, power=0.15)
+    m.lamp(-3, 10.0, -4.0, radius=12.0, power=0.12)
     m.box(-W, 13.8, -D, W, 13.95, D, hexc("#c9a06e"), sub=3.0)
     # mansard roof
     h = 2.6
@@ -414,9 +455,9 @@ def hotel(out):
         m.box(x, F + 0.6, -D + 1.2, x + 1.3, F + 4.6, -D + 1.24, hexc("#8fd0e0"), glow=0.08)
         m.box(x - 0.08, F + 0.5, -D + 1.2, x + 1.38, F + 4.7, -D + 1.22, hexc("#e6b23c"))
     # reception desk
-    m.box(3.0, F, -3.6, 9.0, F + 1.25, -2.4, hexc("#6e4326"))
-    m.box(2.8, F + 1.25, -3.75, 9.2, F + 1.36, -2.25, hexc("#e6b23c"))
-    m.col(2.8, F, -3.75, 9.2, F + 1.36, -2.25)
+    m.box(1.6, F, -3.6, 7.8, F + 1.25, -2.4, hexc("#6e4326"))
+    m.box(1.4, F + 1.25, -3.75, 8.0, F + 1.36, -2.25, hexc("#e6b23c"))
+    m.col(1.4, F, -3.75, 8.0, F + 1.36, -2.25)
     # checkerboard rug
     for i in range(10):
         for j in range(6):
@@ -424,7 +465,150 @@ def hotel(out):
             m.box(-5 + i, F, -1 + j, -4 + i, F + 0.03, j, c, faces="Y")
     m.lamp(-3, 4.8, 1.5, radius=12.0, power=0.16)
     m.lamp(6, 4.8, -2, radius=8.0, power=0.1)
-    m.room(-W, 0, -D, W, 6.0, D, level=0.11, col=(1.0, 0.95, 0.88))
+    m.room(-W, 0, -D, W, 13.8, D, level=0.11, col=(1.0, 0.95, 0.88))
+    m.finish(out)
+
+
+def bank(out):
+    """First National Slop Bank: the Vault. Front (+z) has columns, a gap for the
+    round door the game moves, and a strongroom of gold behind it."""
+    m = LM("bank", 81)
+    stone = hexc("#d8cfba")
+    W, H = 5.0, 7.4
+    m.floor_boards(-W, -4.6, W, 3.8, 0.02, hexc("#7f7a86"), along_x=False, depth=0.1)
+    m.wall((-W, 3.8), (W, 3.8), 0, H, stone, [(W - 1.6, 3.2, 0.0, 4.1)], board=0.62, jit=0.05, t=0.6, frame=BRASS, inner=hexc("#5a5560"))
+    m.wall((W, 3.8), (W, -4.6), 0, H, stone, board=0.62, jit=0.05, t=0.6, inner=hexc("#5a5560"))
+    m.wall((W, -4.6), (-W, -4.6), 0, H, stone, board=0.62, jit=0.05, t=0.6, inner=hexc("#5a5560"))
+    m.wall((-W, -4.6), (-W, 3.8), 0, H, stone, board=0.62, jit=0.05, t=0.6, inner=hexc("#5a5560"))
+    m.box(-W - 0.2, H, -4.8, W + 0.2, H + 0.7, 4.0, hexc("#b8ad9a"), sub=2.5)
+    m.col(-W, H, -4.6, W, H + 0.3, 3.8)
+    # portico: steps, six columns, pediment, big lettering
+    for i, z in enumerate((6.6, 6.0, 5.4)):
+        m.box(-W - 1.2 + i * 0.1, 0, 3.9, W + 1.2 - i * 0.1, 0.16 * (i + 1) - 0.06, z, jitter(stone, m.rng, 0.04), sub=2.5)
+    m.col_ramp((0, 0.0, 7.0), (0, 0.42, 5.2), 2 * W + 2.4)
+    m.col(-W - 1.2, 0, 3.9, W + 1.2, 0.42, 5.3)
+    for x in (-5.4, -3.3, -1.9, 1.9, 3.3, 5.4):
+        m.cyl(x, 0.42, 5.0, 0.42, H, 0.36, stone, n=10, caps=False)
+        m.cyl(x, H - 0.3, 5.0, 0.4, H, 0.56, CREAM, n=10, caps=False)
+        m.col(x - 0.38, 0.42, 4.62, x + 0.38, H, 5.38)
+    m.box(-W - 1.2, H, 3.8, W + 1.2, H + 0.7, 5.8, stone, sub=2.5)
+    a, b, c = m.P(-W - 1.4, H + 0.7, 5.82), m.P(W + 1.4, H + 0.7, 5.82), m.P(0, H + 2.5, 5.82)
+    m.face([a, b, c], hexc("#e6dcc4"))
+    # back gable, then a roof whose ridge runs front to back so the pediment stays visible
+    m.face([m.P(W + 1.4, H + 0.7, -4.8), m.P(-W - 1.4, H + 0.7, -4.8), m.P(0, H + 2.5, -4.8)], stone)
+    # lead roof in strips, ridge front to back so the pediment stays visible
+    X, y0, y1 = W + 1.6, H + 0.62, H + 2.56
+    strips = 10
+    for i in range(strips):
+        zb, zf = -5.0 + 11.1 * i / strips, -5.0 + 11.1 * (i + 1) / strips
+        c = jitter(hexc("#7f8a96"), m.rng, 0.08)
+        m.quad(m.P(X, y0, zf), m.P(X, y0, zb), m.P(0, y1, zb), m.P(0, y1, zf), c)
+        m.quad(m.P(-X, y0, zb), m.P(-X, y0, zf), m.P(0, y1, zf), m.P(0, y1, zb), c)
+    m.text("FIRST NATIONAL", 0, H + 0.14, 5.82, 0.42, hexc("#7a4a33"), depth=0.05)
+    m.text("SLOP BANK", 0, H + 0.88, 5.83, 0.56, hexc("#7a4a33"), depth=0.05)
+    # strongroom: gold bars, coin heaps, money bags, a chandelier for no reason
+    gold = hexc("#ffc935")
+    for i in range(46):
+        x, z = m.rng.uniform(-4.2, 4.2), m.rng.uniform(-4.0, -1.0)
+        y = m.rng.uniform(0.02, 0.5) * (1.0 - abs(x) / 5.0) * 3.0
+        m.push(x, y, z, yaw=m.rng.uniform(0, 180))
+        m.box(-0.34, 0, -0.14, 0.34, 0.14, 0.14, jitter(gold, m.rng, 0.1), glow=0.08)
+        m.pop()
+    for x in (-3.4, 3.4):
+        m.ball(x, 0.6, 1.8, 0.62, hexc("#a88a5a"), n=8, rings=5, sy=0.95)
+        m.cyl(x, 1.1, 1.8, 0.14, 1.4, 0.24, hexc("#a88a5a"), n=7)
+        m.text("$", x, 0.36, 2.42, 0.6, CREAM, depth=0.02, res=1)
+    m.room(-W, 0, -4.6, W, H, 3.8, level=0.12, col=(1.0, 0.9, 0.6))
+    m.room(-W - 1.4, 0, 3.8, W + 1.4, H + 0.7, 7.0, level=0.14, col=(1.0, 0.96, 0.9))  # the portico faces away from the sun
+    m.lamp(0, 1.5, -2.4, radius=8.0, power=0.18, col=(1.0, 0.8, 0.4))
+    m.finish(out)
+
+
+def cave(out):
+    """Spooky Cave: an arched mouth, a dark tunnel, then a glowing treasure chamber."""
+    m = LM("cave", 82)
+    rock, dark = hexc("#7b7390"), hexc("#4d4763")
+    cry = hexc("#7af0ff")
+    def wall_rocks(x0, z0, x1, z1, top=4.2, rows=(0.5, 1.9, 3.3)):
+        m.col(min(x0, x1), 0, min(z0, z1), max(x0, x1), top, max(z0, z1))
+        n = int(max(abs(x1 - x0), abs(z1 - z0)) / 1.3) + 2
+        for i in range(n):
+            t = i / max(1, n - 1)
+            x, z = x0 + (x1 - x0) * t, z0 + (z1 - z0) * t
+            for y in rows:
+                m.ball(x + m.rng.uniform(-0.3, 0.3), y, z + m.rng.uniform(-0.3, 0.3), m.rng.uniform(0.95, 1.4),
+                       jitter(rock if y < 3 else dark, m.rng, 0.16), n=6, rings=4, sy=0.8)
+    m.box(-10, -0.05, -8, 12, 0.02, 8, hexc("#8a8096"), sub=2.0)
+    m.col(-9.6, -0.1, -8, 12, 0.02, 8)
+    m.col_ramp((-11.6, -0.2, 0), (-9.6, 0.02, 0), 7.0)
+    # tunnel walls
+    wall_rocks(-9, 2.3, 2, 2.3)
+    wall_rocks(-9, -2.3, 2, -2.3)
+    # chamber walls
+    tall = dict(top=6.6, rows=(0.5, 1.9, 3.3, 4.7, 6.1))
+    wall_rocks(2, 2.3, 2, 7, **tall)
+    wall_rocks(2, -2.3, 2, -7, **tall)
+    wall_rocks(2, 7, 11, 7, **tall)
+    wall_rocks(2, -7, 11, -7, **tall)
+    wall_rocks(11, -7, 11, 7, **tall)
+    for z in (-1.9, -0.6, 0.6, 1.9):  # the wall over the tunnel's inner end
+        for y in (4.9, 6.1):
+            m.ball(2, y, z, 1.25, jitter(rock, m.rng, 0.16), n=6, rings=4, sy=0.8)
+    # roof: tunnel is low, the chamber opens up. A solid lid behind the lumpy rocks.
+    m.box(-10, 4.7, -3.8, 2.6, 5.1, 3.8, dark, sub=2.5)
+    m.box(1.0, 7.1, -8.6, 12.6, 7.6, 8.6, dark, sub=2.5)
+    m.col(-9, 3.6, -3, 2, 4.6, 3)
+    m.col(2, 6.2, -7.5, 11.5, 7.2, 7.5)
+    for i in range(30):
+        x, z = m.rng.uniform(-8, 11), m.rng.uniform(-7, 7)
+        low = x < 2.0
+        if low and abs(z) > 3:
+            continue
+        y = 4.5 if low else 7.0
+        m.ball(x, y, z, m.rng.uniform(1.6, 2.4), jitter(dark, m.rng, 0.14), n=6, rings=4, sy=0.7)
+    for i in range(14):  # stalactites
+        x, z = m.rng.uniform(3, 10), m.rng.uniform(-6, 6)
+        m.cyl(x, 6.2, z, 0.34, 6.2 - m.rng.uniform(0.9, 2.2), 0.02, dark, n=6)
+    # crystals: the only light down here
+    for i in range(16):
+        x, z = m.rng.uniform(3.2, 10), m.rng.uniform(-6, 6)
+        if abs(z) < 2.0 and x > 7.0:
+            continue
+        h = m.rng.uniform(0.9, 2.6)
+        c = cry if i % 3 else hexc("#ff7ad9")
+        m.push(x, 0, z, yaw=m.rng.uniform(0, 90), roll=m.rng.uniform(-14, 14))
+        m.cyl(0, 0, 0, 0.3, h * 0.75, 0.3, c, n=6, glow=0.5)
+        m.cyl(0, h * 0.75, 0, 0.3, h, 0.0, c, n=6, glow=0.6)
+        m.pop()
+    for i in range(14):  # mushrooms line the way in
+        x, z = -8 + i * 0.75, 1.4 * (1 if i % 2 else -1) + m.rng.uniform(-0.25, 0.25)
+        m.cyl(x, 0, z, 0.05, 0.28, 0.05, CREAM, n=5)
+        m.ball(x, 0.34, z, 0.2, cry, n=7, rings=3, sy=0.5, glow=0.7)
+    # the last person who tried this
+    b = hexc("#e8e0cc")
+    m.ball(5.0, 0.55, 4.8, 0.3, b, n=7, rings=4)
+    m.ball(4.9, 0.55, 5.1, 0.06, INK, n=4, rings=3)
+    m.ball(5.15, 0.55, 5.05, 0.06, INK, n=4, rings=3)
+    m.beam((5.0, 0.15, 4.2), (5.0, 0.3, 4.75), 0.05, b)
+    for k in range(4):
+        m.beam((4.7, 0.2 + k * 0.08, 4.3 + k * 0.1), (5.3, 0.2 + k * 0.08, 4.3 + k * 0.1), 0.02, b)
+    m.beam((5.0, 0.15, 4.2), (4.3, 0.04, 3.4), 0.04, b)
+    m.beam((5.0, 0.15, 4.2), (5.6, 0.04, 3.3), 0.04, b)
+    m.text("TURN BACK", 3.0, 2.3, 6.2, 0.5, hexc("#ff7ad9"), font="Bungee-Regular", glow=0.8, depth=0.02, res=1, yaw=180)
+    # treasure dais
+    m.cyl(9.0, 0, 0, 1.9, 0.3, 1.6, hexc("#8d8791"), n=12)
+    m.col(7.6, 0, -1.4, 10.4, 0.3, 1.4)
+    for i in range(26):
+        a = m.rng.uniform(0, math.tau)
+        r = m.rng.uniform(0.4, 1.8)
+        m.cyl(9.0 + math.cos(a) * r, 0.3, math.sin(a) * r, 0.11, 0.34, 0.11, hexc("#ffc935"), n=7, glow=0.25)
+    # mouth
+    for z in (-3.1, 3.1):
+        m.ball(-9.6, 1.6, z, 1.9, rock, n=7, rings=5)
+        m.ball(-9.6, 3.6, z * 0.6, 1.5, dark, n=6, rings=4)
+    m.ball(-9.6, 4.8, 0, 1.8, rock, n=7, rings=5, sy=0.7)
+    m.lamp(7, 2.5, 0, radius=11.0, power=0.2, col=(0.5, 0.9, 1.0))
+    m.room(-13, -1, -10, 14, 10, 10, level=0.11, col=(0.8, 0.8, 1.0))  # rock on rock bakes black otherwise
     m.finish(out)
 
 
@@ -508,4 +692,4 @@ def town_arch(out):
     m.finish(out)
 
 
-ALL = ["saloon", "sheriff", "store", "hotel", "water_tower", "outhouse", "town_arch"]
+ALL = ["saloon", "sheriff", "store", "hotel", "bank", "cave", "water_tower", "outhouse", "town_arch"]

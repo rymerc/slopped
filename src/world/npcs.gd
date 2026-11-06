@@ -19,11 +19,15 @@ const MUTTER := ["i know", "nice shoes", "we saw that", "keep going", "it's fine
 var game: WorldBase
 var _all: Array[Dictionary] = []
 var _mutter_t := 12.0
+var deal_t := 0.0  # dealers flick their arms while this runs down
 
 
 ## A worker: stays put, faces `yaw`, follows you with their head.
-func add_still(pos: Vector3, yaw: float, look: Dictionary) -> void:
+## job: "" stands there, "wipe" polishes a glass forever, "deal" works the table,
+## "piano" hammers the keys.
+func add_still(pos: Vector3, yaw: float, look: Dictionary, job := "") -> void:
 	_add(look, pos, yaw, [])
+	_all[-1].job = job
 
 
 ## A walker: loops a path of points forever.
@@ -46,6 +50,7 @@ func _process(delta: float) -> void:
 	if me == null:
 		return
 	var eye := me.global_position + Vector3.UP * 1.3 * me.size
+	deal_t -= delta
 	for n: Dictionary in _all:
 		_tick(n, eye, delta)
 	_mutter(eye, delta)
@@ -72,6 +77,17 @@ func _tick(n: Dictionary, eye: Vector3, delta: float) -> void:
 	(limbs.leg_r as Node3D).rotation.x = -swing
 	(limbs.arm_l as Node3D).rotation.x = -swing * 0.7
 	(limbs.arm_r as Node3D).rotation.x = swing * 0.7
+	var t := Time.get_ticks_msec() * 0.001 + float(n.phase)
+	match str(n.get("job", "")):
+		"wipe":
+			(limbs.arm_r as Node3D).rotation = Vector3(-1.4, 0, sin(t * 6.0) * 0.5)
+		"piano":
+			(limbs.arm_l as Node3D).rotation.x = -1.2 + sin(t * 17.0) * 0.28
+			(limbs.arm_r as Node3D).rotation.x = -1.2 + sin(t * 13.0 + 1.0) * 0.28
+		"deal":
+			var flick := sin(t * 12.0) * 0.5 if deal_t > 0.0 else 0.0
+			(limbs.arm_r as Node3D).rotation.x = -1.1 + flick
+			(limbs.arm_l as Node3D).rotation.x = -0.9
 	var want := Vector2.ZERO
 	if d < STARE_RANGE:
 		var l: Vector3 = root.global_transform.affine_inverse() * eye - head.global_position * 0.0

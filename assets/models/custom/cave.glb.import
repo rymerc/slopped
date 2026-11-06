@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bsen5pb512gog"
-path="res://.godot/imported/coaster_coaster_wood_straight.glb-98c7be1daee5b3fa5c23a83088579695.scn"
+uid="uid://dsu8no7w4s2yx"
+path="res://.godot/imported/cave.glb-15ff132018fd7e079dc2ce13e45d6018.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/coaster_coaster_wood_straight.glb"
-dest_files=["res://.godot/imported/coaster_coaster_wood_straight.glb-98c7be1daee5b3fa5c23a83088579695.scn"]
+source_file="res://assets/models/custom/cave.glb"
+dest_files=["res://.godot/imported/cave.glb-15ff132018fd7e079dc2ce13e45d6018.scn"]
 
 [params]
 

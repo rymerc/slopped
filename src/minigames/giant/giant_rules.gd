@@ -428,6 +428,12 @@ func _end(side: String, msg: String) -> void:
 			Net.award(g, 40, "Good effort")
 		gp.perks = []
 	Net.broadcast()
+	var rows: Array = []
+	for id: int in game.littles + [g]:
+		if Net.players.has(id):
+			rows.append({"name": Net.pname(id), "a": "GIANT" if id == g else "little", "b": "%d pts" % int(Net.players[id].score),
+				"win": (side == "giant") == (id == g)})
+	Net.publish_results(msg, rows)
 	await get_tree().create_timer(7.0).timeout
 	Net.request_world("lobby", {})
 

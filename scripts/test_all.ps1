@@ -7,6 +7,7 @@
 $ErrorActionPreference = "Continue"
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $Godot = Join-Path $Root "tools\godot\Godot_v4.6.3-stable_win64_console.exe"
+$TestPort = 24690  # not the game port, so tests can run while the game is open
 
 function Clear-Strays {
     Get-CimInstance Win32_Process -Filter "Name like 'Godot_v4.6.3%'" |
@@ -17,7 +18,7 @@ function Clear-Strays {
 
 function Run-Test([string]$Name, [string]$Script, [string[]]$GameArgs, [int]$Secs, [string]$OkText) {
     $log = Join-Path $env:TEMP ("slopped_test_" + ($Name -replace '\W', '_') + ".log")
-    $a = @("--headless", "--path", "`"$Root`"", "-s", $Script, "--") + $GameArgs
+    $a = @("--headless", "--path", "`"$Root`"", "-s", $Script, "--", "--port=$TestPort") + $GameArgs
     $p = Start-Process -FilePath $Godot -ArgumentList $a -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError "$log.err"
     $null = $p.WaitForExit($Secs * 1000)
     Clear-Strays
@@ -35,15 +36,16 @@ Run-Test "smoke giant" "tests/smoke_test.gd" @("--host", "--bots=4", "--giant") 
 Run-Test "physics" "tests/physics_test.gd" @("--host", "--bots=2") 70 "PHYSICS OK"
 Run-Test "settings" "tests/settings_test.gd" @() 30 "SETTINGS OK"
 Run-Test "town walk" "tests/town_test.gd" @("--host", "--bots=1") 180 "TOWN OK"
+Run-Test "rides" "tests/rides_test.gd" @("--host", "--bots=1") 175 "RIDES OK"
 foreach ($g in "pocket", "soup", "cursed") {
     Run-Test "$g (bot boss)" "tests/games_test.gd" @("--host", "--bots=4", "--game=$g", "--bot-boss") 75 "GAME $g OK"
     Run-Test "$g (you boss)" "tests/games_test.gd" @("--host", "--bots=3", "--game=$g") 75 "GAME $g OK"
 }
 $hostLog = Join-Path $env:TEMP "slopped_test_host.log"
-$h = Start-Process -FilePath $Godot -ArgumentList @("--headless", "--path", "`"$Root`"", "--", "--host", "--bots=1") -PassThru -NoNewWindow -RedirectStandardOutput $hostLog -RedirectStandardError "$hostLog.err"
+$h = Start-Process -FilePath $Godot -ArgumentList @("--headless", "--path", "`"$Root`"", "--", "--port=$TestPort", "--host", "--bots=1") -PassThru -NoNewWindow -RedirectStandardOutput $hostLog -RedirectStandardError "$hostLog.err"
 Start-Sleep -Seconds 3
 $log = Join-Path $env:TEMP "slopped_test_client.log"
-$c = Start-Process -FilePath $Godot -ArgumentList @("--headless", "--path", "`"$Root`"", "-s", "tests/net_test.gd", "--", "--join=127.0.0.1") -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError "$log.err"
+$c = Start-Process -FilePath $Godot -ArgumentList @("--headless", "--path", "`"$Root`"", "-s", "tests/net_test.gd", "--", "--port=$TestPort", "--join=127.0.0.1") -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError "$log.err"
 $null = $c.WaitForExit(60000)
 Clear-Strays
 $text = Get-Content $log -Raw

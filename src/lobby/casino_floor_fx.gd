@@ -17,6 +17,11 @@ var _duck_win := 0
 var _crash_t0 := -1
 var _felt: Dictionary = {}  # key -> {node, down}: everything on the blackjack table
 var bj_view: Dictionary = {}
+var _deal_from := Vector3.ZERO
+var _roul_slot: Dictionary = {}
+var _roul_t: Dictionary = {}
+var _chart: Node3D
+var _chart_t := 0.0
 
 
 func spinning_slots() -> bool:
@@ -50,6 +55,10 @@ func fx(kind: String, seat: int, d: Dictionary) -> void:
 			_later(3.5, _label("wheel", 0), str(Casino.WHEEL_SEGMENTS[int(d.index)].label))
 		"roulette":
 			_roul_v = 7.0
+			# green is slot 0, odd slots red, even slots black; roll picks which one
+			var slot := 0 if int(d.roll) == 0 else (1 if str(d.landed) == "red" else 2) + (int(d.roll) % 8) * 2
+			_roul_slot[seat] = (slot + 0.5) * TAU / 18.0
+			_roul_t[seat] = 2.4
 			_label("roulette", seat).text = "NO MORE BETS"
 			_later(2.4, _label("roulette", seat), "%s %d" % [str(d.landed).to_upper(), int(d.roll)])
 		"ducks":
@@ -59,6 +68,7 @@ func fx(kind: String, seat: int, d: Dictionary) -> void:
 			_later(3.5, _label("ducks", 0), "%s WINS" % CasinoTables.DUCKS[_duck_win])
 		"crash_start":
 			_crash_t0 = Time.get_ticks_msec()
+			_chart_reset()
 		"crash_end":
 			_crash_t0 = -1
 			var l := _label("crash", 0)
@@ -68,12 +78,60 @@ func fx(kind: String, seat: int, d: Dictionary) -> void:
 				Sfx.at(host, "boom", LobbyBuilder.CRASH, -4.0, 0.1, 1.5)
 		"bj":
 			_draw_table(d)
+			var npcs := refs.get("npcs") as Npcs
+			if npcs:
+				npcs.deal_t = 1.0
+		"poker":
+			_draw_poker(seat, d)
 
 
 func _later(secs: float, l: Label3D, text: String) -> void:
 	get_tree().create_timer(secs).timeout.connect(func() -> void:
 		if is_instance_valid(l):
 			l.text = text)
+
+
+# --- crash chart: the line actually draws itself up the wall ------------------------
+
+func _chart_reset() -> void:
+	if _chart:
+		_chart.queue_free()
+	_chart = Node3D.new()
+	get_parent().add_child(_chart)
+	_chart_t = 0.0
+
+
+func _chart_tick(delta: float, t: float) -> void:
+	_chart_t -= delta
+	if _chart == null or _chart_t > 0.0:
+		return
+	_chart_t = 0.2
+	var m := exp(Casino.CRASH_RATE * t)
+	var x := clampf(t / 16.0, 0.0, 1.0)
+	var y := clampf((m - 1.0) / 3.0, 0.0, 1.0)
+	Art.part(_chart, Art.box(Vector3(0.04, 0.12, 0.2)), Color("#46e3ff"), Vector3(51.72, 1.35 + y * 2.9, -13.7 + x * 6.4), Vector3.ONE, Vector3.ZERO, false, 2.0)
+
+
+# --- three card poker ---------------------------------------------------------------
+
+func _draw_poker(seat: int, d: Dictionary) -> void:
+	var c := LobbyBuilder.POKER + Vector3(-1.0 + seat * 2.0, 1.0, -0.72)
+	_deal_from = LobbyBuilder.POKER + Vector3(0, 1.1, 0.8)
+	var want := {}
+	var delay := 0.0
+	var p: Array = d.p
+	var dl: Array = d.d
+	for i in p.size():
+		delay = _card("pk%d_%d" % [seat, i], int(p[i]), c + Vector3((i - 1) * 0.28, 0.01 + i * 0.006, 0), false, delay, want)
+	for i in dl.size():
+		delay = _card("pkd%d_%d" % [seat, i], int(dl[i]), c + Vector3((i - 1) * 0.28, 0.01 + i * 0.006, 0.72), bool(d.hide), delay, want)
+	for key: String in _felt.keys():
+		if key.begins_with("pk%d_" % seat) or key.begins_with("pkd%d_" % seat):
+			if not want.has(key):
+				(_felt[key].node as Node3D).queue_free()
+				_felt.erase(key)
+	_deal_from = Vector3.ZERO
+	_label("poker", seat).text = str(d.text)
 
 
 # --- blackjack table ----------------------------------------------------------------
@@ -142,7 +200,7 @@ func _card(key: String, c: int, at: Vector3, down: bool, delay: float, want: Dic
 		return delay
 	var n := _card_node(c, down)
 	get_parent().add_child(n)
-	n.position = _shoe()
+	n.position = _deal_from if _deal_from != Vector3.ZERO else _shoe()
 	n.scale = Vector3.ONE * 0.6
 	_felt[key] = {"node": n, "down": down}
 	var tw := n.create_tween().set_parallel(true)
@@ -208,15 +266,26 @@ func _process(delta: float) -> void:
 		if float(s.t) <= 0.0:
 			_label("slots", m).text = str(s.text)
 			_slots.erase(m)
-	for dyn: Dictionary in refs.get("roulette", []):
-		(dyn.rotor as Node3D).rotation.y += delta * (0.25 + _roul_v)
-		(dyn.ball as Node3D).rotation.y -= delta * (_roul_v * 2.0)
+	var tables: Array = refs.get("roulette", [])
+	for i in tables.size():
+		var rotor := tables[i].rotor as Node3D
+		var ball := tables[i].ball as Node3D
+		rotor.rotation.y += delta * (0.25 + _roul_v)
+		var left := float(_roul_t.get(i, 0.0))
+		if left > 0.6:  # ball runs the other way round the rim
+			_roul_t[i] = left - delta
+			ball.rotation.y -= delta * (_roul_v * 2.0)
+		elif _roul_slot.has(i):  # then drops and rides in its slot with the wheel
+			_roul_t[i] = maxf(0.0, left - delta)
+			var seated := rotor.rotation.y - float(_roul_slot[i])
+			ball.rotation.y = lerp_angle(ball.rotation.y, seated, clampf(delta * 9.0, 0.0, 1.0))
 	_roul_v = move_toward(_roul_v, 0.0, delta * 2.6)
 	if _crash_t0 >= 0:
 		var t := (Time.get_ticks_msec() - _crash_t0) / 1000.0
 		var l := _label("crash", 0)
 		l.text = "x%.2f" % exp(Casino.CRASH_RATE * t)
 		l.modulate = Ui.YELLOW
+		_chart_tick(delta, t)
 	var ducks: Dictionary = refs.get("ducks", {})
 	if _duck_t > 0.0 and not ducks.is_empty():
 		_duck_t -= delta

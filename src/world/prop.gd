@@ -19,6 +19,9 @@ const KINDS := {
 	"beam": {"mass": 9.0, "box": Vector3(4.0, 0.3, 0.3), "solid": true},
 	"stool": {"mass": 1.2, "cyl": Vector2(0.34, 0.9), "solid": false},
 	"keg": {"mass": 4.5, "cyl": Vector2(0.4, 0.95), "solid": true},
+	"scrap_fin": {"mass": 2.0, "box": Vector3(0.96, 0.8, 0.2), "solid": true},
+	"scrap_bin": {"mass": 2.5, "cyl": Vector2(0.36, 1.0), "solid": true},
+	"scrap_nose": {"mass": 1.5, "cyl": Vector2(0.32, 0.8), "solid": true},
 	"beachball": {"mass": 0.3, "sphere": 0.6, "bounce": 0.85, "solid": false},
 }
 
@@ -102,6 +105,11 @@ func _build_visual() -> void:
 			_fit("pirate_barrel", Vector3(0.8, 1.0, 0.8))
 		"keg":
 			_fit("survival_barrel_open", Vector3(0.8, 0.95, 0.8))
+		"scrap_fin", "scrap_bin", "scrap_nose":
+			var mi := MeshInstance3D.new()
+			mi.mesh = Kit.part_mesh("scrap", {"scrap_fin": "fin", "scrap_bin": "bin", "scrap_nose": "nose"}[kind])
+			mi.material_override = Art.vcol_mat()
+			add_child(mi)
 		"stool":
 			_fit("kk_restaurant_chair_stool", Vector3(0.68, 0.9, 0.68))
 		"beachball":

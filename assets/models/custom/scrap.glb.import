@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://57jlwvnxulfv"
-path="res://.godot/imported/coaster_coaster_wood_looping.glb-1bfc1b22ed9ff5389571a94f396e80b4.scn"
+uid="uid://bs10i535635hh"
+path="res://.godot/imported/scrap.glb-da2f7d74060abddc5fe76c79d6b3fd3b.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/coaster_coaster_wood_looping.glb"
-dest_files=["res://.godot/imported/coaster_coaster_wood_looping.glb-1bfc1b22ed9ff5389571a94f396e80b4.scn"]
+source_file="res://assets/models/custom/scrap.glb"
+dest_files=["res://.godot/imported/scrap.glb-da2f7d74060abddc5fe76c79d6b3fd3b.scn"]
 
 [params]
 

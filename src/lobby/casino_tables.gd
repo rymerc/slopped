@@ -23,6 +23,7 @@ var _bet := 0
 var _pick := 0
 var _busy := false
 var _crash := false
+var _pk_hand := false
 var _pending := ""
 var _pending_t := 0.0
 
@@ -89,6 +90,13 @@ func _send(method: String, args: Array = []) -> void:
 
 
 func _act() -> void:
+	if kind == "poker":
+		if _pk_hand:
+			_send("req_pk_play")
+		else:
+			_msg.text = ""
+			_send("req_pk_ante", [BETS[_bet], seat])
+		return
 	if kind == "blackjack":
 		if _my_turn():
 			_send("req_bj_hit")
@@ -112,6 +120,8 @@ func _act() -> void:
 
 
 func _act2() -> void:
+	if kind == "poker" and _pk_hand:
+		_send("req_pk_fold")
 	if kind == "blackjack" and _my_turn():
 		_send("req_bj_stand")
 
@@ -134,10 +144,10 @@ func _can_bet() -> bool:
 
 
 func _cycle(d: int) -> void:
-	if _busy or _crash or (kind == "blackjack" and not _can_bet()):
+	if _busy or _crash or _pk_hand or (kind == "blackjack" and not _can_bet()):
 		return
 	match kind:
-		"crash", "blackjack": _bet = posmod(_bet + d, BETS.size())
+		"crash", "blackjack", "poker": _bet = posmod(_bet + d, BETS.size())
 		"ducks": _pick = posmod(_pick + d, 4)
 		"roulette": _pick = posmod(_pick + d, PICKS.size())
 	if kind == "ducks" or kind == "roulette":
@@ -158,6 +168,9 @@ func _on_result(k: String, data: Dictionary) -> void:
 			_crash = false
 			_msg.text = str(data.msg)
 		"bj":
+			_msg.text = str(data.get("msg", ""))
+		"pk":
+			_pk_hand = not bool(data.done)
 			_msg.text = str(data.get("msg", ""))
 		_:
 			_pending = str(data.msg)
@@ -193,6 +206,11 @@ func _hint() -> String:
 		"roulette": line = "[%s/%s] on: %s   [%s] SPIN (%dc)" % [q, f, str(PICKS[_pick]).to_upper(), e, Casino.ROULETTE_COST]
 		"crash":
 			line = "[%s] CASH OUT" % e if _crash else "[%s/%s] bet: %d   [%s] LAUNCH" % [q, f, BETS[_bet], e]
+		"poker":
+			if _pk_hand:
+				line = "[%s] PLAY (%dc)   [%s] FOLD" % [e, BETS[_bet], InputSetup.label("primary")]
+			else:
+				line = "[%s/%s] ante: %d   [%s] DEAL ME IN" % [q, f, BETS[_bet], e]
 		"blackjack":
 			if _my_turn():
 				line = "YOUR TURN   [%s] HIT   [%s] STAND   [%s] DOUBLE" % [e, InputSetup.label("primary"), InputSetup.label("secondary")]

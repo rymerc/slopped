@@ -29,6 +29,17 @@ def soup_pot(out):
         m.push(0, 0, 0, yaw=-math.degrees(am))
         m.col(R + 0.05, -3, -1.9, R + t, H + 8.0, 1.9)
         m.pop()
+    # riveted bands + burnt-on tide marks inside
+    for y, c in ((8.0, "#6e4326"), (18.0, "#7f5230"), (28.0, "#6e4326"), (37.0, "#c98a3f")):
+        p2 = lambda a, r, yy: m.P(math.cos(a) * r, yy, math.sin(a) * r)
+        for i in range(n):
+            a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+            m.face([p2(a0, R - 0.06, y + 0.5), p2(a1, R - 0.06, y + 0.5), p2(a1, R - 0.06, y), p2(a0, R - 0.06, y)], hexc(c))
+            m.ball(math.cos(a0) * (R - 0.08), y + 0.25, math.sin(a0) * (R - 0.08), 0.16, BRASS, n=5, rings=3)
+    # a giant wooden spoon somebody left in the pot
+    m.beam((-22, 0, -14), (-30, 46, -20), 0.7, hexc("#b0773f"))
+    m.ball(-21.5, -0.5, -13.6, 2.4, hexc("#b0773f"), n=8, rings=5, sy=0.5)
+    m.text("SOUP OF THE DAY: YOU", 0, 33.0, -R + 0.1, 3.0, hexc("#ffd257"), font="Bungee-Regular", depth=0.05, res=1)
     # stove below and two great handles
     for side in (-1, 1):
         m.box(side * (R + t), 26, -3, side * (R + t + 7), 29, 3, IRON_D)
@@ -66,6 +77,24 @@ def rocket(out):
             p.disc(0, 0, 0, 0.95, hexc("#ffd257"), n=12)
             p.disc(0, 0, 0.02, 0.72, hexc("#7fd0e0"), n=12, glow=0.3)
             p.pop()
+    m.finish(out)
+
+
+def scrap(out):
+    """Rocket parts for Pocket God: things that shouldn't be on a rocket."""
+    m = LM("scrap", 415)
+    tin = hexc("#b9c2d0")
+    a = m.part("fin")
+    a.face([a.P(-0.45, -0.3, 0), a.P(0.45, -0.3, 0), a.P(0.0, 0.42, 0)], RED)
+    a.face([a.P(0.45, -0.3, 0), a.P(-0.45, -0.3, 0), a.P(0.0, 0.42, 0)], scale_col(RED, 0.75))
+    a.box(-0.48, -0.36, -0.08, 0.48, -0.3, 0.08, tin)
+    b = m.part("bin")
+    b.cyl(0, -0.45, 0, 0.3, 0.45, 0.36, tin, n=8)
+    b.cyl(0, 0.45, 0, 0.38, 0.5, 0.38, hexc("#8d93a0"), n=8)
+    c = m.part("nose")
+    c.cyl(0, -0.2, 0, 0.3, 0.45, 0.0, hexc("#e8e2d0"), n=8)
+    c.cyl(0, -0.3, 0, 0.32, -0.2, 0.32, RED, n=8)
+    m.box(0, 0, 0, 0.01, 0.01, 0.01, tin)
     m.finish(out)
 
 
@@ -123,8 +152,9 @@ def back_room(out):
     for x, c in ((-2.2, hexc("#ffe27a")), (-1.2, hexc("#46e3ff")), (1.6, hexc("#ff4f9a"))):
         m.cyl(x, 1.32, 0.5, 0.16, 1.8, 0.16, c, n=7, glow=0.5)
     m.box(0.3, 1.32, 0.3, 0.9, 1.5, 0.75, INK)
-    m.room(-W, 0, -D, W, H, D, level=0.1, col=(1.0, 0.6, 0.8))
+    m.room(-W, 0, -D, W, H, D, level=0.26, col=(1.0, 0.6, 0.8))
+    m.lamp(0, 3.4, 0.2, radius=6.0, power=0.3, col=(1.0, 0.65, 0.8))
     m.finish(out)
 
 
-ALL = ["soup_pot", "rocket", "shrine", "back_room"]
+ALL = ["soup_pot", "rocket", "shrine", "back_room", "scrap"]

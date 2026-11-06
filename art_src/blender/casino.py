@@ -135,10 +135,6 @@ def casino(out):
     p = m.part("crash_screen")
     p.origin = (-9.5, 2.6, -D + 0.2)
     p.box(-3.5, -1.4, 0.0, 3.5, 1.9, 0.04, hexc("#10203a"), glow=0.25)
-    for k in range(18):
-        x = -3.3 + k * 0.38
-        y = -1.2 + 2.8 * (k / 17.0) ** 2.2
-        p.box(x, y, 0.04, x + 0.3, y + 0.14, 0.06, hexc("#46e3ff"), glow=0.95)
     m.room(-W, 0, -D, W, H, D, level=0.13, col=(1.0, 0.8, 0.85))
     m.finish(out)
 
@@ -369,10 +365,10 @@ def blackjack_table(out):
         m.cyl(x, F + 0.004, z, 0.25, F + 0.006, 0.25, FELT, n=16)
     # printed flat on the felt, reading from the players' side
     m.push(0, F + 0.004, -0.42, yaw=180, pitch=-90)
-    m.text("BLACKJACK PAYS 3 TO 2", 0, 0, 0, 0.2, BRASS, font="Limelight-Regular", depth=0.004, res=1)
+    m.text("BLACKJACK PAYS 3 TO 2", 0, 0, 0, 0.3, BRASS, font="Bungee-Regular", depth=0.004, res=2)
     m.pop()
     m.push(0, F + 0.004, -0.14, yaw=180, pitch=-90)
-    m.text("DEALER STANDS ON 17", 0, 0, 0, 0.13, CREAM, font="Bungee-Regular", depth=0.004, res=1)
+    m.text("DEALER STANDS ON 17", 0, 0, 0, 0.2, CREAM, font="Bungee-Regular", depth=0.004, res=1)
     m.pop()
     # chip tray along the dealer edge
     m.box(-1.3, F, 0.58, 1.1, F + 0.05, 0.82, hexc("#2a1c28"))

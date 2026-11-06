@@ -33,6 +33,7 @@ const ROULETTE_PICKS := {"red": {"slots": 18, "pay": 2}, "black": {"slots": 18, 
 
 var _crash: Dictionary = {}  # peer -> {bet, start_ms, point}
 var bj: Dictionary = _bj_empty()
+var _pk: Dictionary = {}  # peer -> {bet, seat, p, d}
 var chips_mode := false  # Cursed Casino Night: play for chips, not coins
 var chips: Dictionary = {}
 var house_bank := 0
@@ -367,6 +368,102 @@ func _bj_push() -> void:
 			"name": Net.pname(int(s.id)) if int(s.id) != 0 else "a local"}
 	_fx.rpc("bj", 0, {"state": bj.state, "hide": str(bj.state) in ["betting", "turns"], "turn": bj.turn,
 		"t": float(bj.t), "dealer": bj.dealer, "seats": seats})
+
+
+# --- three card poker: ante, look, then fold or pay again to play -----------------
+
+## [category, tiebreaks...] compares as an array. 5 straight flush .. 0 high card.
+static func pk_rank(hand: Array) -> Array:
+	var r: Array = hand.map(func(c: int) -> int: return 12 if c % 13 == 0 else (c % 13) - 1)  # ace high
+	r.sort()
+	r.reverse()
+	var flush: bool = hand[0] / 13 == hand[1] / 13 and hand[1] / 13 == hand[2] / 13
+	var run: bool = int(r[0]) - int(r[2]) == 2 and r[0] != r[1] and r[1] != r[2]
+	if r[0] == r[1] and r[1] == r[2]:
+		return [4, r[0]]
+	if run and flush:
+		return [5, r[0]]
+	if run:
+		return [3, r[0]]
+	if flush:
+		return [2, r[0], r[1], r[2]]
+	if r[0] == r[1]:
+		return [1, r[0], r[2]]
+	if r[1] == r[2]:
+		return [1, r[1], r[0]]
+	return [0, r[0], r[1], r[2]]
+
+
+static func pk_name(hand: Array) -> String:
+	return ["high card", "a pair", "a flush", "a straight", "three of a kind", "a straight flush"][int(pk_rank(hand)[0])]
+
+
+func _pk_beats(a: Array, b: Array) -> int:
+	var x := pk_rank(a)
+	var y := pk_rank(b)
+	for i in mini(x.size(), y.size()):
+		if int(x[i]) != int(y[i]):
+			return 1 if int(x[i]) > int(y[i]) else -1
+	return 0
+
+
+@rpc("any_peer", "reliable")
+func req_pk_ante(bet: int, seat: int) -> void:
+	var id := Net.sender()
+	if _pk.has(id) or not [10, 25, 50].has(bet) or seat < 0 or seat > 1 or not _pay(id, bet):
+		return
+	var p: Array = []
+	var d: Array = []
+	var used: Array = []
+	for i in 6:  # one real deck: no two identical cards
+		var c := randi() % 52
+		while used.has(c):
+			c = randi() % 52
+		used.append(c)
+		(p if i % 2 == 0 else d).append(c)
+	_pk[id] = {"bet": bet, "seat": seat, "p": p, "d": d}
+	_fx.rpc("poker", seat, {"p": p, "d": d, "hide": true, "text": pk_name(p)})
+	_reply(id, "pk", {"done": false, "msg": "You have %s." % pk_name(p)})
+
+
+@rpc("any_peer", "reliable")
+func req_pk_fold() -> void:
+	var id := Net.sender()
+	if not _pk.has(id):
+		return
+	var h: Dictionary = _pk[id]
+	_pk.erase(id)
+	_fx.rpc("poker", int(h.seat), {"p": [], "d": [], "hide": false, "text": "FOLDED"})
+	_reply(id, "pk", {"done": true, "msg": "You fold. The table watches you do it."})
+
+
+@rpc("any_peer", "reliable")
+func req_pk_play() -> void:
+	var id := Net.sender()
+	if not _pk.has(id):
+		return
+	var h: Dictionary = _pk[id]
+	var bet := int(h.bet)
+	if not _pay(id, bet):
+		return
+	_pk.erase(id)
+	var cmp := _pk_beats(h.p, h.d)
+	var dealer_qualifies := int(pk_rank(h.d)[0]) > 0 or int(pk_rank(h.d)[1]) >= 10  # queen high
+	var msg := ""
+	if not dealer_qualifies:
+		_gain(id, bet * 3)
+		msg = "Dealer doesn't qualify. Ante pays, play pushes: +%dc" % bet
+	elif cmp > 0:
+		var bonus := bet * 2 if int(pk_rank(h.p)[0]) >= 3 else 0
+		_gain(id, bet * 4 + bonus)
+		msg = "%s beats %s. +%dc" % [pk_name(h.p).capitalize(), pk_name(h.d), bet * 2 + bonus]
+	elif cmp == 0:
+		_gain(id, bet * 2)
+		msg = "Tie. Nobody is happy."
+	else:
+		msg = "Dealer's %s takes it." % pk_name(h.d)
+	_fx.rpc("poker", int(h.seat), {"p": h.p, "d": h.d, "hide": false, "text": msg.left(26)})
+	_reply(id, "pk", {"done": true, "msg": msg})
 
 
 ## DIRTY DEEDS DEPT.: self items apply now, everything else goes in the bag.

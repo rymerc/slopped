@@ -138,6 +138,7 @@ func finish(msg: String, winners: Array, payouts: Dictionary, challenge := "") -
 	over = true
 	_ev_state.rpc(0.0, scores, extra)
 	_ev_over.rpc(msg, winners)
+	var rows: Array = []
 	for id: int in roster:
 		if not Net.players.has(id):
 			continue
@@ -145,9 +146,12 @@ func finish(msg: String, winners: Array, payouts: Dictionary, challenge := "") -
 		var pay: Array = payouts.get(id, [0, 15, 40])
 		p.score = int(p.score) + int(pay[0])
 		Net.reward(id, int(pay[1]))
+		rows.append({"name": Net.pname(id), "a": "+%d" % int(pay[0]), "b": "+%dc" % int(pay[1]), "win": winners.has(id)})
 		Net.award(id, int(pay[2]), "Won!" if winners.has(id) else "Good effort", challenge if winners.has(id) else "")
 		p.perks = []
 	Net.broadcast()
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.win) > int(b.win))
+	Net.publish_results(msg.get_slice("\n", 0), rows)
 	await get_tree().create_timer(LOBBY_DELAY).timeout
 	Net.request_world("lobby", {})
 

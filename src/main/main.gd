@@ -18,6 +18,8 @@ var _status: Label
 var _color: Color = Art.SWATCHES[0]
 var _hat := "party"
 var _body := "kid"
+var _backdrop: Node3D
+var _backcam: Camera3D
 
 
 func _ready() -> void:
@@ -36,7 +38,9 @@ func _on_world(w: String, args: Dictionary) -> void:
 	_menu.visible = w == "menu"
 	if w == "menu":
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		_build_backdrop()
 		return
+	_drop_backdrop()
 	var node: WorldBase
 	match w:
 		"lobby":
@@ -143,6 +147,46 @@ func _save_profile() -> void:
 	cfg.save(SAVE_PATH)
 
 
+# --- menu backdrop ---------------------------------------------------------------
+
+## The town at golden hour, slowly orbited. Freed as soon as a world loads.
+func _build_backdrop() -> void:
+	if DisplayServer.get_name() == "headless" or _backdrop:
+		return
+	_backdrop = Node3D.new()
+	add_child(_backdrop)
+	WorldBase.build_env(_backdrop, Color("#4a86dc"), Color("#ffd9b5"), 0.6, 0.9, 150.0, 620.0,
+		Vector3(-30, -52, 0), Color("#fff0dc"), Color("#d9b08e"))
+	Terrain.build(_backdrop, func(_x: float, _z: float) -> float: return 0.0,
+		func(_x: float, _z: float, _h: float, _n: Vector3) -> Color: return Color("#b39a78"), 120.0, 8.0, false)
+	var b := Batch.new()
+	Kit.landmark(_backdrop, b, "saloon", LobbyBuilder.SALOON)
+	Kit.landmark(_backdrop, b, "sheriff", LobbyBuilder.SHERIFF)
+	Kit.landmark(_backdrop, b, "casino", LobbyBuilder.CASINO, -90.0)
+	Kit.landmark(_backdrop, b, "water_tower", Vector3(-40, 0, -2))
+	b.commit(_backdrop)
+	_backcam = Camera3D.new()
+	_backcam.far = 700.0
+	_backcam.fov = 55.0
+	_backdrop.add_child(_backcam)
+	_backcam.current = true
+
+
+func _process(_delta: float) -> void:
+	if _backcam:
+		# a slow drift across Main Street, framed so the menu panel covers nothing important
+		var a := Time.get_ticks_msec() * 0.00012
+		_backcam.global_position = Vector3(-32.0 + sin(a) * 6.0, 3.5 + sin(a * 0.7) * 0.6, 18.0)
+		_backcam.look_at(Vector3(-25, 6, -30))
+
+
+func _drop_backdrop() -> void:
+	if _backdrop:
+		_backdrop.queue_free()
+		_backdrop = null
+		_backcam = null
+
+
 # --- menu UI ---------------------------------------------------------------
 
 func _build_menu() -> void:
@@ -151,13 +195,10 @@ func _build_menu() -> void:
 	_menu = Control.new()
 	_menu.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(_menu)
-	var bg := ColorRect.new()
-	bg.color = Ui.BG
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_menu.add_child(bg)
-
+	_build_backdrop()
 	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	center.offset_right = 720.0
 	_menu.add_child(center)
 	var p := Ui.panel()
 	p.custom_minimum_size = Vector2(560, 0)

@@ -7,6 +7,7 @@ signal world_requested(world: String, args: Dictionary)
 signal status(msg: String)
 signal announced(msg: String)
 signal peer_left(id: int)
+signal results(title: String, rows: Array)
 
 const PORT := 24680
 const MAX_CLIENTS := 15
@@ -21,10 +22,15 @@ var world_args: Dictionary = {}
 var _pending_profile: Dictionary = {}
 var _bot_seq := 0
 var next_game := "giant"
+var port := PORT
+var history: Array = []  # short lines, newest last: who won what this session
 
 
 func _ready() -> void:
 	InputSetup.ensure()
+	for a: String in OS.get_cmdline_user_args():  # lets tests run beside a live game
+		if a.begins_with("--port="):
+			port = int(a.get_slice("=", 1))
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected)
 	multiplayer.connection_failed.connect(_on_failed)
@@ -35,7 +41,7 @@ func _ready() -> void:
 
 func host(profile: Dictionary, bots: int) -> int:
 	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(PORT, MAX_CLIENTS)
+	var err := peer.create_server(port, MAX_CLIENTS)
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
@@ -50,7 +56,7 @@ func host(profile: Dictionary, bots: int) -> int:
 
 func join(ip: String, profile: Dictionary) -> int:
 	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_client(ip.strip_edges(), PORT)
+	var err := peer.create_client(ip.strip_edges(), port)
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
@@ -74,7 +80,7 @@ func _on_connected() -> void:
 
 func _on_failed() -> void:
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
-	status.emit("Connection failed. Is the host running and port %d open?" % PORT)
+	status.emit("Connection failed. Is the host running and port %d open?" % port)
 
 
 func _on_server_gone() -> void:
@@ -285,6 +291,17 @@ func reward(id: int, n: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func set_next_game(g: String) -> void:
 	next_game = g
+
+
+## Host: everyone sees the match table. rows: {name, a, b, win}
+func publish_results(title: String, rows: Array) -> void:
+	_results.rpc(title, rows)
+
+
+@rpc("authority", "call_local", "reliable")
+func _results(title: String, rows: Array) -> void:
+	history.append(title)
+	results.emit(title, rows)
 
 
 func give_coins(id: int, n: int) -> void:

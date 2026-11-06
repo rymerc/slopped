@@ -124,6 +124,11 @@ static func _make(n: String) -> AudioStreamWAV:
 			return randf_range(-1, 1) * maxf(0.0, 1.0 - t * 40.0) * 0.6)
 		"wind": return _render(2.0, func(t: float, _i: int) -> float:
 			return _bp_noise(0.04 + 0.02 * sin(TAU * 0.5 * t)) * 0.8, true)
+		"flush": return _render(1.5, func(t: float, _i: int) -> float:
+			# a glug-glug swirl that drops in pitch and vanishes down the pipe
+			var k := t / 1.5
+			var f := lerpf(260.0, 70.0, k) * (1.0 + sin(TAU * lerpf(6.0, 13.0, k) * t) * 0.4)
+			return (sin(TAU * f * t) * 0.5 + _lp_noise(0.3) * 0.7) * _env(t, 1.5, 0.05))
 		"scrape": return _make_slide()
 		"squish": return _render(0.2, func(t: float, _i: int) -> float:
 			return (_lp_noise(0.3) * 0.6 + sin(TAU * lerpf(300.0, 120.0, t / 0.2) * t) * 0.4) * _env(t, 0.2, 0.004))

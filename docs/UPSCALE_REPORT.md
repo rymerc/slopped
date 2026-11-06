@@ -39,7 +39,7 @@ The original game had **no model, texture or audio files**. Everything was GDScr
 
 - **Retained**: all gameplay systems, characters, Big Wheel, Slide Hill, Gauntlet, Narrow Bridge, crane, wrecking ball, Giant Hunt.
 - **Replaced**: everything marked above.
-- **Added**: 33 custom models, 106 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
+- **Added**: 36 custom models, 101 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
 
 ## 3 and 4. Sources and licences
 
@@ -88,12 +88,10 @@ There are no `.tscn` changes: worlds are built in code, and all node names and R
 
 ## 8. Remaining visual deficiencies
 
-- **The Vault** is still a grey box, and **the cave** is still rock blobs.
-- **Town ground** is flat dirt. Ruts, cobbles and plank crossings would add a lot up close.
-- **Interiors are sparse**: the hotel upstairs doesn't exist, and the jail has no prisoners.
+- **Interiors are sparse**: the saloon has no upstairs, hotel balconies can't be reached, and the jail has no prisoners.
 - **Some Nature kit bushes** still read too neon from far away.
-- **Poker is decorative**, played by NPCs. Blackjack and every other table game is playable.
-- **The coaster and Ferris wheel can't be ridden.**
+- **Meadow grass grows through the cave floor** in places. Beach scatter is kept out of it; the meadow scatter isn't.
+- **NPCs have jobs and stares**, but no faces or hand props of their own.
 - **Avatars walk through saloon doors and stools**; these have no collision by design.
 - **Music passes through walls.** There's no occlusion.
 - **Not heard by a human:** audio levels and the synthesised music were checked by construction only. Nobody has listened to them yet, including the slide sound you asked about. Sliders are there if anything needs nudging.
@@ -109,6 +107,8 @@ Measured at 1600x900 on an RTX 4080 Super with vsync off, Medium preset:
 | Street | 2260 / 4.79 | 876 / 2.82 | 262k → 713k |
 | Overview | 1594 / 5.04 | 850 / 2.89 | 179k → 593k |
 | East | 686 / 3.35 | 548 / 2.81 | 192k → 539k |
+
+After the rides, Vault, cave and hotel upstairs were added, the same probe reads: Spawn 949 draws / 3.52 ms, Street 1560 / 3.17, Overview 1203 / 3.08, East 844 / 2.85, with 690k to 910k primitives. Draws are up, mostly from Street, but frame time is about the same. Low-end machines haven't been tested.
 
 World build went from 946 ms to about 1190 ms, and video memory from 80 MB to 96 MB. Assets add 20 MB to the repo. **None of this was tested on low-end hardware**, which is the real target, so try the Low preset on the weakest machine in your group.
 
@@ -145,4 +145,4 @@ godot --headless --path . -- --host --bots=1                             # then,
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
 ```
 
-`scripts/test_all.ps1` runs all of these one at a time and cleans up after each.
+`scripts/test_all.ps1` runs all of these one at a time and cleans up after each. It uses port 24690, so it can run with the game open. Pass `--port=N` to any run to do the same by hand. `tests/rides_test.gd` covers the coaster, Ferris wheel, every cannon target, the toilet, the helter-skelter and poker ranks.

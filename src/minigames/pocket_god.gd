@@ -13,7 +13,7 @@ const PAD_Y := 4.0
 const PAD_R := 6.5
 const SHRINE_R := 4.0
 const SHRINES := [Vector3(38, 5, 0), Vector3(-19, 5, 33), Vector3(-19, 5, -33)]
-const SCRAP_KINDS := ["crate_s", "barrel", "plank"]
+const SCRAP_KINDS := ["scrap_fin", "scrap_bin", "scrap_nose"]
 const STAGES := 8
 const MUTINY_SECS := 70.0  # time for a third of the team to dethrone the god
 
@@ -89,6 +89,14 @@ func build_arena() -> void:
 	Art.label(self, "BUILD THE ROCKET\n(bring scrap)", Vector3(0, PAD_Y + 6.5, 9.0), 0.016, Ui.YELLOW)
 	for s: Vector3 in SHRINES:
 		Art.label(self, "PRAY HERE\n(stand in the circle)", s + Vector3(0, 4.4, 0), 0.012, Art.GOLD)
+	# a beach camp + wrecked first attempt: this is not their first rocket
+	Dress.put(self, b, "pirate_ship_wreck", Vector3(-58, -1.0, 38), 30.0, 1.4)
+	Dress.put(self, b, "nature_tent_detailedOpen", Vector3(30, height(30, 30), 30), 200.0, 4.2, Dress.COL_BOX)
+	Dress.put(self, b, "survival_tent", Vector3(-30, height(-30, 22), 22), 80.0, 1.7, Dress.COL_BOX)
+	Dress.put(self, b, "watercraft_cargo_container_a", Vector3(26, height(26, -26), -26), 40.0, 2.0, Dress.COL_BOX)
+	Dress.put(self, b, "retrourban_truck_flat", Vector3(-34, height(-34, -6), -6), 70.0, 3.2, Dress.COL_BOX)
+	Dress.put(self, b, "survival_campfire_pit", Vector3(16, height(16, -14), -14), 0.0, 2.0)
+	Dress.put(self, b, "nature_statue_head" if Kit.has("nature_statue_head") else "nature_rock_largeA", Vector3(0, height(0, -52), -52), 0.0, 5.0, Dress.COL_BOX)
 	b.absorb(self, [_sea] + _stages.values())
 	b.commit(self)
 

@@ -15,7 +15,6 @@ const HEAT_SECS := 6.0
 const CLIMB_STEP := 1.45
 const CLIMB_TOP := 36.0
 const SOLO_SURVIVE := 110.0  # 1v1: outlast this and the veg beats the chef
-const BOT_AIR := 0.8
 const BOT_LEAP := 11.0
 const FOODS := [["food_plate_dinner", 7.5], ["food_pizza", 7.0], ["food_burger", 8.0], ["food_donut_sprinkles", 9.0]]
 
@@ -324,8 +323,11 @@ func _bots() -> void:
 			continue
 		var fallen := av.global_position.y < -1.0
 		if (d < 6.5 and d > 1.0 and to.y > -0.5) or (fallen and d < 15.5):
-			# a bot can't judge a jump, so it computes one: flight is about 0.8 s
-			var step := flat / BOT_AIR if not fallen else flat.normalized() * 7.0
+			# a bot can't judge a jump, so it computes one from the real arc
+			var v := av.jump_vel
+			var apex := v * v / (2.0 * Avatar.GRAVITY)
+			var air := v / Avatar.GRAVITY + sqrt(2.0 * maxf(apex - to.y, 0.05) / (Avatar.GRAVITY * Avatar.FALL_MULT))
+			var step := flat / air if not fallen else flat.normalized() * 7.0
 			av.velocity.x = step.limit_length(BOT_LEAP).x
 			av.velocity.z = step.limit_length(BOT_LEAP).z
 			av.bot_jump = true

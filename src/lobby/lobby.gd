@@ -11,6 +11,20 @@ const RANK_FX := {
 }
 const DRINKS := ["giant", "tiny", "zoom", "floaty", "drunk", "burp"]
 const SMITE_COOLDOWN := 6.0
+const FUSE_SECS := 2.2
+const FLUSH_SECS := 1.5
+## name, landing point, upward launch speed. Long shots land fast: you skid. That is the joke.
+const CANNON_TARGETS := [["THE CARNIVAL (safe-ish)", Playground.LANDING, 21.0],
+	["SLOP COVE", Vector3(-92, 0.5, 92), 28.0],
+	["SLIDE HILL SUMMIT", Playground.SUMMIT, 34.0],
+	["THE SALOON ROOF", Vector3(-21, 10.5, -33), 30.0],
+	["THE RANDOM OCEAN", Vector3(190, -4, -60), 30.0]]
+const FLUSH_OUTLETS := [[Vector3(-17, 2.2, 6), "the town fountain"], [Vector3(-40, 17, -2), "the water tower"],
+	[Vector3(-31.6, 2.6, -34), "the saloon piano"], [Vector3(44, 3.5, -16), "a slot machine"],
+	[Vector3(112, 3.0, -6), "the Chaos Yard port-a-potty"], [Vector3(-82, 1.5, 80), "the Bilge Bar taps"],
+	[Vector3(3.5, 38, -100), "the giant duck"], [Playground.CAVE + Vector3(-7, 1.2, 0), "the Spooky Cave"]]
+const FLUSH_LINES := ["10/10 would flush", "the pipes remember you", "again?", "a regular", "plumbing is a journey",
+	"you have a problem", "they named a wrench after you", "please stop", "it knows your name"]
 const GAMES := {"giant": "GIANT HUNT", "pocket": "POCKET GOD", "soup": "LAVA SOUP", "cursed": "CURSED CASINO NIGHT"}
 static var _last_game := ""
 const CANNON_VEL := Vector3(-5.8, 21.0, -24.0)
@@ -36,6 +50,13 @@ var _gauntlet_start := -1.0
 var _slide_from_top := false
 var _session_done: Dictionary = {}
 var _door_a := 0.0
+var _in_cannon := false
+var _fuse_lit := false
+var _cannon_aim := 0
+var _cannon_label: Label
+var _ride_lap_end := -1.0
+var _flushing: Dictionary = {}
+var _flush_count: Dictionary = {}
 var _dive_top := 0.0
 var floor_fx: CasinoFloorFx
 
@@ -102,6 +123,14 @@ func build_world() -> void:
 	tables.floor_fx = floor_fx
 	add_child(tables)
 	LobbyBuilder.populate(_refs.npcs)
+	_cannon_label = Ui.label("", 26, Ui.YELLOW)
+	_cannon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_cannon_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_cannon_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_cannon_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_cannon_label.offset_bottom = -70
+	_cannon_label.visible = false
+	hud.add_child(_cannon_label)
 
 	_hud_info = Ui.label("", 20)
 	_hud_info.position = Vector2(16, 12)
@@ -158,14 +187,22 @@ func _wire_stations() -> void:
 	add_interact(LobbyBuilder.SHOP, 3.5, "Browse the PERK SHOP", _open_casino.bind("shop"))
 	add_interact(LobbyBuilder.KENNEL + Vector3(-3, 0, -0.9), 2.4, "Adopt a bot (host)", _server_call.bind("req_bot", [true]))
 	add_interact(LobbyBuilder.KENNEL + Vector3(5, 0, -0.9), 2.4, "Release a bot (host)", _server_call.bind("req_bot", [false]))
-	add_interact(LobbyBuilder.TOILET, 2.4, "Flush yourself", _server_call.bind("req_flush", []))
+	add_interact(LobbyBuilder.TOILET, 2.4, "Sit down and flush", _server_call.bind("req_flush", []))
 	add_interact(Playground.TROPHY + Vector3(0, 1, 0), 2.8, _trophy_text, _claim_trophy)
 	add_interact(Playground.SUMMIT + Vector3(-4, 0, 3), 3.0, "Plant your flag on the summit", _server_call.bind("req_spot", ["summit"]))
 	add_interact(Playground.VAULT + Vector3(0, 0, 1.5), 2.5, "Loot the Vault", _server_call.bind("req_spot", ["vault"]),
 		func() -> bool: return vault_open > 0.0)
 	add_interact(Playground.LEDGE + Vector3(0, 3.0, 0), 2.2, "Open the Friend Ledge chest", _server_call.bind("req_spot", ["ledge"]))
-	add_interact(Playground.CAVE + Vector3(6.2, 0, 0), 2.4, "Open the cave chest", _server_call.bind("req_spot", ["cave"]))
-	add_interact(Playground.CANNON + Vector3(0, 0.4, 6.0), 3.5, "Climb into the HUMAN CANNON", _fire_cannon)
+	add_interact(Playground.CAVE_CHEST, 3.2, "Open the cave chest", _server_call.bind("req_spot", ["cave"]))
+	add_interact(Playground.CANNON + Vector3(0, 0.4, 5.6), 3.2, "Climb into the HUMAN CANNON", _enter_cannon)
+	add_interact(Playground.CARNIVAL + Vector3(-7, 2.9, 40), 9.0, "Board THE SLOPPER", _ride_coaster, _not_riding)
+	add_interact(Playground.FERRIS, 8.0, "Get on the Ferris wheel", _ride_ferris, _not_riding)
+	add_interact(Playground.CAROUSEL + Vector3(0, 0.45, 0), 7.5, "Ride a duck", _ride_carousel, _not_riding)
+
+
+func _not_riding() -> bool:
+	var me := local_avatar()
+	return me != null and not me.ride.is_valid()
 
 
 func _server_call(method: String, call_args: Array) -> void:
@@ -188,6 +225,14 @@ func _open_casino(kind: String) -> void:
 func close_ui() -> void:
 	casino_ui.visible = false
 	tables.leave()
+	if _in_cannon and not _fuse_lit:  # climb back out
+		_in_cannon = false
+		_cannon_label.visible = false
+		var me := local_avatar()
+		if me:
+			me.end_ride()
+			me.place(Playground.CANNON + Vector3(0, 1.2, 7.0))
+			_ev_cannon_body.rpc(me.pid, false)
 	super.close_ui()
 
 
@@ -310,16 +355,6 @@ func _drink_fx(id: int, kind: String) -> void:
 			if other != av and d.length() < 6.0:
 				other.push.rpc(d.normalized() * 14.0 + Vector3.UP * 6.0)
 
-
-@rpc("any_peer", "reliable")
-func req_flush() -> void:
-	if not multiplayer.is_server():
-		return
-	var av: Avatar = avatars.get(Net.sender())
-	if av:
-		var p := Vector3(randf_range(-20, 20), 6.0, randf_range(-16, 18))
-		av.teleport.rpc(p)
-		Net.announce("%s went down the drain" % Net.pname(av.pid))
 
 
 @rpc("any_peer", "reliable")
@@ -500,6 +535,14 @@ func _update_hazard_visuals(delta: float) -> void:
 ## Doors swing, rides turn, casino machines spin. Purely visual, driven by the
 ## shared clock so every peer sees the same rides in the same place.
 func _update_town(delta: float) -> void:
+	(_play.coaster as Coaster).animate(clock)
+	var rider := local_avatar()
+	if _ride_lap_end > 0.0 and clock > _ride_lap_end:  # the lap is over: everybody off
+		_ride_lap_end = -1.0
+		if rider and rider.ride.is_valid():
+			rider.end_ride()
+			rider.place(Playground.CARNIVAL + Vector3(-7, 3.4, 41.0))
+			toast("Thank you for riding THE SLOPPER. Refunds are not a thing.")
 	var doors: Dictionary = _refs.get("saloon_doors", {})
 	var open := 0.0
 	var door_pos := LobbyBuilder.SALOON + Vector3(0, 0, 9)
@@ -631,9 +674,11 @@ func req_spot(kind: String) -> void:
 		"summit": ok = p.y > 26.0
 		"vault":
 			ok = vault_open > 0.0 and p.distance_to(Playground.VAULT) < 8.0
-			coins = 25
+			coins = 75
 		"ledge": ok = p.y > Playground.LEDGE.y + 2.6 and p.distance_to(Playground.LEDGE) < 4.0
-		"cave": ok = p.distance_to(Playground.CAVE) < 9.0
+		"cave":
+			ok = p.distance_to(Playground.CAVE_CHEST) < 6.0
+			coins = 40
 	if not ok:
 		return
 	_session_done[key] = true
@@ -648,7 +693,7 @@ func req_spot(kind: String) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _spot_fx(p: Vector3) -> void:
-	Fx.confetti(self, p + Vector3.UP * 1.5, 36)
+	Fx.confetti(self, p + Vector3.UP * 1.5, 70)
 	Sfx.at(self, "coin", p, 2.0)
 
 
@@ -716,19 +761,242 @@ func _local_goals() -> void:
 		_slide_from_top = false
 
 
-## Into the barrel, out over the rooftops. Uses the same owner-side velocity write
-## as bounce pads, so it needs nothing new from the network.
-func _fire_cannon() -> void:
+# --- rides --------------------------------------------------------------------
+
+func _ride_coaster() -> void:
+	var me := local_avatar()
+	var co: Coaster = _play.coaster
+	if me == null:
+		return
+	if not co.boarding(clock):
+		toast("Train leaves in a moment. Wait for it (%.0fs)" % co.lap_left(clock))
+		return
+	var seat := randi() % Coaster.CARS
+	me.ride = func() -> Transform3D: return co.seat(seat, clock)
+	_ride_lap_end = clock + co.lap_left(clock)
+	toast("Hands inside. Jump to bail.")
+
+
+func _ride_ferris() -> void:
+	var me := local_avatar()
+	var f: Dictionary = _play.ferris
+	if me == null:
+		return
+	var best: Node3D = null
+	var bd := 6.0
+	for i in 12:
+		var car: Node3D = f["car%d" % i]
+		var d := car.global_position.distance_to(me.global_position + Vector3.UP * 2.0)
+		if d < bd:
+			bd = d
+			best = car
+	if best == null:
+		toast("No gondola in reach. Wait for one to come down.")
+		return
+	me.ride = func() -> Transform3D: return Transform3D(Basis.IDENTITY, best.global_position + Vector3.DOWN * 1.35)
+	toast("You're on. Jump to get off (mind the drop).")
+
+
+func _ride_carousel() -> void:
 	var me := local_avatar()
 	if me == null:
 		return
+	var i := randi() % 8
+	var at: Vector3 = Playground.CAROUSEL
+	var top := _play.carousel as Node3D
+	me.ride = func() -> Transform3D:
+		var a := -top.rotation.y + i * TAU / 8.0
+		return Transform3D(Basis(Vector3.UP, -a - PI * 0.5), at + Vector3(cos(a) * 5.0, 2.1, sin(a) * 5.0))
+	toast("Yeehaw, or quack. Jump to get off.")
+
+
+# --- the human cannon -----------------------------------------------------------
+
+func _enter_cannon() -> void:
+	var me := local_avatar()
+	if me == null or _in_cannon:
+		return
+	_in_cannon = true
+	ui_open = true
+	me.ride = func() -> Transform3D: return Transform3D(Basis.IDENTITY, Playground.CANNON + Vector3(0, 2.3, 0))
+	_ev_cannon_body.rpc(me.pid, true)
+	_aim_cannon()
+	cam.shake(0.2)
+	Sfx.at(self, "pop", me.global_position, 0.0, 0.1, 0.6)
+
+
+func _aim_cannon() -> void:
+	var t: Array = CANNON_TARGETS[_cannon_aim]
+	_cannon_label.text = "AIMING AT: %s\n[%s/%s] change target   [%s] LIGHT THE FUSE   [%s] climb out" % [t[0],
+		InputSetup.label("ability_1"), InputSetup.label("ability_2"), InputSetup.label("interact"), InputSetup.label("menu")]
+	_cannon_label.visible = true
+	_point_barrel(_cannon_aim)
+
+
+func _point_barrel(i: int) -> void:
+	var barrel := _play.cannon as Node3D
+	var to: Vector3 = CANNON_TARGETS[i][1] - Playground.CANNON
+	var v := cannon_velocity(Playground.CANNON + CANNON_MOUTH, CANNON_TARGETS[i][1], float(CANNON_TARGETS[i][2]))
+	var world_yaw := atan2(to.x, to.z)
+	var tw := barrel.create_tween()
+	# the landmark is turned 180 degrees, so barrel yaw is measured from its back
+	tw.tween_property(barrel, "rotation:y", wrapf(world_yaw - PI, -PI, PI), 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(barrel, "rotation:x", -clampf(atan2(v.y, Vector2(v.x, v.z).length()), 0.3, 1.3), 0.5)
+
+
+func _input(event: InputEvent) -> void:
+	if not _in_cannon or _fuse_lit:
+		return
+	var step := -1 if event.is_action_pressed("ability_1") else (1 if event.is_action_pressed("ability_2") else 0)
+	if step != 0:
+		_cannon_aim = posmod(_cannon_aim + step, CANNON_TARGETS.size())
+		_aim_cannon()
+		Sfx.ui(self, "click")
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled()
+		_light_fuse()
+
+
+func _light_fuse() -> void:
+	_fuse_lit = true
+	_cannon_label.text = "FSSSSSSSS"
+	Net.to_server(self, "req_fuse", [_cannon_aim])
+
+
+@rpc("any_peer", "reliable")
+func req_fuse(i: int) -> void:
+	if multiplayer.is_server() and i >= 0 and i < CANNON_TARGETS.size():
+		_ev_fuse.rpc(Net.sender(), i)
+
+
+## Everyone watches the barrel swing and the fuse burn. The rider launches themself.
+@rpc("authority", "call_local", "reliable")
+func _ev_fuse(pid: int, i: int) -> void:
+	_point_barrel(i)
+	var at := Playground.CANNON + Vector3(0, 2.0, 3.6)
+	Sfx.at(self, "hiss", at, 2.0, 0.0, 1.4)
+	for k in 6:
+		get_tree().create_timer(k * 0.35).timeout.connect(func() -> void:
+			if is_inside_tree():
+				Fx.impact(self, at + Vector3(0, 0.2, 0), 0.4))
+	Net.announce("%s lit the fuse on the HUMAN CANNON" % Net.pname(pid))
+	await get_tree().create_timer(FUSE_SECS).timeout
+	if not is_inside_tree():
+		return
+	var mouth := Playground.CANNON + CANNON_MOUTH
+	Fx.explosion(self, mouth, 2.5)
+	Sfx.at(self, "boom", mouth, 4.0, 0.05, 1.3)
+	var me := local_avatar()
+	if me and me.global_position.distance_to(mouth) < 30.0:
+		cam.shake(0.7)
+	_ev_cannon_body(pid, false)
+	if pid == Net.me():
+		launch_cannon(i)
+
+
+## Owner side: into the air, using the same velocity write as a bounce pad.
+func launch_cannon(i: int) -> void:
+	var me := local_avatar()
+	_in_cannon = false
+	_fuse_lit = false
+	ui_open = false
+	_cannon_label.visible = false
+	if me == null:
+		return
+	me.end_ride()
+	var t: Array = CANNON_TARGETS[i]
 	me.global_position = Playground.CANNON + CANNON_MOUTH
-	me.velocity = CANNON_VEL
+	me.velocity = cannon_velocity(me.global_position, t[1], float(t[2]))
 	me.floor_vis = false
-	Sfx.at(self, "boom", Playground.CANNON + CANNON_MOUTH, 2.0, 0.05, 1.3)
-	Fx.explosion(self, Playground.CANNON + CANNON_MOUTH, 2.0)
-	cam.shake(0.7)
 	toast("WHEEEEEEEEE")
+
+
+## Solves the arc for the avatar's real gravity (slower up, 1.55x down).
+static func cannon_velocity(from: Vector3, to: Vector3, vy: float) -> Vector3:
+	var g := Avatar.GRAVITY
+	var rise := vy * vy / (2.0 * g)
+	var drop := rise + from.y - to.y
+	var t := vy / g + sqrt(2.0 * maxf(drop, 0.1) / (g * Avatar.FALL_MULT))
+	var flat := Vector3(to.x - from.x, 0, to.z - from.z) / t
+	return Vector3(flat.x, vy, flat.z)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_cannon_body(pid: int, hide_body: bool) -> void:
+	var av: Avatar = avatars.get(pid)
+	if av and av.parts.has("root"):
+		(av.parts.root as Node3D).visible = not hide_body
+
+
+# --- the toilet ------------------------------------------------------------------
+
+@rpc("any_peer", "reliable")
+func req_flush() -> void:
+	if not multiplayer.is_server():
+		return
+	var id := Net.sender()
+	var av: Avatar = avatars.get(id)
+	if av == null or av.dead or _flushing.has(id):
+		return
+	_flushing[id] = true
+	var count := int(_flush_count.get(id, 0)) + 1
+	_flush_count[id] = count
+	var roll := randf()
+	var kind := "clog" if roll < 0.14 else ("gold" if roll < 0.2 else "normal")
+	var outlet := randi() % FLUSH_OUTLETS.size()
+	if kind == "gold":
+		Net.give_coins(id, 40)
+		Net.broadcast()
+	_ev_flush.rpc(id, outlet, kind, count)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_flush(pid: int, outlet: int, kind: String, count: int) -> void:
+	var av: Avatar = avatars.get(pid)
+	if av == null:
+		return
+	var seat := LobbyBuilder.TOILET + Vector3(0, 1.0, 1.5)
+	Sfx.at(self, "flush", seat, 4.0, 0.05)
+	Fx.text(self, seat + Vector3.UP * 3.2, FLUSH_LINES[count % FLUSH_LINES.size()], Color("#9fe6ff"), 0.011, 1.0, 2.2)
+	var body: Node3D = av.parts.root
+	if av.is_local():
+		av.ride = func() -> Transform3D: return Transform3D(Basis.IDENTITY, seat)
+		cam.wobble = 2.0
+	var tw := body.create_tween().set_parallel(true)
+	tw.tween_property(body, "rotation:y", TAU * 5.0, FLUSH_SECS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(body, "scale", Vector3(0.05, 0.05, 0.05), FLUSH_SECS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await get_tree().create_timer(FLUSH_SECS + 0.15).timeout
+	if not is_inside_tree() or not is_instance_valid(av):
+		return
+	body.rotation.y = 0.0
+	body.create_tween().tween_property(body, "scale", Vector3.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var at: Vector3 = FLUSH_OUTLETS[outlet][0]
+	var up := 15.0
+	var where := "%s came out of %s" % [Net.pname(pid), FLUSH_OUTLETS[outlet][1]]
+	match kind:
+		"clog":  # it comes straight back up
+			at = seat + Vector3.UP * 0.5
+			up = 34.0
+			where = "THE TOILET REJECTED %s" % Net.pname(pid)
+			Fx.explosion(self, seat, 3.0)
+		"gold":
+			where = "%s hit the GOLDEN FLUSH (+40c) and came out of %s" % [Net.pname(pid), FLUSH_OUTLETS[outlet][1]]
+			Fx.confetti(self, at, 50)
+	toast(where)
+	Fx.splash(self, at)
+	Sfx.at(self, "boing", at, 2.0, 0.1, 0.7)
+	if av.is_local():
+		av.end_ride()
+		av.place(at)
+		av.velocity = Vector3(randf_range(-3, 3), up, randf_range(-3, 3))
+		av.floor_vis = false
+		Net.to_server(self, "req_flushed", [])
+
+
+@rpc("any_peer", "reliable")
+func req_flushed() -> void:
+	_flushing.erase(Net.sender())
 
 
 func respawn_for(av: Avatar) -> Vector3:

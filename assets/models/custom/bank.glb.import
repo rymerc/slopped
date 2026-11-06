@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cgsvicsfcbbai"
-path="res://.godot/imported/coaster_support_large.glb-91f6ddcff3e1437bd3b8b4ac8fcdbc3f.scn"
+uid="uid://2j68pithmxvy"
+path="res://.godot/imported/bank.glb-1a4bed9c6ef0f8d9b53880475fb0f23a.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/coaster_support_large.glb"
-dest_files=["res://.godot/imported/coaster_support_large.glb-91f6ddcff3e1437bd3b8b4ac8fcdbc3f.scn"]
+source_file="res://assets/models/custom/bank.glb"
+dest_files=["res://.godot/imported/bank.glb-1a4bed9c6ef0f8d9b53880475fb0f23a.scn"]
 
 [params]
 

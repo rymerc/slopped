@@ -56,6 +56,7 @@ var stun_t := 0.0
 var input_locked := false
 var glow := false
 var holding: Node3D  # Prop currently carried (set by PropSystem)
+var ride: Callable  # () -> Transform3D. While set, the avatar is a passenger.
 var hexes: Dictionary = {}  # kind -> expiry in ms. Everyone tracks them; the owner obeys them.
 var air_jumps := 0
 var knock_resist := 1.0
@@ -619,7 +620,27 @@ func _remote_flags() -> void:
 		state = St.SLIDE if _tflags & 4 != 0 else St.NORMAL
 
 
+## Passenger mode: position comes from the ride. Jumping bails out, keeping the
+## ride's speed, which is the funniest available option at the top of a coaster.
+func _ride_tick(delta: float) -> void:
+	var xf: Transform3D = ride.call()
+	velocity = (xf.origin - global_position) / maxf(delta, 0.0001)
+	global_position = xf.origin
+	facing = atan2(xf.basis.z.x, xf.basis.z.z)
+	floor_vis = true
+	if is_local() and not input_locked and Input.is_action_just_pressed("jump"):
+		end_ride()
+		velocity.y += jump_vel
+
+
+func end_ride() -> void:
+	ride = Callable()
+
+
 func _simulate(delta: float) -> void:
+	if ride.is_valid():
+		_ride_tick(delta)
+		return
 	var dir := Vector3.ZERO
 	var want_jump := false
 	var hold_jump := false
