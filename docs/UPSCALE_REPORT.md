@@ -88,9 +88,9 @@ There are no `.tscn` changes: worlds are built in code, and all node names and R
 
 ## 8. Remaining visual deficiencies
 
-- **The jail has no prisoners**, and the hotel's top-floor balcony is still for looking at only. The saloon gallery and outside stairs and the hotel's first-floor balcony are walkable, and the town walk test covers them.
+- **Upstairs spaces are walk-tested**: the saloon gallery, the saloon's outside stairs, both hotel balconies and the hotel's side stairs are all covered by the town walk test, which now also checks each route ends on the right floor.
 - **Some Nature kit bushes** still read too neon from far away.
-- **NPCs don't blink and carry one thing each** (glass, card, coffee, paper, ice cream, balloon or tray). They have no idle variety beyond that.
+- **NPCs** carry one thing each, fidget (scratch, check a watch, shift about) and slowly wave when you get close. They still have no voices beyond the mutter lines.
 - **Avatars walk through saloon doors and stools**; these have no collision by design.
 - **Music passes through walls.** There's no occlusion.
 - **Not heard by a human:** audio levels and the synthesised music were checked by construction only. Nobody has listened to them yet, including the slide sound you asked about. Sliders are there if anything needs nudging.

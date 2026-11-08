@@ -23,8 +23,8 @@ var deal_t := 0.0  # dealers flick their arms while this runs down
 
 
 ## A worker: stays put, faces `yaw`, follows you with their head.
-## job: "" stands there, "wipe" polishes a glass forever, "deal" works the table,
-## "piano" hammers the keys.
+## job: "" stands there (and fidgets), "wipe" polishes a glass forever, "deal" works
+## the table, "piano" hammers the keys, "sit" sits, "rattle" shakes the cell bars.
 func add_still(pos: Vector3, yaw: float, look: Dictionary, job := "") -> void:
 	_add(look, pos, yaw, [])
 	_all[-1].job = job
@@ -45,7 +45,7 @@ func _add(look: Dictionary, pos: Vector3, yaw: float, path: Array) -> void:
 	root.position = pos
 	root.rotation.y = yaw
 	_all.append({"parts": p, "root": root, "path": path, "i": 1, "phase": randf() * TAU,
-		"hold": 0.0, "twitch": randf_range(2.0, 7.0), "off": 0.0})
+		"hold": 0.0, "twitch": randf_range(2.0, 7.0), "off": 0.0, "idle": randf_range(2.0, 6.0), "gesture": ""})
 
 
 ## Something in the right hand. The hand sits 0.38 m down the arm.
@@ -126,6 +126,18 @@ func _tick(n: Dictionary, eye: Vector3, delta: float) -> void:
 			var flick := sin(t * 12.0) * 0.5 if deal_t > 0.0 else 0.0
 			(limbs.arm_r as Node3D).rotation.x = -1.1 + flick
 			(limbs.arm_l as Node3D).rotation.x = -0.9
+		"sit":
+			(limbs.leg_l as Node3D).rotation.x = -1.5
+			(limbs.leg_r as Node3D).rotation.x = -1.5
+			(limbs.arm_l as Node3D).rotation.x = -0.5
+			(limbs.arm_r as Node3D).rotation.x = -0.5
+		"rattle":  # hands on the bars; harder when you're close
+			var hard := 0.22 if d < FREEZE_RANGE else 0.06
+			(limbs.arm_l as Node3D).rotation = Vector3(-1.55 + sin(t * 19.0) * hard, 0, -0.18)
+			(limbs.arm_r as Node3D).rotation = Vector3(-1.55 + sin(t * 19.0 + 1.3) * hard, 0, 0.18)
+		"":
+			if not walking:
+				_fidget(n, limbs, d, t, delta)
 	var want := Vector2.ZERO
 	if d < STARE_RANGE:
 		var l: Vector3 = root.global_transform.affine_inverse() * eye - head.global_position * 0.0
@@ -142,6 +154,28 @@ func _tick(n: Dictionary, eye: Vector3, delta: float) -> void:
 	var k := clampf(delta * 3.2, 0.0, 1.0)
 	head.rotation.x = lerp_angle(head.rotation.x, want.x, k)
 	head.rotation.y = lerp_angle(head.rotation.y, want.y, k)
+
+
+## Idle business for anyone without a job: scratch, check a watch that isn't there,
+## shift about. Get close and they stop all that and wave at you, very slowly.
+func _fidget(n: Dictionary, limbs: Dictionary, d: float, t: float, delta: float) -> void:
+	var arm_l := limbs.arm_l as Node3D
+	var arm_r := limbs.arm_r as Node3D
+	if d < FREEZE_RANGE:
+		arm_r.rotation = Vector3(-2.7, 0, 0.35 + sin(t * 1.6) * 0.35)
+		return
+	n.idle = float(n.idle) - delta
+	if float(n.idle) <= 0.0:
+		n.gesture = ["", "scratch", "watch", "shift", ""][randi() % 5] if str(n.gesture) == "" else ""
+		n.idle = randf_range(1.8, 3.0) if str(n.gesture) != "" else randf_range(3.0, 8.0)
+	match str(n.gesture):
+		"scratch":
+			arm_r.rotation = Vector3(-2.9, 0, -0.5 + sin(t * 14.0) * 0.12)
+		"watch":
+			arm_l.rotation = Vector3(-1.4, 0, -0.6)
+			arm_r.rotation = Vector3(-0.9, 0, 0.5)
+		"shift":
+			(limbs.torso as Node3D).rotation.z = sin(t * 2.0) * 0.08
 
 
 func _walk(n: Dictionary, root: Node3D, path: Array, delta: float) -> bool:

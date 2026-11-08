@@ -174,9 +174,10 @@ func _ev_release(id: int, pid: int, pos: Vector3, vel: Vector3, thrown: bool) ->
 		p.linear_velocity = vel
 		p.angular_velocity = Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * (6.0 if thrown else 1.0)
 	if thrown:
-		Sfx.at(self, "whoosh", pos, 0.0, 0.1, clampf(1.4 / sqrt(p.mass), 0.6, 1.5))
+		# one quiet whoosh per throw (the arm swing no longer adds its own on top)
+		Sfx.at(self, "whoosh", pos, -12.0, 0.1, clampf(1.4 / sqrt(p.mass), 0.6, 1.5))
 		if av:
-			av.play_shove()
+			av.play_shove(false)
 
 
 @rpc("authority", "unreliable_ordered")

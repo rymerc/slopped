@@ -196,8 +196,10 @@ static func populate(npcs: Npcs) -> void:
 	npcs.add_still(SHOP + Vector3(0, 0, 2.6), 0.0, {"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"})
 	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog", "holds": "glass"}, "wipe")
 	npcs.add_still(SALOON + Vector3(-9.8, f, -0.9), -PI * 0.5, {"color": Color("#4a4e69"), "hat": "top", "body": "wizard"}, "piano")  # the pianist
-	npcs.add_still(HOTEL + Vector3(-6, f, 3.0), PI, {"color": Color("#c44569"), "hat": "none", "body": "kid", "holds": "paper"})  # hotel desk
+	npcs.add_still(HOTEL + Vector3(-6, f + 0.6, 4.6), 0.0,  # on a step behind the desk
+	 {"color": Color("#c44569"), "hat": "none", "body": "kid", "holds": "paper"})  # hotel desk
 	npcs.add_still(SHERIFF + Vector3(-4.8, f, 6.4), PI, {"color": Color("#2f8f8a"), "hat": "bucket", "body": "kid", "holds": "coffee"})  # the sheriff
+	jail_inmates(npcs)
 	# upstairs at the saloon: still holding the hand he was dealt in 1887
 	npcs.add_still(SALOON + Vector3(-5.4, 5.62, 7.4), 0.0, {"color": Color("#e8e0cc"), "hat": "top", "body": "robot", "holds": "card"})
 	var loops := [
@@ -318,10 +320,22 @@ static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
 	var fame := Art.label(root, "", FAME + Vector3(0, -0.2, 0.02), 0.0052, Color.WHITE, false)
 	out.fame = fame
 	Art.label(root, "HALL OF FAME (and shame)", FAME + Vector3(0, 1.8, 0.02), 0.0075, Art.GOLD, false)
-	Art.label(root, "ADOPT A BOT", KENNEL + Vector3(-3.2, 2.4, -1.2), 0.009, Ui.YELLOW)
-	Art.label(root, "RELEASE A BOT", KENNEL + Vector3(4.6, 2.4, -1.2), 0.009, Ui.YELLOW)
+	Art.label(root, "ADOPT A BOT", KENNEL + Vector3(-3.2, 1.5, -1.2), 0.008, Ui.YELLOW)  # below the crime signs
+	Art.label(root, "RELEASE A BOT", KENNEL + Vector3(4.6, 1.5, -1.2), 0.008, Ui.YELLOW)
 	Dress.put(root, b, "kk_furniture_chair_B_wood", KENNEL + Vector3(-5.0, 0, 4.9), 200.0, 1.0, Dress.COL_NONE, true)
 	Dress.put(root, b, "kk_furniture_shelf_B_small_decorated", KENNEL + Vector3(7.5, 0, 7.5), 0.0, 1.1, Dress.COL_NONE, true)
+	# the cell signs say what they're in for
+	var crimes := [[Vector3(-6.0, 0, 0), "LIFE\nfor running in the lobby"], [Vector3(4.2, 0, 0), "25 YEARS\nfor counting cards (badly)"]]
+	for c: Array in crimes:
+		Art.label(root, str(c[1]), SHERIFF + (c[0] as Vector3) + Vector3(0, 3.75, -2.22), 0.0055, Color("#ffcf5a"), false)
+
+
+## The prisoners. They are not bots and cannot be adopted. They have been here a while.
+static func jail_inmates(npcs: Npcs) -> void:
+	var f := 0.4
+	npcs.add_still(SHERIFF + Vector3(-5.6, f, -2.8), PI, {"color": Color("#e8e0cc"), "hat": "none", "body": "kid"}, "rattle")
+	npcs.add_still(SHERIFF + Vector3(-7.0, f + 0.7 - 0.36, -6.6), PI, {"color": Color("#e8e0cc"), "hat": "bucket", "body": "frog"}, "sit")
+	npcs.add_still(SHERIFF + Vector3(5.6, f + 0.7 - 0.36, -6.6), PI, {"color": Color("#e8e0cc"), "hat": "party", "body": "cat", "holds": "card"}, "sit")
 
 
 ## Wheel ruts, plank crossings, loose stones and a trough: the ground has a history.

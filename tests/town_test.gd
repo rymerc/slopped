@@ -56,6 +56,10 @@ func _build_routes() -> void:
 		["paint", [c.PAINT]],
 		["hotel upstairs", [Vector3(13, 0.4, 28), Vector3(11.5, 0.4, 26.4), Vector3(8.8, 0.5, 26.3), Vector3(8.7, 1.6, 29.0), Vector3(8.7, 6.2, 37.0), Vector3(8.7, 6.2, 40.3), Vector3(11.2, 6.2, 40.3), Vector3(11.5, 6.2, 37.0), Vector3(12, 6.2, 34), Vector3(14, 6.2, 31)]],
 		["hotel balcony", [Vector3(19.3, 6.2, 28), Vector3(19.3, 6.1, 23.9), Vector3(25, 6.1, 25.0), Vector3(19.3, 6.1, 25.3), Vector3(19.3, 6.2, 29.5), Vector3(12, 6.2, 34)]],
+		["hotel top balcony", [Vector3(19.3, 6.2, 23.9), Vector3(30.0, 6.2, 25.25), Vector3(32.1, 6.2, 25.25), Vector3(32.1, 8.1, 32.5),
+			Vector3(36.0, 8.1, 33.0), Vector3(34.4, 10.0, 25.4), Vector3(33.0, 10.0, 25.25), Vector3(25, 10.0, 25.25)]],
+		["hotel top balcony down", [Vector3(36.0, 10.0, 25.1), Vector3(34.4, 8.1, 33.0), Vector3(31.0, 8.1, 32.6), Vector3(32.2, 7.1, 29.0), Vector3(32.2, 6.2, 24.3),
+			Vector3(30, 6.2, 25.25), Vector3(19.3, 6.2, 25.3), Vector3(19.3, 6.2, 29.5), Vector3(12, 6.2, 34)]],
 		["back downstairs", [Vector3(12, 6.2, 34), Vector3(11.5, 6.2, 37.0), Vector3(11.2, 6.2, 40.3), Vector3(8.7, 6.2, 40.3), Vector3(8.7, 6.2, 37.0), Vector3(8.7, 1.6, 29.0), Vector3(8.8, 0.5, 26.3), Vector3(13, 0.4, 28)]],
 		["casino", [Vector3(19, 0.4, 28), hotel_door, casino_door, Vector3(31, 0, -1), Vector3(40, 0, -3), c.CRASH + Vector3(-1.4, 0, 0)]],
 		["slots", [Vector3(47.5, 0, -14), c.SLOTS[3] + Vector3(0, 0, 1.2)]],
@@ -73,7 +77,7 @@ func _build_routes() -> void:
 
 
 func _process(delta: float) -> bool:
-	if (Time.get_ticks_msec() - _start) / 1000.0 > 170.0:
+	if (Time.get_ticks_msec() - _start) / 1000.0 > 260.0:
 		print("TIMEOUT at route ", _i, " leg ", _leg, " pos ", _av.global_position, " goal ", _routes[_i][1][_leg], " hexes ", _av.hexes, " perks ", root.get_node("Net").perks_of(_av.pid), " stall ", _stall)
 		quit(1)
 		return false
@@ -100,8 +104,15 @@ func _process(delta: float) -> bool:
 	if to.length() < REACH if _leg == pts.size() - 1 else to.length() < 1.6:
 		_leg += 1
 		_t = 0.0
+		if OS.get_cmdline_user_args().has("--legs"):
+			print("  leg ", _leg, " of ", r[0], " at ", _av.global_position.snappedf(0.1))
 		if _leg >= pts.size():
-			print("PASS ", r[0])
+			# reaching is judged flat, so check we ended on the right floor too
+			if absf(_av.global_position.y - goal.y) > 1.5:
+				print("FAIL ", r[0], " ended on the wrong level: ", _av.global_position.snappedf(0.1), " wanted y ", goal.y)
+				_fail += 1
+			else:
+				print("PASS ", r[0], " at ", _av.global_position.snappedf(0.1))
 			_next_route()
 		return false
 	_av.bot_move = to.normalized()

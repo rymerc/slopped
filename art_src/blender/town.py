@@ -509,9 +509,55 @@ def hotel(out):
         m.box(-W, y + 1.08, D + 1.4, W, y + 1.2, D + 1.56, trim)
         m.col(-W, y - 0.14, D, W, y, D + 1.5)
         m.col(-W, y, D + 1.38, W, y + 1.25, D + 1.56)
-        for x in (-W, W - 0.1):
-            m.box(x, y, D, x + 0.1, y + 1.2, D + 1.5, trim)
-            m.col(x, y, D, x + 0.1, y + 1.25, D + 1.5)
+        m.box(W - 0.1, y, D, W, y + 1.2, D + 1.5, trim)  # the -W ends open onto the outside stairs
+        m.col(W - 0.1, y, D, W, y + 1.25, D + 1.5)
+    # outside stairs on the side away from Main Street: balcony -> flight -> landing -> flight -> top balcony
+    Y1, Y2, YM = 6.15, 10.0, 8.08
+    stair = hexc("#8c5a3c")
+    def flight(x0, x1, za, ya, zb, yb):
+        m.col_ramp((0.5 * (x0 + x1), ya, za), (0.5 * (x0 + x1), yb, zb), x1 - x0)
+        n = 12
+        for i in range(n):
+            t0, t1 = i / n, (i + 1) / n
+            z0, z1 = za + (zb - za) * t0, za + (zb - za) * t1
+            y0, y1 = ya + (yb - ya) * t0, ya + (yb - ya) * t1
+            m.box(x0, y0, min(z0, z1), x1, y1, max(z0, z1), jitter(stair, m.rng, 0.08), faces="YZ" if zb < za else "Yz")
+        for x in (x0, x1 - 0.1):
+            m.beam((x + 0.05, ya - 0.1, za), (x + 0.05, yb - 0.1, zb), 0.08, WOOD_D)
+    def landing(x0, z0, x1, z1, y):
+        m.floor_boards(x0, z0, x1, z1, y, stair, depth=0.14)
+        m.col(x0, y - 0.14, z0, x1, y, z1)
+        for (px, pz) in ((x0 + 0.15, z0 + 0.15), (x1 - 0.15, z0 + 0.15), (x0 + 0.15, z1 - 0.15), (x1 - 0.15, z1 - 0.15)):
+            m.box(px - 0.1, 0, pz - 0.1, px + 0.1, y - 0.14, pz + 0.1, trim)
+    def rail(x0, z0, x1, z1, y0, y1):
+        """Balusters + top rail + collider from (x0, z0, y0) to (x1, z1, y1)."""
+        n = max(2, int(math.hypot(x1 - x0, z1 - z0) / 0.5))
+        for i in range(n + 1):
+            t = i / n
+            x, z, y = x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, y0 + (y1 - y0) * t
+            m.box(x - 0.035, y, z - 0.035, x + 0.035, y + 1.05, z + 0.035, trim)
+        m.beam((x0, y0 + 1.1, z0), (x1, y1 + 1.1, z1), 0.05, trim)
+        L = math.hypot(x1 - x0, z1 - z0)
+        mx, mz = 0.5 * (x0 + x1), 0.5 * (z0 + z1)
+        if abs(y1 - y0) < 0.01:
+            m.col(min(x0, x1) - 0.05, y0, min(z0, z1) - 0.05, max(x0, x1) + 0.05, y0 + 1.2, max(z0, z1) + 0.05)
+        else:
+            m.col_ramp((x0, y0 + 1.2, z0), (x1, y1 + 1.2, z1), 0.1, t=1.2)
+    ex = -W  # outside face of the south wall
+    landing(ex - 2.2, D, ex, D + 1.5, Y1)                 # off the first-floor balcony
+    flight(ex - 2.2, ex, D, Y1, 1.9, YM)                  # up, heading back along the wall (no gap to fall through)
+    landing(ex - 4.4, -0.3, ex, 1.9, YM)                  # turn
+    flight(ex - 4.4, ex - 2.4, 1.9, YM, D, Y2)            # up, heading front again
+    landing(ex - 4.4, D, ex, D + 1.5, Y2)                 # onto the top balcony
+    rail(ex - 2.2, D + 1.45, ex, D + 1.45, Y1, Y1)
+    rail(ex - 2.25, D, ex - 2.25, 1.9, Y1, YM)
+    rail(ex - 4.35, 1.9, ex - 4.35, D, YM, Y2)
+    rail(ex - 2.45, 1.9, ex - 2.45, D, YM, Y2)  # inner side: the first flight is a long way down
+    rail(ex - 4.35, -0.25, ex, -0.25, YM, YM)
+    rail(ex - 4.35, 1.9, ex - 4.35, -0.25, YM, YM)
+    rail(ex - 4.4, D + 1.45, ex, D + 1.45, Y2, Y2)
+    rail(ex - 4.35, D, ex - 4.35, D + 1.45, Y2, Y2)
+    rail(ex - 2.3, D + 0.05, ex, D + 0.05, Y2, Y2)  # over the drop to the first flight
     for x in (-W + 0.15, -6.0, 6.0, W - 0.15):
         m.box(x - 0.12, F, D + 1.3, x + 0.12, 12.4, D + 1.54, trim)
     m.box(-W - 0.2, 12.4, D, W + 0.2, 12.6, D + 1.7, roofc)

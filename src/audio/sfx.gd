@@ -89,8 +89,8 @@ static func _make(n: String) -> AudioStreamWAV:
 			return (sin(TAU * lerpf(700.0, 220.0, sqrt(t / 0.18)) * t) + randf_range(-1, 1) * maxf(0.0, 1.0 - t * 60.0)) * 0.5 * _env(t, 0.18, 0.001))
 		"pop": return _render(0.08, func(t: float, _i: int) -> float:
 			return sin(TAU * lerpf(500.0, 1300.0, t / 0.08) * t) * 0.5 * _env(t, 0.08, 0.002))
-		"whoosh": return _render(0.3, func(t: float, _i: int) -> float:
-			return _bp_noise(0.08 + 0.3 * sin(PI * t / 0.3)) * sin(PI * t / 0.3) * 0.7)
+		"whoosh": return _render(0.3, func(t: float, _i: int) -> float:  # soft and dark: it plays a lot
+			return _bp_noise(0.04 + 0.12 * sin(PI * t / 0.3)) * sin(PI * t / 0.3) * 0.4)
 		"knock": return _render(0.1, func(t: float, _i: int) -> float:
 			return (sin(TAU * 190.0 * t) * 0.7 + _lp_noise(0.5) * 0.5) * _env(t, 0.1, 0.001))
 		"thud": return _render(0.22, func(t: float, _i: int) -> float:

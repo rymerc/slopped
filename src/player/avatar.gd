@@ -467,9 +467,10 @@ func _hit(v: Vector3) -> void:
 		Sfx.at(self, "bonk", global_position + Vector3.UP * size, -4.0)
 
 
-func play_shove() -> void:
+func play_shove(sound := true) -> void:
 	_shove_t = 0.35
-	Sfx.at(self, "whoosh", global_position + Vector3.UP, -6.0, 0.1, 1.4)
+	if sound:
+		Sfx.at(self, "whoosh", global_position + Vector3.UP, -10.0, 0.1, 1.4)
 
 
 # --- ragdoll ---------------------------------------------------------------
