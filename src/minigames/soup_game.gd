@@ -16,12 +16,15 @@ const CLIMB_STEP := 1.45
 const CLIMB_TOP := 36.0
 const SOLO_SURVIVE := 110.0  # 1v1: outlast this and the veg beats the chef
 const BOT_LEAP := 11.0
-const FOODS := [["food_plate_dinner", 7.5], ["food_pizza", 7.0], ["food_burger", 8.0], ["food_donut_sprinkles", 9.0]]
+## [mesh, scale]: "bits:" meshes are modelled in art_src/blender/arenas.py (game_bits)
+const FOODS := [["bits:cracker", 1.0], ["food_pizza", 7.0], ["bits:carrot", 1.0], ["food_burger", 8.0],
+	["bits:mushroom", 1.0], ["food_donut_sprinkles", 9.0]]
 
 var soup_y := SOUP_START
 var heat_t := 0.0
 var _grace := GRACE
 var _soup: MeshInstance3D
+var _floaters: MeshInstance3D
 var _out_order: Array = []
 var _brain: Dictionary = {}
 var _climb: Array[Vector3] = []
@@ -56,7 +59,8 @@ func build_arena() -> void:
 	Art.part(self, Art.box(Vector3(220, 1, 220)), Color("#8a6a55"), Vector3(0, -2.6, 0))
 	Kit.landmark(self, b, "soup_pot", Vector3.ZERO)
 	# everyone starts on a big raft of toast, just above the soup
-	Art.solid_cyl(self, 13.0, 1.0, Color("#d9a865"), Vector3(0, -1.2, 0), -1.0, 14)
+	Art.col_cyl(self, 13.0, 1.0, Vector3(0, -1.2, 0))
+	Kit.landmark(self, b, "soup_raft", Vector3(0, -1.2, 0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(args.get("seed", 1))
 	# one guaranteed spiral all the way up, plus decoys that dead-end
@@ -92,6 +96,12 @@ func build_arena() -> void:
 	_soup.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_soup.position.y = SOUP_START
 	add_child(_soup)
+	_floaters = MeshInstance3D.new()  # veg and bubbles riding the surface
+	_floaters.mesh = Kit.part_mesh("game_bits", "floaters")
+	_floaters.material_override = Art.vcol_mat()
+	_floaters.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_floaters.position.y = SOUP_START
+	add_child(_floaters)
 	water_y = SOUP_START
 	# the chef, looming: a statue of whoever is running the kitchen
 	var look: Dictionary = Net.profile(boss_id).duplicate()
@@ -101,15 +111,17 @@ func build_arena() -> void:
 	chef.rotation.y = PI
 	chef.scale = Vector3.ONE * 26.0
 	add_child(chef)
-	b.absorb(self, [_soup])
+	b.absorb(self, [_soup, _floaters])
 	b.commit(self)
 
 
 ## Food of any shape, with its top exactly at p.y, so every step is the same height.
 func _platform(b: Batch, p: Vector3, food: Array) -> void:
-	var box := Kit.aabb(food[0])
+	var id: String = food[0]
+	var mesh: Mesh = Kit.part_mesh("game_bits", id.substr(5)) if id.begins_with("bits:") else Kit.mesh(id)
+	var box := mesh.get_aabb()
 	var sc := float(food[1])
-	Dress.put(self, b, food[0], p - Vector3.UP * box.end.y * sc, randf() * 360.0, sc)
+	b.add(mesh, Dress.xf(p - Vector3.UP * box.end.y * sc, randf() * 360.0, sc))
 	var body := StaticBody3D.new()
 	body.collision_mask = 0
 	add_child(body)
@@ -267,8 +279,10 @@ func _ev_ladle(pos: Vector3) -> void:
 	var l := Node3D.new()
 	add_child(l)
 	l.position = pos + Vector3.UP * 40.0
-	Art.part(l, Art.sphere(4.6, 10), Art.P_STEEL, Vector3.ZERO, Vector3(1, 0.5, 1))
-	Art.part(l, Art.cyl(0.5, 0.5, 34.0, 8), Art.P_STEEL, Vector3(0, 18, 0))
+	var ladle := MeshInstance3D.new()
+	ladle.mesh = Kit.part_mesh("game_bits", "ladle")
+	ladle.material_override = Art.vcol_mat()
+	l.add_child(ladle)
 	var tw := l.create_tween()
 	tw.tween_property(l, "position", pos + Vector3.UP * 1.0, 1.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tw.tween_property(l, "position", pos + Vector3.UP * 44.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -286,6 +300,9 @@ func game_visuals(delta: float) -> void:
 		soup_y = lerpf(soup_y, float(extra.get("soup", soup_y)), clampf(delta * 2.0, 0.0, 1.0))
 	_soup.position.y = soup_y
 	water_y = soup_y
+	var t := Time.get_ticks_msec() * 0.001
+	_floaters.position.y = soup_y + 0.04 + sin(t * 1.3) * 0.05
+	_floaters.rotation.y = t * 0.015  # the soup turns, slowly
 
 
 func info_text() -> String:

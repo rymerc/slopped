@@ -118,6 +118,18 @@ class LM:
         self.face(A, col, glow)
         self.face(list(reversed(B)), col, glow)
 
+    def rod(self, a, b, r, col, n=8, glow=0.0, r1=None, caps=True):
+        """Round rod between two local points (beam() is square)."""
+        a, b = Vector(a), Vector(b)
+        d = b - a
+        length = d.length
+        dn = d / length
+        pitch = math.degrees(math.acos(max(-1.0, min(1.0, dn.y))))
+        yaw = math.degrees(math.atan2(dn.x, dn.z))
+        self.push(a.x, a.y, a.z, yaw=yaw, pitch=pitch)
+        self.cyl(0, 0, 0, r, length, r if r1 is None else r1, col, n=n, glow=glow, caps=caps)
+        self.pop()
+
     def cyl(self, x, y0, z, r0, y1, r1, col, n=10, glow=0.0, caps=True):
         P = self.P
         ring = lambda y, r: [P(x + math.cos(2 * math.pi * i / n) * r, y, z + math.sin(2 * math.pi * i / n) * r) for i in range(n)]
@@ -282,8 +294,9 @@ class LM:
                 self.box(x2 - 0.012, y - depth, z0, x2, y - 0.03, z1, scale_col(col, 0.55), faces="Y")
         self.box(x0, y - depth, z0, x1, y, z1, scale_col(col, 0.6), faces="xXzZ")
 
-    def text(self, s, x, y, z, size, col, font="Rye-Regular", depth=0.08, glow=0.0, align="CENTER", yaw=0.0, back=None, res=2):
-        """Extruded mesh lettering. (x, y, z) is the centre of the text's baseline."""
+    def text(self, s, x, y, z, size, col, font="Rye-Regular", depth=0.08, glow=0.0, align="CENTER", yaw=0.0, back=None, res=2, bend=0.0):
+        """Extruded mesh lettering. (x, y, z) is the centre of the text's baseline.
+        bend > 0 wraps it round a concave wall of that radius (centre in front of the text)."""
         cu = bpy.data.curves.new("t", "FONT")
         cu.body = s
         cu.font = _font(font)
@@ -302,7 +315,12 @@ class LM:
             pts = []
             for vi in p.vertices:
                 v = me.vertices[vi].co
-                pts.append(self.P(v.x, v.y, v.z))
+                if bend > 0.0:
+                    a = v.x / bend
+                    r = bend - v.z
+                    pts.append(self.P(math.sin(a) * r, v.y, bend - math.cos(a) * r))
+                else:
+                    pts.append(self.P(v.x, v.y, v.z))
             n = p.normal
             front = n.z > 0.5
             self.face(pts, col if front else side, glow if front else glow * 0.3)
@@ -345,8 +363,10 @@ class LM:
         hi = np.array([max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)], dtype=np.float32)
         self.rooms.append((lo, hi, level, col))
 
-    def part(self, name, seed=2):
+    def part(self, name, seed=2, ao=False):
+        """ao=True bakes occlusion for this part on its own (other objects hidden)."""
         sub = LM(name, seed)
+        sub.bake = ao
         self.dyn[name] = sub
         return sub
 
@@ -385,7 +405,7 @@ class LM:
         objs = [self._object(self.name, ao=ao)]
         print(f"{self.name}: {sum(len(f) - 2 for f in self.faces)} tris, {len(self.cols)} colliders")
         for k, sub in self.dyn.items():
-            o = sub._object("DYN_" + k, ao=False)
+            o = sub._object("DYN_" + k, ao=getattr(sub, "bake", False))
             objs.append(o)
         for i, (m, size) in enumerate(self.cols):
             me = bpy.data.meshes.new("c")
@@ -442,6 +462,9 @@ def _bake_ao(ob, samples, dist):
         scene.world = bpy.data.worlds.new("w")
     scene.world.light_settings.distance = dist
     me = ob.data
+    hidden = [o for o in scene.objects if o is not ob and not o.hide_render]
+    for o in hidden:  # parts share an origin: bake each one alone
+        o.hide_render = True
     ao = me.color_attributes.new("AO", "FLOAT_COLOR", "CORNER")
     me.color_attributes.active_color = ao
     if not me.materials:
@@ -458,6 +481,8 @@ def _bake_ao(ob, samples, dist):
     print(f"  AO {ob.name}: min {v.min():.2f} mean {v.mean():.2f} max {v.max():.2f}")
     me.color_attributes.remove(me.color_attributes["AO"])
     me.materials.clear()
+    for o in hidden:
+        o.hide_render = False
     return 0.42 + 0.58 * np.clip(v, 0.0, 1.0) ** 0.8
 
 

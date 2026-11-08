@@ -28,6 +28,8 @@ func _process(_d: float) -> bool:
 		quit(1)
 	if w == null or t < 4.0:
 		return false
+	if _stage == 0 and (w.get_script() as Script).get_global_name() != "Lobby" and t < 10.0:
+		return false  # minigames: let the start banner fade first
 	if _stage == 0:
 		_stage = 1
 		_cam = Camera3D.new()
@@ -92,13 +94,25 @@ func _process(_d: float) -> bool:
 			w.casino.req_bj_bet(10, 2)
 			_bj_w = w
 		elif name == "PocketGod":
-			_shots = [["pocket", Vector3(34, 24, 60), Vector3(0, 3, 0)], ["pocket_low", Vector3(14, 6, 26), Vector3(0, 7, 0)]]
+			_shots = [["pocket", Vector3(34, 24, 60), Vector3(0, 3, 0)], ["pocket_low", Vector3(14, 6, 26), Vector3(0, 7, 0)],
+				["pocket_camp", Vector3(-9, 4.5, 24), Vector3(0, 1.5, 35)], ["pocket_camp2", Vector3(7, 3.0, 28), Vector3(-1, 1.2, 36)],
+				["pocket_shrine", Vector3(29, 8.5, 7), Vector3(38, 6, 0)], ["pocket_pad", Vector3(11, 9, 14), Vector3(0, 8, -2)],
+				["pocket_hand", Vector3(-30, 9, -14), Vector3(-40, 5, -20)]]
+			_fx(w, "hand", Vector3(-40, 6, -20))
 		elif name == "SoupGame":
-			_shots = [["soup", Vector3(0, 46, 40), Vector3(0, 6, 0)], ["soup_low", Vector3(8, 3, 11), Vector3(-14, 6, -8)]]
+			_shots = [["soup", Vector3(0, 46, 40), Vector3(0, 6, 0)], ["soup_low", Vector3(8, 3, 11), Vector3(-14, 6, -8)],
+				["soup_raft", Vector3(10, 4, 10), Vector3(0, -0.5, 0)], ["soup_rim", Vector3(0, 30, 0), Vector3(-15, 40, -22)], ["soup_sign", Vector3(-6, 30, 0), Vector3(29, 34, 0)],
+				["soup_rim2", Vector3(0, 30, 0), Vector3(20, 40, 18)], ["soup_ladle", Vector3(0, 46, 40), Vector3(-25, 30, 25)]]
+			_fx(w, "ladle", Vector3(-25, 25, 25))
+			w.set("soup_y", -1.2)  # just under the raft top, so nobody is cooked
+			w.set("_grace", 999.0)
 		elif name == "CursedCasino":
-			_shots = [["cursed", Vector3(31, 3, -2), Vector3(46, 1.5, -4)]]
+			_shots = [["cursed", Vector3(31, 3, -2), Vector3(46, 1.5, -4)], ["cursed_door", Vector3(34, 2.6, 0), Vector3(28.1, 2.4, -1)],
+				["cursed_side", Vector3(40, 2.6, 10), Vector3(40, 2.0, 18)], ["cursed_floor", Vector3(40, 3.2, 4), Vector3(37, 0, 0.5)]]
 		else:
-			_shots = [["arena", Vector3(30, 26, 60), Vector3(0, 0, 0)], ["arena_low", Vector3(10, 3, 22), Vector3(0, 3, 0)]]
+			_shots = [["arena", Vector3(30, 26, 60), Vector3(0, 0, 0)], ["arena_low", Vector3(10, 3, 22), Vector3(0, 3, 0)],
+				["arena_hut", Vector3(37, 2.4, 20.5), Vector3(29, 1.8, 15.8)], ["arena_fence", Vector3(28, 3, 28), Vector3(46, 2.5, 40)],
+				["arena_pillars", Vector3(0, 4, -17), Vector3(0, 2, 0)], ["arena_rack", Vector3(17.5, 2.2, 15), Vector3(20.8, 1.2, 12)]]
 	if _wait > 0:
 		_wait -= 1
 		return false
@@ -138,6 +152,16 @@ func _process(_d: float) -> bool:
 	_wait = 20
 	_stage += 1
 	return false
+
+
+## Parks a copy of a transient effect mesh (god hand, tasting ladle) for a still.
+func _fx(w: Node3D, part: String, pos: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	# loaded at run time: naming these classes here would compile them before the autoloads exist
+	mi.mesh = (load("res://src/art/kit.gd") as GDScript).call("part_mesh", "game_bits", part)
+	mi.material_override = (load("res://src/art/art.gd") as GDScript).call("vcol_mat")
+	w.add_child(mi)
+	mi.global_position = pos
 
 
 func _lineup(w: Node3D) -> void:

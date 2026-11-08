@@ -16,6 +16,7 @@ const SHRINES := [Vector3(38, 5, 0), Vector3(-19, 5, 33), Vector3(-19, 5, -33)]
 const SCRAP_KINDS := ["scrap_fin", "scrap_bin", "scrap_nose"]
 const STAGES := 8
 const MUTINY_SECS := 70.0  # time for a third of the team to dethrone the god
+const CAMP := Vector3(0, 0, 34)  # the castaways' workshop, facing the pad
 
 var need := 8
 var rocket := 0
@@ -77,7 +78,7 @@ func build_arena() -> void:
 		var d := rng.randf_range(24.0, 60.0)
 		var p := Vector3(cos(a) * d, 0, sin(a) * d)
 		p.y = height(p.x, p.z)
-		if p.y > 0.5:
+		if p.y > 0.5 and Vector2(p.x - CAMP.x, p.z - CAMP.z).length() > 10.0:
 			var t: Array = OverlordArt.TREES[i % OverlordArt.TREES.size()]
 			Dress.tree(self, b, t[0], p, rng.randf() * 360.0, float(t[1]) * rng.randf_range(0.9, 1.4), 0.3)
 	for i in 26:
@@ -92,10 +93,9 @@ func build_arena() -> void:
 	# a beach camp + wrecked first attempt: this is not their first rocket
 	Dress.put(self, b, "pirate_ship_wreck", Vector3(-58, -1.0, 38), 30.0, 1.4)
 	Dress.put(self, b, "nature_tent_detailedOpen", Vector3(30, height(30, 30), 30), 200.0, 4.2, Dress.COL_BOX)
-	Dress.put(self, b, "survival_tent", Vector3(-30, height(-30, 22), 22), 80.0, 1.7, Dress.COL_BOX)
 	Dress.put(self, b, "watercraft_cargo_container_a", Vector3(26, height(26, -26), -26), 40.0, 2.0, Dress.COL_BOX)
 	Dress.put(self, b, "retrourban_truck_flat", Vector3(-34, height(-34, -6), -6), 70.0, 3.2, Dress.COL_BOX)
-	Dress.put(self, b, "survival_campfire_pit", Vector3(16, height(16, -14), -14), 0.0, 2.0)
+	Kit.landmark(self, b, "pg_camp", Vector3(CAMP.x, height(CAMP.x, CAMP.z), CAMP.z), 180.0)
 	Dress.put(self, b, "nature_statue_head" if Kit.has("nature_statue_head") else "nature_rock_largeA", Vector3(0, height(0, -52), -52), 0.0, 5.0, Dress.COL_BOX)
 	b.absorb(self, [_sea] + _stages.values())
 	b.commit(self)
@@ -253,10 +253,10 @@ func _ev_hand(pos: Vector3) -> void:
 	var h := Node3D.new()
 	add_child(h)
 	h.position = pos + Vector3.UP * 26.0
-	Art.part(h, Art.bbox(Vector3(4.0, 1.4, 5.0), 0.3), Art.SKIN)
-	for i in 4:
-		Art.part(h, Art.bbox(Vector3(0.8, 0.8, 3.2), 0.3), Art.SKIN, Vector3(-1.5 + i, -0.1, 3.6))
-	Art.part(h, Art.bbox(Vector3(0.9, 0.8, 2.2), 0.3), Art.SKIN, Vector3(2.8, -0.1, 0.8), Vector3.ONE, Vector3(0, 30, 0))
+	var hand := MeshInstance3D.new()
+	hand.mesh = Kit.part_mesh("game_bits", "hand")
+	hand.material_override = Art.vcol_mat()
+	h.add_child(hand)
 	var tw := h.create_tween()
 	tw.tween_property(h, "position", pos + Vector3.UP * 1.5, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(h, "position", pos + Vector3.UP * 30.0, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)

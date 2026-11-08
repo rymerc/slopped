@@ -39,12 +39,20 @@ func build_arena() -> void:
 	Art.part(self, Art.box(Vector3(240, 1, 240)), Color("#2a1f30"), Vector3(40, -0.55, 0))
 	Kit.landmark(self, b, "casino", LobbyBuilder.CASINO, -90.0)
 	LobbyBuilder.casino_floor(self, b, _refs)
-	# the doors are locked
-	var bars := Color("#7a1020")
-	Art.solid_box(self, Vector3(0.6, 5.2, 7.4), bars, Vector3(28.1, 2.6, -1))
-	Art.solid_box(self, Vector3(5.4, 4.4, 0.6), bars, Vector3(40, 2.2, 18))
-	Art.solid_box(self, Vector3(5.4, 4.4, 0.6), bars, Vector3(40, 2.2, -20))
-	Art.label(self, "NOBODY LEAVES", Vector3(28.6, 3.4, -1), 0.012, Art.P_RED)
+	# the doors are locked: barred, boarded and chained (the signs are in the models)
+	Art.col_box(self, Vector3(0.6, 5.2, 7.4), Vector3(28.1, 2.6, -1))
+	Art.col_box(self, Vector3(5.4, 4.4, 0.6), Vector3(40, 2.2, 18))
+	Art.col_box(self, Vector3(5.4, 4.4, 0.6), Vector3(40, 2.2, -20))
+	Kit.landmark(self, b, "cc_gate_big", Vector3(28.1, 0, -1), 90.0)
+	Kit.landmark(self, b, "cc_gate_small", Vector3(40, 0, 18), 180.0)
+	Kit.landmark(self, b, "cc_gate_small", Vector3(40, 0, -20), 0.0)
+	# after hours: purple candles by the doors, chips and cards where people panicked
+	for p: Vector3 in [Vector3(29.3, 0, -5.6), Vector3(29.3, 0, 3.6), Vector3(37.4, 0, 16.6), Vector3(42.6, 0, 16.6),
+			Vector3(37.4, 0, -18.6), Vector3(42.6, 0, -18.6)]:
+		Art.col_cyl(self, 0.35, 2.0, p + Vector3.UP)
+		Kit.landmark(self, b, "cc_candles", p)
+	for p: Vector3 in [Vector3(36.5, 0, 0.5), Vector3(44.0, 0, -6.0), Vector3(38.0, 0, 10.0), Vector3(47.0, 0, 3.5)]:
+		Kit.landmark(self, b, "cc_mess", p, p.x * 37.0)
 	var keep: Array = _refs.values()
 	for d: Variant in (_refs.slots as Array) + (_refs.roulette as Array):
 		keep.append_array((d as Dictionary).values())

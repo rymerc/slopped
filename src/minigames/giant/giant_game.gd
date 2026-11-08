@@ -47,8 +47,8 @@ func build_world() -> void:
 	eye_hp = [eye_max, eye_max]
 	seed(int(args.get("seed", 0)))
 	make_environment(Color("#3d8ef0"), Color("#bfe6ff"), 0.55, 0.8, 90.0, 380.0)
-	racks = GiantArena.build(self, props)
 	var batch := Batch.new()  # nothing in the arena moves, so it all merges
+	racks = GiantArena.build(self, props, batch)
 	batch.absorb(self, [])
 	batch.commit(self)
 	randomize()
