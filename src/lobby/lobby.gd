@@ -17,7 +17,7 @@ const FLUSH_SECS := 1.5
 const CANNON_TARGETS := [["THE CARNIVAL (safe-ish)", Playground.LANDING, 21.0],
 	["SLOP COVE", Vector3(-92, 0.5, 92), 28.0],
 	["SLIDE HILL SUMMIT", Playground.SUMMIT, 34.0],
-	["THE SALOON ROOF", Vector3(-21, 10.5, -33), 30.0],
+	["THE SALOON ROOF", Vector3(-21, 12.3, -33), 31.0],
 	["THE RANDOM OCEAN", Vector3(190, -4, -60), 30.0]]
 const FLUSH_OUTLETS := [[Vector3(-17, 2.2, 6), "the town fountain"], [Vector3(-40, 17, -2), "the water tower"],
 	[Vector3(-31.6, 2.6, -34), "the saloon piano"], [Vector3(44, 3.5, -16), "a slot machine"],

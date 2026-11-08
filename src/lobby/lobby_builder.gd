@@ -102,6 +102,14 @@ static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
 		Dress.put(root, b, "food_mug", p + Vector3(0.1, 1.0, 0.15), 0.0, 0.5, Dress.COL_NONE, true)
 		Dress.put(root, b, "pirate_bottle", p + Vector3(-0.2, 1.0, -0.1), 0.0, 0.5, Dress.COL_NONE, true)
 	Dress.put(root, b, "kk_furniture_rug_oval_A", SALOON + Vector3(-3, f + 0.01, 3), 0.0, 3.0, Dress.COL_NONE, true)
+	var up := 5.62
+	for t: Vector3 in [Vector3(-6.5, 0, 7.0), Vector3(5.5, 0, 7.0)]:
+		var p := SALOON + t + Vector3(0, up, 0)
+		Dress.put(root, b, "kk_furniture_table_small", p, -10.0, 1.25, Dress.COL_BOX)
+		for k in 2:
+			var a := PI * k + 0.3
+			Dress.put(root, b, "kk_furniture_chair_A_wood", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0, 0.95, Dress.COL_NONE, true)
+		Dress.put(root, b, "pirate_bottle", p + Vector3(-0.2, 1.0, -0.1), 0.0, 0.5, Dress.COL_NONE, true)
 	# barrels behind the bar + on the porch
 	for i in 3:
 		Dress.put(root, b, "pirate_barrel", SALOON + Vector3(6.6 - i * 0.5, f, -7.5 + i * 0.2), 30.0 * i, 0.72, Dress.COL_BOX, true)
@@ -183,12 +191,15 @@ static func _seats(root: Node3D, out: Dictionary) -> void:
 ## Everyone who lives here. Casino staff are added by casino_floor.
 static func populate(npcs: Npcs) -> void:
 	var f := 0.4
-	npcs.add_still(SALOON + Vector3(-1, f, -6.8), PI, {"color": Color("#8d8aa0"), "hat": "top", "body": "robot"}, "wipe")
+	npcs.add_still(SALOON + Vector3(-1, f + 0.95, -6.8), PI,  # on a crate: the bar is taller than he is
+	 {"color": Color("#8d8aa0"), "hat": "top", "body": "robot", "holds": "glass"}, "wipe")
 	npcs.add_still(SHOP + Vector3(0, 0, 2.6), 0.0, {"color": Color("#ff8a3d"), "hat": "bucket", "body": "cat"})
-	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog"}, "wipe")
+	npcs.add_still(Playground.BAR2 + Vector3(1.0, 0.3, 1.0), -0.7, {"color": Color("#ff5fa2"), "hat": "party", "body": "frog", "holds": "glass"}, "wipe")
 	npcs.add_still(SALOON + Vector3(-9.8, f, -0.9), -PI * 0.5, {"color": Color("#4a4e69"), "hat": "top", "body": "wizard"}, "piano")  # the pianist
-	npcs.add_still(HOTEL + Vector3(-6, f, 3.0), PI, {"color": Color("#c44569"), "hat": "none", "body": "kid"})  # hotel desk
-	npcs.add_still(SHERIFF + Vector3(-4.8, f, 6.4), PI, {"color": Color("#2f8f8a"), "hat": "bucket", "body": "kid"})  # the sheriff
+	npcs.add_still(HOTEL + Vector3(-6, f, 3.0), PI, {"color": Color("#c44569"), "hat": "none", "body": "kid", "holds": "paper"})  # hotel desk
+	npcs.add_still(SHERIFF + Vector3(-4.8, f, 6.4), PI, {"color": Color("#2f8f8a"), "hat": "bucket", "body": "kid", "holds": "coffee"})  # the sheriff
+	# upstairs at the saloon: still holding the hand he was dealt in 1887
+	npcs.add_still(SALOON + Vector3(-5.4, 5.62, 7.4), 0.0, {"color": Color("#e8e0cc"), "hat": "top", "body": "robot", "holds": "card"})
 	var loops := [
 		[Vector3(-16, 0, -16), Vector3(16, 0, -16), Vector3(20, 0, 16), Vector3(-16, 0, 16)],
 		[Vector3(20, 0, -14), Vector3(-20, 0, -14), Vector3(-22, 0, 10), Vector3(-6, 0, 20)],
@@ -199,15 +210,16 @@ static func populate(npcs: Npcs) -> void:
 	var kinds := ["kid", "cat", "wizard", "frog", "robot"]
 	var cols := [Color("#7ccf4e"), Color("#ffd23f"), Color("#3ec1ff"), Color("#8b5cf6"), Color("#ff8a3d")]
 	var hats := ["top", "bucket", "none", "traffic", "party"]
+	var holds := ["coffee", "paper", "cone", "balloon", "coffee"]
 	for i in loops.size():
-		npcs.add_walker(loops[i], {"color": cols[i], "hat": hats[i], "body": kinds[i]})
+		npcs.add_walker(loops[i], {"color": cols[i], "hat": hats[i], "body": kinds[i], "holds": holds[i]})
 	var o := Vector3(Playground.BEACH_DIR.x, 0, Playground.BEACH_DIR.y) * 98.0
 	npcs.add_walker([o + Vector3(-8, Playground.height(o.x, o.z), 6), o + Vector3(10, Playground.height(o.x, o.z), -6)],
-		{"color": Color("#f2efe9"), "hat": "party", "body": "banana"})
+		{"color": Color("#f2efe9"), "hat": "party", "body": "banana", "holds": "cone"})
 	var c := Playground.CARNIVAL
 	npcs.add_walker([c + Vector3(-6, 0, 6), c + Vector3(8, 0, -6), c + Vector3(-10, 0, -10)],
-		{"color": Color("#ff5fa2"), "hat": "party", "body": "cat"})
-	npcs.add_walker([c + Vector3(12, 0, 8), c + Vector3(-4, 0, 12)], {"color": Color("#3ec1ff"), "hat": "propeller", "body": "kid"})
+		{"color": Color("#ff5fa2"), "hat": "party", "body": "cat", "holds": "balloon"})
+	npcs.add_walker([c + Vector3(12, 0, 8), c + Vector3(-4, 0, 12)], {"color": Color("#3ec1ff"), "hat": "propeller", "body": "kid", "holds": "cone"})
 
 
 static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
@@ -236,7 +248,7 @@ static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
 	npcs.game = root as WorldBase
 	root.add_child(npcs)
 	out.npcs = npcs
-	npcs.add_still(DEEDS + Vector3(-0.2, 0, 0), PI * 0.5, {"color": Color("#7fbf6a"), "hat": "top", "body": "frog"})
+	npcs.add_still(DEEDS + Vector3(-0.2, 0, 0), PI * 0.5, {"color": Color("#7fbf6a"), "hat": "top", "body": "frog", "holds": "card"})
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, -8.8), 0.0, 1.5, Dress.COL_BOX, true)
 	Dress.put(root, b, "nature_pot_large", Vector3(29.8, 0, 6.0), 0.0, 1.5, Dress.COL_BOX, true)
 	# bottom right of the screen: the chart climbs from bottom left to top right
@@ -246,14 +258,14 @@ static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
 	var staff := [[POKER + Vector3(0, 0, 2.1), 0.0, "kid"], [BJ_TABLE + Vector3(0, 0, 1.5), 0.0, "cat"],
 		[Vector3(38, 0, -10.0), PI, "robot"], [Vector3(45, 0, -10.0), PI, "frog"]]
 	for d: Array in staff:
-		npcs.add_still(d[0], d[1], {"color": Color("#f2efe9"), "hat": "none", "body": d[2]}, "deal")
+		npcs.add_still(d[0], d[1], {"color": Color("#f2efe9"), "hat": "none", "body": d[2], "holds": "card"}, "deal")
 	# regulars: a full poker game, and one who never leaves the slots
 	var regulars := [[POKER + Vector3(-3.0, 0, 0), PI * 0.5, "wizard", Color("#4a4e69")], [POKER + Vector3(3.0, 0, 0), -PI * 0.5, "robot", Color("#ff8a3d")],
 		[SLOTS[4] + Vector3(0, 0, 1.3), PI, "frog", Color("#7ccf4e")]]
 	for d: Array in regulars:
 		npcs.add_still(d[0], d[1], {"color": d[3], "hat": "top", "body": d[2]})
 	npcs.add_walker([Vector3(34, 0, -3), Vector3(47, 0, -3), Vector3(47, 0, 1.5), Vector3(34, 0, 1.5)],
-		{"color": Color("#2a2030"), "hat": "top", "body": "kid"})
+		{"color": Color("#2a2030"), "hat": "top", "body": "kid", "holds": "tray"})
 	npcs.add_walker([Vector3(42, 0, -15), Vector3(33, 0, -15), Vector3(33, 0, -4)], {"color": Color("#7a2336"), "hat": "none", "body": "wizard"})
 	Art.label(root, "LIL' WHEEL", MINIWHEEL + Vector3(-1.2, 6.6, 0), 0.012, Ui.YELLOW)
 	Art.label(root, "DUCK DERBY", DUCKS + Vector3(2.4, 2.2, 0), 0.012, Ui.YELLOW)

@@ -155,6 +155,8 @@ static func ground(x: float, z: float) -> float:
 
 
 static func _grassy(x: float, z: float) -> bool:
+	if _in_cave(x, z):
+		return false
 	var sq := maxf(absf(x), absf(z))
 	var r := Vector2(x, z).length()
 	if sq < 47.0 or r > ISLAND - 22.0 or _cove(x, z, r) > 0.15:

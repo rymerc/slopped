@@ -56,7 +56,8 @@ def hitching_rail(m, x0, x1, z):
 def saloon(out):
     m = LM("saloon", 11)
     W, D, F = 13.0, 9.0, 0.4   # half width, half depth, floor height
-    H = 7.2
+    H = 9.2  # tall enough for the upstairs gallery
+    UP = 5.62  # gallery + balcony floor
     red = hexc("#a33a2c")
     # interior floor
     m.floor_boards(-W, -D, W, D, F, WOOD)
@@ -65,14 +66,19 @@ def saloon(out):
     # walls: front (with door + windows), right, back, left
     door = (W - 2.0, 4.0, 0.0, 4.4)
     ops = [door, (3.0, 3.2, 1.7, 3.9), (W + 6.8, 3.2, 1.7, 3.9),   # ground floor
-           (3.2, 2.2, 6.0, 8.3), (W - 1.1, 2.2, 6.0, 8.3), (W + 7.0, 2.2, 6.0, 8.3)]
+           (3.2, 2.2, 6.0, 8.3), (W - 1.1, 2.2, UP, 8.3, True), (W + 7.0, 2.2, 6.0, 8.3)]
     m.wall((-W, D), (W, D), 0, 11.6, red, ops, glass=GLASS, frame=CREAM, inner=WOOD_L)
-    m.wall((W, D), (W, -D), 0, H, red, [(4.0, 2.4, 1.8, 4.0), (11.5, 2.4, 1.8, 4.0)], glass=GLASS, frame=CREAM, inner=WOOD_L)
+    up = [(2.4, 2.0, 6.4, 8.2), (14.0, 2.0, 6.4, 8.2)]
+    m.wall((W, D), (W, -D), 0, H, red, [(4.0, 2.4, 1.8, 4.0), (11.5, 2.4, 1.8, 4.0)] + up, glass=GLASS, frame=CREAM, inner=WOOD_L)
     m.wall((W, -D), (-W, -D), 0, H, red, [(5.0, 2.0, 2.4, 4.0), (19.0, 2.0, 2.4, 4.0)], glass=GLASS, frame=CREAM, inner=WOOD_L)
-    m.wall((-W, -D), (-W, D), 0, H, red, [(4.0, 2.4, 1.8, 4.0), (11.5, 2.4, 1.8, 4.0)], glass=GLASS, frame=CREAM, inner=WOOD_L)
+    m.wall((-W, -D), (-W, D), 0, H, red, [(4.0, 2.4, 1.8, 4.0), (11.5, 2.4, 1.8, 4.0)] + up, glass=GLASS, frame=CREAM, inner=WOOD_L)
     # ceiling + roof
     m.box(-W, H, -D, W, H + 0.12, D, WOOD, sub=2.2)
     m.prism_roof(-W, W, H + 0.1, -D, D - 0.3, 3.0, ROOF, over=0.4)
+    # the roof is a cannon target: make it something you can land on
+    zm = (-D + D - 0.3) * 0.5
+    m.col_ramp((0, H + 0.1, -D - 0.4), (0, H + 3.1, zm), 2 * W + 0.8)
+    m.col_ramp((0, H + 0.1, D - 0.3 + 0.4), (0, H + 3.1, zm), 2 * W + 0.8)
     m.gable_end(-W - 0.02, H + 0.1, -D, D - 0.3, 3.0, red)
     m.gable_end(W + 0.02, H + 0.1, -D, D - 0.3, 3.0, red, flip=True)
     # false front: stepped parapet + cornice + sign board
@@ -97,10 +103,69 @@ def saloon(out):
     hitching_rail(m, -11.5, -6.5, D + 4.2)
     hitching_rail(m, 6.5, 11.5, D + 4.2)
     # balcony rail above the awning
-    for x in range(-12, 13, 1):
-        m.box(x - 0.05, 5.6, D + 1.05, x + 0.05, 6.35, D + 1.15, CREAM)
-    m.box(-W, 6.3, D + 1.0, W, 6.42, D + 1.2, CREAM)
-    m.box(-W, 5.52, D + 0.3, W, 5.62, D + 1.2, WOOD)
+    BX0, BZ = -W - 2.6, D + 2.0
+    m.floor_boards(BX0, D + 0.3, W, BZ, UP, WOOD, depth=0.12)
+    m.box(BX0, UP - 0.3, BZ - 0.06, W, UP - 0.12, BZ, WOOD_D)  # fascia
+    m.col(BX0, UP - 0.3, D + 0.3, W, UP, BZ)
+    for x in [BX0 + 0.1 + k * 0.5 for k in range(int((W - BX0) / 0.5))]:
+        m.box(x - 0.04, UP, BZ - 0.14, x + 0.04, UP + 0.95, BZ - 0.06, CREAM)
+    m.box(BX0, UP + 0.95, BZ - 0.18, W, UP + 1.07, BZ - 0.02, CREAM)
+    m.box(W - 0.12, UP, D + 0.3, W, UP + 1.07, BZ, CREAM)
+    m.col(BX0, UP, BZ - 0.2, W, UP + 1.15, BZ)
+    m.col(W - 0.15, UP, D + 0.3, W, UP + 1.15, BZ)
+    # outside stairs: up the west wall from the back of the building to the balcony
+    sx0, sx1, z0s, z1s = -W - 2.6, -W - 0.4, -4.6, D + 0.3
+    m.col_ramp((0.5 * (sx0 + sx1), 0.0, z0s), (0.5 * (sx0 + sx1), UP, z1s), sx1 - sx0)
+    steps = 24
+    for i in range(steps):
+        t0, t1 = i / steps, (i + 1) / steps
+        za, zb = z0s + (z1s - z0s) * t0, z0s + (z1s - z0s) * t1
+        ya, yb = UP * t0, UP * t1
+        c = jitter(WOOD, m.rng, 0.08)
+        m.box(sx0, ya, za, sx1, yb, zb, c, faces="Yz")
+    for x in (sx0, sx1 - 0.12):
+        m.beam((x + 0.06, 0.0, z0s - 0.1), (x + 0.06, UP - 0.1, z1s), 0.09, WOOD_D)  # stringers
+    for z in (z0s + 4.0, z0s + 8.0, z0s + 11.5):
+        y = UP * (z - z0s) / (z1s - z0s)
+        for x in (sx0 + 0.15, sx1 - 0.15):
+            m.box(x - 0.1, 0, z - 0.1, x + 0.1, y - 0.05, z + 0.1, WOOD_D)
+    for k in range(12):  # handrail on the open side
+        z = z0s + 0.6 + k * (z1s - z0s - 0.8) / 11
+        y = UP * (z - z0s) / (z1s - z0s)
+        m.box(sx0 + 0.02, y, z - 0.04, sx0 + 0.1, y + 0.95, z + 0.04, CREAM)
+    m.beam((sx0 + 0.06, 0.95, z0s + 0.6), (sx0 + 0.06, UP + 0.95, z1s), 0.05, CREAM)
+    m.col_ramp((sx0 - 0.05, 0.6, z0s), (sx0 - 0.05, UP + 0.6, z1s), 0.12, t=1.2)
+    # --- upstairs gallery: across the front, railed, looking down on the bar ----------
+    GZ = D - 4.0
+    m.floor_boards(-W, GZ, W, D - 0.14, UP, WOOD, depth=0.15)
+    m.box(-W, UP - 0.22, GZ, W, UP - 0.2, D - 0.14, WOOD_D, faces="y")  # underside, held off the boards
+    m.box(-W, UP - 0.22, GZ - 0.08, W, UP, GZ, WOOD_D, faces="zY")
+    m.col(-W, UP - 0.22, GZ, W, UP, D)
+    for x in [-10.6 + k * 0.5 for k in range(48)]:  # stops short of the stair head
+        m.box(x - 0.04, UP, GZ + 0.04, x + 0.04, UP + 0.95, GZ + 0.12, WOOD_L)
+    m.box(-10.8, UP + 0.95, GZ, W, UP + 1.07, GZ + 0.16, WOOD_D)
+    m.col(-10.8, UP, GZ - 0.05, W, UP + 1.15, GZ + 0.16)  # the west end stays open for the stairs
+    for x in (-4.5, 4.5, 10.5):
+        m.box(x - 0.16, F, GZ + 0.04, x + 0.16, UP - 0.22, GZ + 0.36, WOOD_D)
+        m.col(x - 0.16, F, GZ + 0.04, x + 0.16, UP - 0.22, GZ + 0.36)
+    # inside stairs up the west wall, back to front, clear of the piano
+    ix0, ix1, iz0 = -W + 0.15, -W + 2.15, -8.0
+    m.col_ramp((0.5 * (ix0 + ix1), F, iz0), (0.5 * (ix0 + ix1), UP, GZ), ix1 - ix0)
+    for i in range(26):
+        t0, t1 = i / 26, (i + 1) / 26
+        za, zb = iz0 + (GZ - iz0) * t0, iz0 + (GZ - iz0) * t1
+        ya, yb = F + (UP - F) * t0, F + (UP - F) * t1
+        m.quad(m.P(ix0, ya, za), m.P(ix1, ya, za), m.P(ix1, yb, zb), m.P(ix0, yb, zb), jitter(hexc("#7a2336"), m.rng, 0.08))
+        m.quad(m.P(ix1, ya - 0.2, za), m.P(ix0, ya - 0.2, za), m.P(ix0, yb - 0.2, zb), m.P(ix1, yb - 0.2, zb), WOOD_D)
+    for k in range(14):
+        z = iz0 + 0.5 + k * (GZ - iz0 - 0.6) / 13
+        y = F + (UP - F) * (z - iz0) / (GZ - iz0)
+        m.box(ix1 - 0.08, y, z - 0.04, ix1, y + 1.0, z + 0.04, BRASS)
+    m.col(ix1, F + 1.0, iz0 + 2.0, ix1 + 0.1, UP + 1.0, GZ)  # banister: keeps you on the stairs
+    m.text("POKER ROOM", 0.0, UP + 2.4, D - 0.3, 0.5, hexc("#ffcc5c"), depth=0.03, yaw=180, res=1)
+    m.text("closed since 1887", 0.0, UP + 1.95, D - 0.3, 0.26, CREAM, font="Bungee-Regular", depth=0.02, yaw=180, res=1)
+    m.lamp(-6.0, UP + 2.6, D - 2.0, radius=8.0, power=0.1)
+    m.lamp(6.0, UP + 2.6, D - 2.0, radius=8.0, power=0.1)
     # swinging doors
     for side, name in ((-1, "doorL"), (1, "doorR")):
         p = m.part(name)
@@ -158,7 +223,7 @@ def saloon(out):
         m.lamp(cx, cy, 2.0, radius=12.0, power=0.14)
     m.lamp(-1.0, F + 3.0, -6.0, radius=9.0, power=0.1, col=(1.0, 0.8, 0.5))
     # duck "trophy" mounted on the wall: nobody knows why
-    m.push(-W + 0.2, 4.2, 0.5, yaw=90)
+    m.push(-W + 0.2, 4.6, -6.0, yaw=90)
     m.cyl(0, -0.6, 0.03, 0.6, -0.55, 0.6, WOOD_D, n=8)
     m.ball(0, -0.3, 0.3, 0.42, hexc("#ffd23f"), n=8)
     m.box(-0.14, -0.4, 0.68, 0.14, -0.28, 1.0, hexc("#ff8a3d"))
@@ -360,7 +425,7 @@ def hotel(out):
     ops = [(W - 2.2, 4.4, 0.0, 4.5), (2.2, 3.0, 1.7, 3.9), (W + 5.2, 3.0, 1.7, 3.9)]
     for k in range(3):
         x = 3.2 + k * 7.4
-        ops.append((x, 2.2, 6.0, 8.2))
+        ops.append((x, 2.2, 6.15, 8.4, True) if k == 1 else (x, 2.2, 6.0, 8.2))  # middle one: out to the balcony
         ops.append((x, 2.2, 10.0, 12.2))
     m.wall((-W, D), (W, D), 0, 13.8, pink, ops, glass=G, frame=trim, inner=hexc("#e8cfa8"))
     side = [(a, 2.2, s, s + 2.2) for a in (2.5, 10.5) for s in (1.9, 6.0, 10.0)]
@@ -437,11 +502,16 @@ def hotel(out):
         m.prism_roof(-1.25, 1.25, 0.0, -0.85, 0.85, 0.7, roofc, over=0.05, row=0.25)
         m.pop()
     # balconies on the upper floors
-    for y in (6.0, 10.0):
+    for y in (6.15, 10.0):  # first floor level with the upstairs, so the door has no step
         m.floor_boards(-W, D, W, D + 1.5, y, hexc("#8c5a3c"), depth=0.14)
         for x in [-W + 0.15 + k * 0.5 for k in range(49)]:
             m.box(x - 0.035, y, D + 1.42, x + 0.035, y + 1.1, D + 1.5, trim)
         m.box(-W, y + 1.08, D + 1.4, W, y + 1.2, D + 1.56, trim)
+        m.col(-W, y - 0.14, D, W, y, D + 1.5)
+        m.col(-W, y, D + 1.38, W, y + 1.25, D + 1.56)
+        for x in (-W, W - 0.1):
+            m.box(x, y, D, x + 0.1, y + 1.2, D + 1.5, trim)
+            m.col(x, y, D, x + 0.1, y + 1.25, D + 1.5)
     for x in (-W + 0.15, -6.0, 6.0, W - 0.15):
         m.box(x - 0.12, F, D + 1.3, x + 0.12, 12.4, D + 1.54, trim)
     m.box(-W - 0.2, 12.4, D, W + 0.2, 12.6, D + 1.7, roofc)

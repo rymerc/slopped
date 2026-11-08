@@ -39,10 +39,48 @@ func _add(look: Dictionary, pos: Vector3, yaw: float, path: Array) -> void:
 	var p: Dictionary = Art.build_character(look)
 	var root: Node3D = p.root
 	add_child(root)
+	_hold(p.limbs.arm_r as Node3D, str(look.get("holds", "")))
+	if str(p.kind) != "robot":  # robots already have a screen for a face
+		_eyes(p.limbs.head as Node3D)
 	root.position = pos
 	root.rotation.y = yaw
 	_all.append({"parts": p, "root": root, "path": path, "i": 1, "phase": randf() * TAU,
 		"hold": 0.0, "twitch": randf_range(2.0, 7.0), "off": 0.0})
+
+
+## Something in the right hand. The hand sits 0.38 m down the arm.
+static func _hold(arm: Node3D, what: String) -> void:
+	var h := Vector3(0, -0.46, -0.04)
+	match what:
+		"glass":
+			Art.part(arm, Art.cyl(0.07, 0.055, 0.17, 7), Color("#bfe8f0"), h + Vector3(0, -0.04, -0.06), Vector3.ONE, Vector3.ZERO, false, 0.2)
+			Art.part(arm, Art.box(Vector3(0.2, 0.02, 0.14)), Color("#f2efe9"), h + Vector3(0, 0.06, -0.02))  # the rag
+		"card":
+			Art.part(arm, Art.box(Vector3(0.12, 0.17, 0.01)), Color("#fbf7ee"), h + Vector3(0, -0.06, -0.06))
+			Art.part(arm, Art.box(Vector3(0.04, 0.04, 0.012)), Color("#d62b3a"), h + Vector3(0, -0.06, -0.07))
+		"coffee":
+			Art.part(arm, Art.cyl(0.06, 0.05, 0.15, 7), Color("#f2efe9"), h + Vector3(0, -0.03, -0.06))
+			Art.part(arm, Art.cyl(0.062, 0.062, 0.02, 7), Color("#4a2f22"), h + Vector3(0, 0.05, -0.06))
+		"paper":
+			Art.part(arm, Art.box(Vector3(0.05, 0.3, 0.22)), Color("#e8e2d0"), h + Vector3(0, -0.08, -0.08), Vector3.ONE, Vector3(0, 0, 10))
+		"cone":
+			Art.part(arm, Art.cyl(0.06, 0.0, 0.18, 6), Color("#d9a35a"), h + Vector3(0, 0.02, -0.06))
+			Art.part(arm, Art.sphere(0.07, 6), Color("#ff9ac1"), h + Vector3(0, 0.13, -0.06))
+		"balloon":
+			Art.part(arm, Art.cyl(0.006, 0.006, 1.1, 3), Color("#f2efe9"), h + Vector3(0, 0.55, -0.04))
+			Art.part(arm, Art.sphere(0.24, 8), Color("#ff3b5c"), h + Vector3(0, 1.25, -0.04), Vector3(1, 1.2, 1))
+		"tray":
+			Art.part(arm, Art.cyl(0.24, 0.24, 0.02, 10), Color("#c9a24a"), h + Vector3(0, 0.0, -0.1))
+			for i in 3:
+				Art.part(arm, Art.cyl(0.035, 0.035, 0.14, 6), Color("#ff6fb0"), h + Vector3(cos(i * 2.1) * 0.12, 0.08, -0.1 + sin(i * 2.1) * 0.12), Vector3.ONE, Vector3.ZERO, false, 0.6)
+
+
+## Wide white eyes over the costume's own dot eyes. They never blink.
+static func _eyes(head: Node3D) -> void:
+	for sx: float in [-1.0, 1.0]:
+		var p := Vector3(Chars.EYE.x * sx, Chars.EYE.y, Chars.EYE.z - 0.012)
+		Art.part(head, Art.sphere(0.062, 8), Color("#fbf7ee"), p, Vector3(1, 1, 0.35))
+		Art.part(head, Art.sphere(0.03, 6), Color("#111118"), p + Vector3(0, 0, -0.022), Vector3(1, 1, 0.4))
 
 
 func _process(delta: float) -> void:

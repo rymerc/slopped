@@ -88,10 +88,9 @@ There are no `.tscn` changes: worlds are built in code, and all node names and R
 
 ## 8. Remaining visual deficiencies
 
-- **Interiors are sparse**: the saloon has no upstairs, hotel balconies can't be reached, and the jail has no prisoners.
+- **The jail has no prisoners**, and the hotel's top-floor balcony is still for looking at only. The saloon gallery and outside stairs and the hotel's first-floor balcony are walkable, and the town walk test covers them.
 - **Some Nature kit bushes** still read too neon from far away.
-- **Meadow grass grows through the cave floor** in places. Beach scatter is kept out of it; the meadow scatter isn't.
-- **NPCs have jobs and stares**, but no faces or hand props of their own.
+- **NPCs don't blink and carry one thing each** (glass, card, coffee, paper, ice cream, balloon or tray). They have no idle variety beyond that.
 - **Avatars walk through saloon doors and stools**; these have no collision by design.
 - **Music passes through walls.** There's no occlusion.
 - **Not heard by a human:** audio levels and the synthesised music were checked by construction only. Nobody has listened to them yet, including the slide sound you asked about. Sliders are there if anything needs nudging.
@@ -109,6 +108,8 @@ Measured at 1600x900 on an RTX 4080 Super with vsync off, Medium preset:
 | East | 686 / 3.35 | 548 / 2.81 | 192k → 539k |
 
 After the rides, Vault, cave and hotel upstairs were added, the same probe reads: Spawn 949 draws / 3.52 ms, Street 1560 / 3.17, Overview 1203 / 3.08, East 844 / 2.85, with 690k to 910k primitives. Draws are up, mostly from Street, but frame time is about the same. Low-end machines haven't been tested.
+
+The saloon upstairs, hotel balcony and NPC props and eyes add about 100 draws and 0.2 to 0.3 ms, measured back to back against the previous commit on the same machine.
 
 World build went from 946 ms to about 1190 ms, and video memory from 80 MB to 96 MB. Assets add 20 MB to the repo. **None of this was tested on low-end hardware**, which is the real target, so try the Low preset on the weakest machine in your group.
 

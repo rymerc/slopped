@@ -44,12 +44,18 @@ func _build_routes() -> void:
 	_routes = [
 		["start button", [c.START_BTN + Vector3(0, 0, 3)]],
 		["bar", [saloon_door, Vector3(-21, 0.4, -30), c.BAR + Vector3(0, 0, 3)]],
+		# intermediate points count as reached 1.6 m out, so doorways get a point past them
+		["saloon stairs up", [Vector3(-27, 0.5, -35), Vector3(-31.3, 0.5, -36), Vector3(-31.3, 0.5, -40), Vector3(-33.6, 0.5, -41.0),
+			Vector3(-32.85, 3.0, -34.5), Vector3(-32.85, 5.7, -28.0), Vector3(-31, 5.7, -26.5), Vector3(-21, 5.7, -26.5)]],
+		["saloon balcony", [Vector3(-21, 5.7, -21.6), Vector3(-33.5, 5.7, -22.9), Vector3(-35.5, 5.7, -24.0)]],
+		["saloon outside stairs", [Vector3(-35.5, 0.4, -39.0), Vector3(-40, 0.4, -39), Vector3(-40, 0.4, -16), Vector3(-21, 0.4, -16), saloon_door]],
 		["sheriff jail", [Vector3(-21, 0.4, -30), saloon_door, Vector3(5, 0, -16), sheriff_door, Vector3(19, 0.4, -29.5), c.KENNEL + Vector3(-3, 0, -0.9)]],
 		["adopt -> release", [Vector3(19, 0.4, -33.5), c.KENNEL + Vector3(5, 0, -0.9)]],
 		["store", [Vector3(19, 0.4, -29), sheriff_door, store_door, Vector3(-17, 0.4, 29), c.SHOP]],
 		["hotel", [Vector3(-17, 0.4, 29), store_door, hotel_door, Vector3(19, 0.4, 28), c.BODY]],
 		["paint", [c.PAINT]],
 		["hotel upstairs", [Vector3(13, 0.4, 28), Vector3(11.5, 0.4, 26.4), Vector3(8.8, 0.5, 26.3), Vector3(8.7, 1.6, 29.0), Vector3(8.7, 6.2, 37.0), Vector3(8.7, 6.2, 40.3), Vector3(11.2, 6.2, 40.3), Vector3(11.5, 6.2, 37.0), Vector3(12, 6.2, 34), Vector3(14, 6.2, 31)]],
+		["hotel balcony", [Vector3(19.3, 6.2, 28), Vector3(19.3, 6.1, 23.9), Vector3(25, 6.1, 25.0), Vector3(19.3, 6.1, 25.3), Vector3(19.3, 6.2, 29.5), Vector3(12, 6.2, 34)]],
 		["back downstairs", [Vector3(12, 6.2, 34), Vector3(11.5, 6.2, 37.0), Vector3(11.2, 6.2, 40.3), Vector3(8.7, 6.2, 40.3), Vector3(8.7, 6.2, 37.0), Vector3(8.7, 1.6, 29.0), Vector3(8.8, 0.5, 26.3), Vector3(13, 0.4, 28)]],
 		["casino", [Vector3(19, 0.4, 28), hotel_door, casino_door, Vector3(31, 0, -1), Vector3(40, 0, -3), c.CRASH + Vector3(-1.4, 0, 0)]],
 		["slots", [Vector3(47.5, 0, -14), c.SLOTS[3] + Vector3(0, 0, 1.2)]],

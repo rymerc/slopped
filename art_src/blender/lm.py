@@ -193,7 +193,8 @@ class LM:
     def wall(self, a, b, y0, y1, col, openings=(), board=0.32, t=0.28, inner=None, frame=None,
              glass=None, jit=0.09, collide=True, sub=2.2):
         """Clapboard wall from local a to b (x, z), outer face on the right of a->b.
-        openings: (start_along_wall, width, sill, head) in metres; sill 0 = door gap."""
+        openings: (start_along_wall, width, sill, head[, door]) in metres; sill 0 = door gap.
+        door=True on a raised opening makes an upstairs door: no glass, and a gap in the collider."""
         ax, az = a
         bx, bz = b
         length = math.hypot(bx - ax, bz - az)
@@ -207,7 +208,7 @@ class LM:
         for r in range(rows):
             ya, yb = y0 + r * bh, y0 + (r + 1) * bh
             spans = [(0.0, length)]
-            for (s0, w, sill, head) in ops:
+            for (s0, w, sill, head, *_) in ops:
                 if yb > sill and ya < head:
                     new = []
                     for (u0, u1) in spans:
@@ -224,26 +225,37 @@ class LM:
                 self.box(u0, ya, -t * 0.5, u1, yb, t * 0.5 + lip, c, faces="xXyYZ")
                 self.box(u0, ya, -t * 0.5, u1, yb, -t * 0.5 + 0.001, inner, faces="z", sub=sub)
         fr = frame or hexc("#e8d6ae")
-        for (s0, w, sill, head) in ops:
+        for (s0, w, sill, head, *door) in ops:
             f = 0.12
             d = t * 0.5 + 0.09
             self.box(s0 - f, sill if sill > 0 else y0, -d, s0, head + f, d, fr)
             self.box(s0 + w, sill if sill > 0 else y0, -d, s0 + w + f, head + f, d, fr)
             self.box(s0 - f, head, -d, s0 + w + f, head + f, d, fr)
-            if sill > 0:
+            if sill > 0 and door and door[0]:
+                self.box(s0 - f, sill - f, -d - 0.05, s0 + w + f, sill, d + 0.05, fr)  # threshold
+            elif sill > 0:
                 self.box(s0 - f * 1.6, sill - f, -d - 0.05, s0 + w + f * 1.6, sill, d + 0.05, fr)
                 g = glass or (*hexc("#ffc774"), 0.32)
                 self.box(s0, sill, -0.02, s0 + w, head, 0.02, g[:3], glow=g[3])
                 self.box(s0 + w * 0.5 - 0.035, sill, -0.05, s0 + w * 0.5 + 0.035, head, 0.05, fr)
                 self.box(s0, (sill + head) * 0.5 - 0.035, -0.05, s0 + w, (sill + head) * 0.5 + 0.035, 0.05, fr)
         if collide:
-            cuts = [0.0]
-            for (s0, w, sill, head) in ops:
-                if sill <= y0 + 0.01:
-                    self.col(cuts[-1], y0, -t * 0.5, s0, y1, t * 0.5)
-                    self.col(s0, head, -t * 0.5, s0 + w, y1, t * 0.5)
-                    cuts.append(s0 + w)
-            self.col(cuts[-1], y0, -t * 0.5, length, y1, t * 0.5)
+            # walk-through openings (ground doors, upstairs doors) are holes in the
+            # collider; they may overlap, so cut the wall into columns at every edge
+            holes = [(s0, s0 + w, y0 if sill <= y0 + 0.01 else sill, head)
+                     for (s0, w, sill, head, *door) in ops if sill <= y0 + 0.01 or (door and door[0])]
+            xs = sorted({0.0, length, *[h[0] for h in holes], *[h[1] for h in holes]})
+            for xa, xb in zip(xs, xs[1:]):
+                if xb - xa < 0.01:
+                    continue
+                gaps = sorted((h[2], h[3]) for h in holes if h[0] < xb - 0.005 and h[1] > xa + 0.005)
+                y = y0
+                for ga, gb in gaps:
+                    if ga > y + 0.01:
+                        self.col(xa, y, -t * 0.5, xb, ga, t * 0.5)
+                    y = max(y, gb)
+                if y < y1 - 0.01:
+                    self.col(xa, y, -t * 0.5, xb, y1, t * 0.5)
         self.pop()
 
     def posts(self, x0, x1, n, y0, y1, z, col, r=0.13):
