@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://druftrgh2aoot"
-path="res://.godot/imported/coaster_stall_drinks.glb-424e90b5a26b217333a759cc930270f6.scn"
+uid="uid://d1p310rmewqnb"
+path="res://.godot/imported/g_pillar.glb-389416ea73a1ae060380fca697b64549.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/coaster_stall_drinks.glb"
-dest_files=["res://.godot/imported/coaster_stall_drinks.glb-424e90b5a26b217333a759cc930270f6.scn"]
+source_file="res://assets/models/custom/g_pillar.glb"
+dest_files=["res://.godot/imported/g_pillar.glb-389416ea73a1ae060380fca697b64549.scn"]
 
 [params]
 

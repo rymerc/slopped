@@ -15,38 +15,6 @@
 ],
 "tris": 942
 },
-"coaster_stall_drinks": {
-"size": [
-1.0,
-1.88,
-1.2
-],
-"tris": 274
-},
-"coaster_stall_food": {
-"size": [
-1.042,
-1.545,
-1.2
-],
-"tris": 380
-},
-"coaster_stall_information": {
-"size": [
-1.0,
-1.5,
-1.15
-],
-"tris": 212
-},
-"coaster_stall_toilets": {
-"size": [
-1.0,
-1.4,
-1.06
-],
-"tris": 211
-},
 "fantasytown_cart": {
 "size": [
 0.893,
@@ -622,14 +590,6 @@
 0.608
 ],
 "tris": 144
-},
-"survival_box": {
-"size": [
-0.25,
-0.25,
-0.25
-],
-"tris": 124
 },
 "survival_box_large": {
 "size": [

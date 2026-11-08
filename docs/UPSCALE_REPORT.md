@@ -39,7 +39,7 @@ The original game had **no model, texture or audio files**. Everything was GDScr
 
 - **Retained**: all gameplay systems, characters, Big Wheel, Slide Hill, Gauntlet, Narrow Bridge, crane, wrecking ball, Giant Hunt.
 - **Replaced**: everything marked above.
-- **Added**: 36 custom models, 101 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
+- **Added**: 63 custom models, 96 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
 
 ## 3 and 4. Sources and licences
 
@@ -85,6 +85,17 @@ There are no `.tscn` changes: worlds are built in code, and all node names and R
 - **`Esc` is now the `menu` action**, with Start on gamepads. Key prompts show the player's real bindings.
 - **New game logic**: roulette (host-authoritative, 10c, pays x2 / x14), Human Cannon (owner-side velocity, like bounce pads), and a `dive` challenge. Only the machine animations use a new RPC.
 - **Movement audio**: the slide loop was rewritten (dark, seamless, eases in and out, peak -20 dB, was -6). Steps, jumps, landings and dives are 8–10 dB quieter, and all have their own Movement slider.
+
+## 7b. Detail pass on code-built pieces
+
+Many set pieces were built in GDScript from plain boxes and cylinders. They now keep their colliders in code (`Art.col_box` / `Art.col_cyl`) and take their look from models in `art_src/blender/sets.py`, placed at the same coordinates:
+
+- **Props**: TNT bundles, playground and beach balls, the big ball, cones, planks, bowling pins, rubber ducks, steel beams, slatted crates, campfire logs, wrecking balls, and the cement drum. Each is built to its collision shape.
+- **The Gauntlet**: start pads, the striped arch, mossy stone stepping pillars, the sweeper drum, the lashed balance beam and pendulum gantry, the bounce tower, and the trophy plinth.
+- **The Chaos Yard**: the I-beam wrecking-ball gantry, scaffold towers, the steel frame tower, a cement truck, a port-a-potty, jersey barriers, and a lattice tower crane with a turning jib.
+- **The Meadow and town**: plank kicker ramps, the bowling lane, Friend Ledge, pressure-plate housings, a packed cobble ring round the plaza, and water troughs with a pump.
+- **The Carnival**: four custom stalls (corn dogs, soda, lost and found, restrooms) replace the kit stalls.
+- **Ramps** made in code are now planks on stringers, not slabs.
 
 ## 8. Remaining visual deficiencies
 

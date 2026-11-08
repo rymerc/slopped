@@ -97,10 +97,19 @@ func _fit(id: String, size: Vector3) -> void:
 	add_child(mi)
 
 
+## A detailed mesh from the props model, built to this kind's collision shape.
+func _part(part: String) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = Kit.part_mesh("props", part)
+	mi.material_override = Art.vcol_mat()
+	add_child(mi)
+	return mi
+
+
 func _build_visual() -> void:
 	match kind:
 		"crate", "crate_s":
-			_fit("survival_box", KINDS[kind].box)
+			_part("crate").scale = KINDS[kind].box
 		"barrel":
 			_fit("pirate_barrel", Vector3(0.8, 1.0, 0.8))
 		"keg":
@@ -113,41 +122,11 @@ func _build_visual() -> void:
 		"stool":
 			_fit("kk_restaurant_chair_stool", Vector3(0.68, 0.9, 0.68))
 		"beachball":
-			var cols := [Art.P_RED, Color.WHITE, Art.P_BLUE, Art.GOLD]
-			Art.part(self, Art.sphere(0.6, 10), cols[id % 4])
-			Art.part(self, Art.sphere(0.61, 10), Color.WHITE, Vector3.ZERO, Vector3(0.3, 1.0, 1.0))
-			Art.part(self, Art.sphere(0.61, 10), cols[(id + 2) % 4], Vector3.ZERO, Vector3(1.0, 1.0, 0.3))
-		"tnt":
-			Art.part(self, Art.cyl(0.38, 0.38, 0.95, 8), Art.P_RED)
-			Art.part(self, Art.cyl(0.39, 0.39, 0.2, 8), Art.P_HAZARD, Vector3.ZERO, Vector3.ONE, Vector3.ZERO, false, 0.3)
-			Art.part(self, Art.cyl(0.03, 0.03, 0.25, 4), Art.INK, Vector3(0, 0.58, 0))
-			Art.label(self, "TNT", Vector3(0, 0, -0.4), 0.008, Color.WHITE, false).rotation.y = 0.0
+			_part("beachball%d" % (id % 4))
 		"ball":
-			var cols := [Art.P_RED, Color.WHITE, Art.P_BLUE, Art.P_HAZARD]
-			Art.part(self, Art.sphere(0.45, 8), cols[id % cols.size()])
-			Art.part(self, Art.sphere(0.46, 8), Color.WHITE, Vector3.ZERO, Vector3(0.25, 1.0, 1.0))
-		"big_ball":
-			Art.part(self, Art.sphere(1.3, 9), Art.P_PINK)
-			Art.part(self, Art.sphere(1.32, 9), Art.P_HAZARD, Vector3.ZERO, Vector3(1.0, 0.2, 1.0))
-		"cone":
-			Art.part(self, Art.cyl(0.03, 0.24, 0.7, 7), Art.P_ORANGE)
-			Art.part(self, Art.cyl(0.11, 0.15, 0.12, 7), Color.WHITE, Vector3(0, 0.05, 0))
-			Art.part(self, Art.box(Vector3(0.52, 0.06, 0.52)), Art.P_ORANGE, Vector3(0, -0.32, 0))
-		"plank":
-			Art.part(self, Art.bbox(Vector3(3.0, 0.15, 0.45), 0.2), Color("#d9a865"))
-		"pin":
-			Art.part(self, Art.cyl(0.08, 0.17, 0.6, 7), Color.WHITE, Vector3(0, -0.15, 0))
-			Art.part(self, Art.sphere(0.12, 6), Color.WHITE, Vector3(0, 0.33, 0))
-			Art.part(self, Art.cyl(0.085, 0.085, 0.06, 7), Art.P_RED, Vector3(0, 0.15, 0))
-		"duck":
-			Art.part(self, Art.sphere(0.32, 7), Ui.YELLOW, Vector3(0, -0.05, 0), Vector3(1.15, 0.85, 1.0))
-			Art.part(self, Art.sphere(0.2, 6), Ui.YELLOW, Vector3(0, 0.22, -0.16))
-			Art.part(self, Art.box(Vector3(0.14, 0.05, 0.14)), Art.P_ORANGE, Vector3(0, 0.2, -0.36))
-			for sx: float in [-1.0, 1.0]:
-				Art.part(self, Art.sphere(0.035, 4), Art.INK, Vector3(0.09 * sx, 0.28, -0.32))
-		"beam":
-			Art.part(self, Art.box(Vector3(4.0, 0.3, 0.3)), Art.P_RED.darkened(0.1), Vector3.ZERO, Vector3.ONE, Vector3.ZERO,
-				false, 0.0).material_override = Art.mat(Art.P_RED.darkened(0.1), false, 0.0, 0.6)
+			_part("ball%d" % (id % 4))
+		"tnt", "big_ball", "cone", "plank", "pin", "duck", "beam":
+			_part(kind)
 
 
 func request_bump(v: Vector3, at: Vector3) -> void:

@@ -297,6 +297,37 @@ static func solid_box(parent: Node3D, size: Vector3, color: Color, pos: Vector3,
 	return body
 
 
+## Collision only: for shapes whose look comes from a detailed model placed separately.
+static func col_box(parent: Node3D, size: Vector3, pos: Vector3, rot_deg := Vector3.ZERO) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.position = pos
+	body.rotation_degrees = rot_deg
+	body.collision_layer = 1
+	body.collision_mask = 0
+	parent.add_child(body)
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	cs.shape = shape
+	body.add_child(cs)
+	return body
+
+
+static func col_cyl(parent: Node3D, r: float, h: float, pos: Vector3) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.position = pos
+	body.collision_layer = 1
+	body.collision_mask = 0
+	parent.add_child(body)
+	var cs := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = r
+	shape.height = h
+	cs.shape = shape
+	body.add_child(cs)
+	return body
+
+
 static func solid_cyl(parent: Node3D, r: float, h: float, color: Color, pos: Vector3,
 		top_r := -1.0, segs := 10) -> StaticBody3D:
 	var body := StaticBody3D.new()

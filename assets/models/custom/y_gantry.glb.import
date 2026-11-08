@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://3xd4jsrx0hsj"
-path="res://.godot/imported/coaster_stall_information.glb-de7e5682b2be801e96b3c72f36e7df2b.scn"
+uid="uid://28ps4bc07yb8"
+path="res://.godot/imported/y_gantry.glb-b9f8fc4253d32740d98ca3cf60fc1702.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/coaster_stall_information.glb"
-dest_files=["res://.godot/imported/coaster_stall_information.glb-de7e5682b2be801e96b3c72f36e7df2b.scn"]
+source_file="res://assets/models/custom/y_gantry.glb"
+dest_files=["res://.godot/imported/y_gantry.glb-b9f8fc4253d32740d98ca3cf60fc1702.scn"]
 
 [params]
 

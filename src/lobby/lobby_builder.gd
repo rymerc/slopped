@@ -353,26 +353,22 @@ static func _ground(root: Node3D, b: Batch) -> void:
 		for i in 8:
 			var t := Color("#a87a4c").darkened(float(i % 3) * 0.1).srgb_to_linear()
 			b.add(plank, Transform3D(Basis(Vector3.UP, (i % 2) * 0.02), Vector3(0, 0.03, z0 + i * 0.46)), true, t)
-	var stone := Art.cyl(0.28, 0.34, 0.1, 6)
-	var cob := Color("#9c9288")
+	# a packed cobble ring round the wheel plaza (one baked model), then loose pebbles
+	Kit.landmark(root, b, "plaza_ring", Vector3(0, 0.02, -1.5))
+	var pebble := Art.sphere(0.3, 6)
+	var cob := Color("#a39a90")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 55
-	for i in 110:  # cobbles around the wheel plaza
-		var a := rng.randf() * TAU
-		var r := rng.randf_range(11.4, 14.0)
-		var s := rng.randf_range(0.8, 1.5)
-		var c := cob.darkened(rng.randf() * 0.2).srgb_to_linear()
-		b.add(stone, Transform3D(Basis(Vector3.UP, a).scaled(Vector3(s, 1, s)), Vector3(cos(a) * r, 0.05, -1.5 + sin(a) * r)), true, c)
 	for i in 60:  # loose stones on the dirt
-		var p := Vector3(rng.randf_range(-44, 44), 0.04, rng.randf_range(-44, 44))
+		var p := Vector3(rng.randf_range(-44, 44), 0.02, rng.randf_range(-44, 44))
 		if maxf(absf(p.x), absf(p.z)) < 14.0:
 			continue
-		var s := rng.randf_range(0.3, 0.6)
-		b.add(stone, Transform3D(Basis.IDENTITY.scaled(Vector3(s, 1, s)), p), true, cob.darkened(0.15).srgb_to_linear())
-	Art.solid_box(root, Vector3(3.2, 0.9, 1.0), Color("#6e4326"), Vector3(-24, 0.45, -19))
-	Art.part(root, Art.box(Vector3(2.9, 0.06, 0.74)), Color("#46a8c8"), Vector3(-24, 0.86, -19), Vector3.ONE, Vector3.ZERO, false, 0.1)
-	Art.solid_box(root, Vector3(3.2, 0.9, 1.0), Color("#6e4326"), Vector3(24, 0.45, 19.6))
-	Art.part(root, Art.box(Vector3(2.9, 0.06, 0.74)), Color("#46a8c8"), Vector3(24, 0.86, 19.6), Vector3.ONE, Vector3.ZERO, false, 0.1)
+		var s := rng.randf_range(0.35, 0.7)
+		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s * rng.randf_range(0.8, 1.3), s * 0.35, s))
+		b.add(pebble, Transform3D(basis, p), true, cob.darkened(rng.randf() * 0.2).srgb_to_linear())
+	for p: Vector3 in [Vector3(-24, 0, -19), Vector3(24, 0, 19.6)]:  # water troughs
+		Art.col_box(root, Vector3(3.2, 0.9, 1.0), p + Vector3(0, 0.45, 0))
+		Kit.landmark(root, b, "trough", p)
 
 
 static func _streets(root: Node3D, b: Batch, props: PropSystem) -> void:
