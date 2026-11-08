@@ -122,24 +122,18 @@ func animate(t: float) -> void:
 
 func _car(i: int) -> Node3D:
 	var n := Node3D.new()
-	var c: Color = [Art.P_RED, Art.GOLD, Art.P_BLUE][i]
-	Art.part(n, Art.bbox(Vector3(1.9, 0.7, 2.7), 0.3), c, Vector3(0, 0.1, 0))
-	Art.part(n, Art.box(Vector3(1.6, 0.5, 1.8)), Art.INK, Vector3(0, 0.26, 0.1))
-	Art.part(n, Art.bbox(Vector3(1.7, 0.5, 0.3), 0.3), Color.WHITE, Vector3(0, 0.7, 1.1))
-	if i == 0:
-		Art.part(n, Art.sphere(0.5, 8), Ui.YELLOW, Vector3(0, 0.75, -1.3))
-		Art.part(n, Art.box(Vector3(0.3, 0.12, 0.4)), Art.P_ORANGE, Vector3(0, 0.72, -1.85))
+	Playground.live(n, "car%d" % (i % 3), Vector3.ZERO)  # modelled in art_src/blender/street.py
 	return n
 
 
 func _station(root: Node3D, b: Batch) -> void:
 	var c := Playground.CARNIVAL
 	var y := 2.9
-	Art.solid_box(root, Vector3(26, 0.4, 6), Color("#8f5a35"), c + Vector3(-7, y - 0.2, 40.2))
+	Art.col_box(root, Vector3(26, 0.4, 6), c + Vector3(-7, y - 0.2, 40.2))
+	Kit.landmark(root, b, "c_station", c + Vector3(-7, y, 40.2))
 	Playground.ramp(root, c + Vector3(-7, 0.0, 47.5) + Vector3.UP * (Playground.height(c.x - 7, c.z + 47.5) - c.y + 0.2), c + Vector3(-7, y, 43.2) , 5.0, 0.3, Color("#9c6238"))
 	for x: float in [-19.0, -7.0, 5.0]:
 		for z: float in [37.8, 42.6]:
-			Art.solid_cyl(root, 0.18, 5.0, Color("#b5402f"), c + Vector3(x, y + 2.5, z), -1.0, 6)
-	Art.part(root, Art.box(Vector3(26, 0.35, 6.6)), Art.P_RED, c + Vector3(-7, y + 5.1, 40.2))
+			Art.col_cyl(root, 0.18, 5.0, c + Vector3(x, y + 2.5, z))
 	Art.label(root, "THE SLOPPER", c + Vector3(-7, y + 6.2, 43.6), 0.02, Ui.YELLOW, false)
 	Art.label(root, "keep your limbs inside the concept of a ride", c + Vector3(-7, y + 4.3, 43.6), 0.007, Color.WHITE, false)

@@ -12,9 +12,7 @@ var _disc: Node3D
 
 
 func _ready() -> void:
-	# Stand
-	Art.part(self, Art.box(Vector3(0.7, 6.0, 0.7)), Art.WOOD, Vector3(-1.6, 3.0, -0.6), Vector3.ONE, Vector3(0, 0, -12))
-	Art.part(self, Art.box(Vector3(0.7, 6.0, 0.7)), Art.WOOD, Vector3(1.6, 3.0, -0.6), Vector3.ONE, Vector3(0, 0, 12))
+	# The stand is modelled (wheel_stand) and placed by the lobby into its Batch.
 	_disc = Node3D.new()
 	_disc.position = Vector3(0, 6.2, 0)
 	add_child(_disc)

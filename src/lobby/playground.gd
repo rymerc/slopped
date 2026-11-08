@@ -55,6 +55,9 @@ const FLATS := [
 ]
 
 static var _noise: FastNoiseLite
+## The world Batch while the lobby is being built: small modelled bits (sign
+## planks, lamps, chests) go straight into it. Set by LobbyBuilder / build().
+static var batch: Batch
 
 
 static func _n(x: float, z: float) -> float:
@@ -180,6 +183,7 @@ static func _grassy(x: float, z: float) -> bool:
 
 static func build(root: Node3D, props: PropSystem, b: Batch) -> Dictionary:
 	var out := {"hazards": [], "pads": []}
+	batch = b
 	var hf := Callable(Playground, "height")
 	Terrain.build(root, hf, Callable(Playground, "color"), HALF, CELL)
 	Terrain.water(root, SEA_Y, 900.0)
@@ -191,6 +195,7 @@ static func build(root: Node3D, props: PropSystem, b: Batch) -> Dictionary:
 	var gm := Terrain.water(root, GOO_Y, 60.0, goo)
 	gm.position = Vector3(-76, GOO_Y, 0)
 	gm.scale = Vector3(0.85, 1, 1.2)
+	_goo_foam(b)
 	Terrain.scatter(root, Terrain.tuft_mesh(), 3200, HALF, hf, Callable(Playground, "_grassy"),
 		[Art.P_GRASS_DARK, Art.P_GRASS, Art.P_GRASS_LIGHT, Color("#6fb84a")], 11)
 	Terrain.scatter(root, Terrain.flower_mesh(), 500, HALF, hf, Callable(Playground, "_grassy"),
@@ -256,9 +261,17 @@ static func sign_post(root: Node3D, pos: Vector3, text: String, yaw_deg := 0.0, 
 	var board := maxf(1.6, longest * 0.2 + 0.4)
 	var mid := 2.0 + extra * 0.5
 	var post := mid + 0.3 + extra * 0.5 + 0.12
+	var h := 0.6 + extra
+	var rows := maxi(2, roundi(h / 0.3))
 	for sx: float in [-1.0, 1.0]:
-		Art.solid_cyl(n, 0.09, post, Art.WOOD, Vector3(sx * (board * 0.5 + 0.09), post * 0.5, 0), -1.0, 5)
-	Art.part(n, Art.bbox(Vector3(board, 0.6 + extra, 0.12), 0.2), Color("#8f5a35"), Vector3(0, mid, 0))
+		var px := sx * (board * 0.5 + 0.09)
+		Art.col_cyl(n, 0.09, post, Vector3(px, post * 0.5, 0))
+		bit(n, "post", Vector3(px, 0, 0), Vector3(1, post, 1))
+		bit(n, "cap", Vector3(px, post, 0))
+		for k in rows:
+			bit(n, "bracket", Vector3(px, mid - h * 0.5 + (k + 0.5) * h / rows, 0), Vector3.ONE, 180.0 if sx < 0.0 else 0.0)
+	for k in rows:  # planks, cut to fit the words
+		bit(n, "plank", Vector3(0, mid - h * 0.5 + (k + 0.5) * h / rows, 0), Vector3(board, h / rows / 0.3, 1))
 	var l := Art.label(n, text, Vector3(0, mid, -0.07), 0.0062, color, false)
 	l.rotation.y = PI
 	var l2 := Art.label(n, text, Vector3(0, mid, 0.07), 0.0062, color, false)
@@ -266,9 +279,52 @@ static func sign_post(root: Node3D, pos: Vector3, text: String, yaw_deg := 0.0, 
 
 
 static func lamp(root: Node3D, pos: Vector3, color := Color("#fff1b8")) -> void:
-	Art.solid_cyl(root, 0.1, 3.6, Color("#3d3550"), pos + Vector3(0, 1.8, 0), 0.07, 6)
-	Art.part(root, Art.sphere(0.28, 6), color, pos + Vector3(0, 3.75, 0), Vector3.ONE, Vector3.ZERO, false, 1.6)
-	Art.part(root, Art.cyl(0.0, 0.34, 0.22, 6), Color("#3d3550"), pos + Vector3(0, 4.05, 0))
+	Art.col_cyl(root, 0.1, 3.6, pos + Vector3(0, 1.8, 0))
+	bit(root, "lamp", pos, Vector3.ONE, pos.x * 7.0)
+	bit(root, "lamp_glass", pos, Vector3.ONE, pos.x * 7.0, false, color)
+
+
+## A street_bits part, static: into the Batch when one is open, else a live node.
+static func bit(parent: Node3D, part: String, pos: Vector3, scl := Vector3.ONE, yaw_deg := 0.0, detail := false,
+		tint := Color.WHITE, glow := 0.0) -> void:
+	var mesh := Kit.part_mesh("street_bits", part)
+	var xf := parent.global_transform * Transform3D(Basis(Vector3.UP, deg_to_rad(yaw_deg)).scaled(scl), pos)
+	if batch:
+		batch.add(mesh, xf, detail, tint.srgb_to_linear(), glow)
+	else:
+		var mi := live(parent, part, Vector3.ZERO)
+		mi.global_transform = xf
+
+
+## A street_bits part as its own node, for things the lobby animates.
+static func live(parent: Node3D, part: String, pos: Vector3) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = Kit.part_mesh("street_bits", part)
+	mi.material_override = Art.vcol_mat()
+	mi.position = pos
+	parent.add_child(mi)
+	return mi
+
+
+## Pink froth where the chasm goo meets the rock, and a few slow bubbles: all static.
+static func _goo_foam(b: Batch) -> void:
+	var foam := Kit.part_mesh("street_bits", "foam")
+	var bub := Kit.part_mesh("street_bits", "bubbles")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	var x := -101.0
+	while x < -51.0:
+		var z := -35.0
+		while z < 35.0:
+			var h := height(x, z)
+			var r := rng.randf()
+			var shore := h < GOO_Y and maxf(maxf(height(x + 1.6, z), height(x - 1.6, z)), maxf(height(x, z + 1.6), height(x, z - 1.6))) > GOO_Y
+			if shore and r < 0.85:  # froth hugs the rock where the goo meets it
+				b.add(foam, Transform3D(Basis(Vector3.UP, r * 40.0).scaled(Vector3.ONE * (1.1 + r)), Vector3(x, GOO_Y + 0.03, z)), true)
+			elif h < GOO_Y - 1.5 and r < 0.014:
+				b.add(bub, Transform3D(Basis(Vector3.UP, r * 300.0), Vector3(x, GOO_Y + 0.02, z)), true)
+			z += 1.5
+		x += 1.5
 
 
 static func chest(root: Node3D, pos: Vector3, yaw := 0.0, gold := true) -> Node3D:
@@ -276,13 +332,10 @@ static func chest(root: Node3D, pos: Vector3, yaw := 0.0, gold := true) -> Node3
 	root.add_child(n)
 	n.position = pos
 	n.rotation.y = yaw
-	Art.solid_box(n, Vector3(1.2, 0.7, 0.8), Color("#a0612f"), Vector3(0, 0.35, 0))
-	Art.part(n, Art.bbox(Vector3(1.24, 0.3, 0.84), 0.3), Color("#7a4520"), Vector3(0, 0.82, 0))
-	Art.part(n, Art.box(Vector3(0.2, 0.26, 0.06)), Art.GOLD, Vector3(0, 0.6, -0.42), Vector3.ONE, Vector3.ZERO, false, 0.4)
+	Art.col_box(n, Vector3(1.2, 0.7, 0.8), Vector3(0, 0.35, 0))
+	bit(n, "chest", Vector3.ZERO)
 	if gold:
-		for i in 5:
-			Art.part(n, Art.cyl(0.12, 0.12, 0.04, 8), Art.GOLD, Vector3(-0.4 + i * 0.2, 1.0 + (i % 2) * 0.05, 0.1),
-				Vector3.ONE, Vector3(70, 0, 0), false, 0.6)
+		bit(n, "coins", Vector3.ZERO)
 	return n
 
 
@@ -376,13 +429,13 @@ static func _slide_hill(root: Node3D, out: Dictionary, b: Batch) -> void:
 			Art.part(root, Art.cyl(0.08, 0.08, 1.0, 5), Color.WHITE, Vector3(3.3 * sx, height(3.3 * sx, zz) + 0.9, zz))
 	# summit: flag + giant rubber duck landmark (visible from everywhere)
 	var top := SUMMIT
-	Art.solid_box(root, Vector3(14, 0.6, 14), Color("#d9cfb0"), top + Vector3(0, -0.25, 0))
-	Art.solid_cyl(root, 0.12, 9.0, Art.P_STEEL, top + Vector3(-4, 4.5, 3), -1.0, 6)
+	Art.col_box(root, Vector3(14, 0.6, 14), top + Vector3(0, -0.25, 0))
+	Art.col_cyl(root, 0.12, 9.0, top + Vector3(-4, 4.5, 3))
+	Kit.landmark(root, b, "summit", top)
 	var flag := Node3D.new()
 	flag.position = top + Vector3(-4, 8.0, 3)
 	root.add_child(flag)
-	Art.part(flag, Art.box(Vector3(2.6, 1.6, 0.06)), Art.P_PINK, Vector3(1.3, 0, 0))
-	Art.part(flag, Art.box(Vector3(0.6, 0.6, 0.07)), Ui.YELLOW, Vector3(1.3, 0, 0), Vector3.ONE, Vector3.ZERO, false, 0.3)
+	live(flag, "flag", Vector3(0.1, 0, 0))
 	out.flag = flag
 	Kit.landmark(root, b, "giant_duck", top + Vector3(3.0, 0.1, -3.0), 165.0)
 	# hay bales at the bottom of the run, picnic spots up the flanks
@@ -413,10 +466,7 @@ static func _chasm(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) -
 	var sweeper := Node3D.new()
 	sweeper.position = sp + Vector3(0, 0.75, 0)
 	root.add_child(sweeper)
-	Art.part(sweeper, Art.cyl(0.4, 0.5, 1.5, 8), Art.INK, Vector3(0, 0.0, 0))
-	Art.part(sweeper, Art.bbox(Vector3(9.6, 0.5, 0.5), 0.3), Art.P_RED, Vector3.ZERO)
-	for sx: float in [-1.0, 1.0]:
-		Art.part(sweeper, Art.bbox(Vector3(0.5, 0.52, 0.52), 0.3), Color.WHITE, Vector3(4.2 * sx, 0, 0))
+	live(sweeper, "sweeper", Vector3.ZERO)
 	(out.hazards as Array).append({"type": "sweeper", "node": sweeper, "center": sp, "r": 4.8, "y": sp.y, "speed": 1.7})
 	# 3. balance beam + pendulum
 	Art.col_box(root, Vector3(9.5, 0.4, 0.6), Vector3(-85.25, 3.0, z))
@@ -444,9 +494,7 @@ static func _chasm(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) -
 	cup.name = "Trophy"
 	cup.position = TROPHY + Vector3(0, 1.2, 0)
 	root.add_child(cup)
-	Art.part(cup, Art.cyl(0.45, 0.2, 0.7, 8), Art.GOLD, Vector3(0, 0.75, 0), Vector3.ONE, Vector3.ZERO, false, 0.5).material_override = Art.mat(Art.GOLD, false, 0.5, 1.0)
-	Art.part(cup, Art.cyl(0.08, 0.08, 0.4, 6), Art.GOLD, Vector3(0, 0.25, 0))
-	Art.part(cup, Art.cyl(0.3, 0.3, 0.08, 8), Art.GOLD, Vector3(0, 0.04, 0))
+	live(cup, "trophy", Vector3.ZERO)
 	out.trophy = cup
 	Art.label(root, "FINISH", TROPHY + Vector3(0, 3.6, 0), 0.02, Art.GOLD)
 	sign_post(root, Vector3(-44, 0, z - 4.0), "<- THE GAUNTLET", 90.0)
@@ -459,9 +507,13 @@ static func _chasm(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) -
 		var t := float(k) / segs
 		var p := a.lerp(bend, t) - Vector3.UP * 3.2 * sin(PI * t)
 		ramp(root, prev, p, 1.0, 0.18, Color("#c9965a") if k % 2 == 0 else Color("#b5814a"))
-		if k % 4 == 0:
-			for sz: float in [-1.0, 1.0]:
-				Art.part(root, Art.cyl(0.05, 0.05, 1.0, 4), Art.WOOD, p + Vector3(0, 0.5, 0.55 * sz))
+		for sz: float in [-1.0, 1.0]:
+			var ra := prev + Vector3(0, 0.03, 0.53 * sz)
+			var rb := p + Vector3(0, 0.03, 0.53 * sz)
+			var d := rb - ra
+			b.add(Kit.part_mesh("street_bits", "rope"), Transform3D(Basis.looking_at(-d, Vector3.UP) * Basis.from_scale(Vector3(1, 1, d.length())), ra), true)
+			if k % 4 == 0:
+				bit(root, "stake", p + Vector3(0, -0.1, 0.55 * sz), Vector3.ONE, float(k) * 30.0)
 		prev = p
 	Art.col_box(root, Vector3(6, 0.6, 6), Vector3(-48.5, 0.0, BRIDGE_Z))
 	Kit.landmark(root, b, "g_pad", Vector3(-48.5, 0.0, BRIDGE_Z), 90.0)
@@ -483,15 +535,14 @@ static func wreck_ball(parent: Node3D, r: float) -> void:
 
 
 static func _pad(root: Node3D, out: Dictionary, pos: Vector3, vel: Vector3) -> void:
-	Art.part(root, Art.cyl(1.2, 1.3, 0.22, 10), Art.INK, pos + Vector3(0, 0.11, 0))
-	var top := Art.part(root, Art.cyl(1.0, 1.0, 0.08, 10), Art.P_PINK, pos + Vector3(0, 0.25, 0), Vector3.ONE,
-		Vector3.ZERO, false, 0.8)
+	bit(root, "pad_base", pos)
+	var top := live(root, "pad_top", pos + Vector3(0, 0.25, 0))
 	(out.pads as Array).append({"pos": pos, "r": 1.25, "vel": vel, "node": top})
 
 
 static func _construction(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) -> void:
 	var g := 0.3
-	Art.label(root, "CHAOS YARD", Vector3(56, 7.0, 24), 0.03, Art.P_HAZARD, true)
+	Kit.landmark(root, b, "y_gate", Vector3(54, g, 24), -90.0)  # its sign replaces the old floating label
 	for p: Vector3 in [Vector3(54, g, 18), Vector3(54, g, 30), Vector3(54, g, -24), Vector3(54, g, -32)]:
 		Art.col_box(root, Vector3(0.3, 1.0, 2.8), p + Vector3(0, 0.5, 0))
 		Kit.landmark(root, b, "y_barrier", p)
@@ -504,9 +555,10 @@ static func _construction(root: Node3D, out: Dictionary, props: PropSystem, b: B
 	Dress.put(root, b, "retrourban_truck_flat", Vector3(58, g, 40), -70.0, 3.4, Dress.COL_BOX)
 	Dress.put(root, b, "kk_city_dumpster", Vector3(72, g, 40), 10.0, 3.2, Dress.COL_BOX)
 	for p: Vector3 in [Vector3(80, g, 24), Vector3(84, g, 25), Vector3(74, g, -6), Vector3(112, g, 8)]:
-		Dress.put(root, b, "retrourban_pallet", p, p.x * 13.0, 1.8, Dress.COL_NONE, true)
+		bit(root, "pallet", p, Vector3.ONE, p.x * 13.0, true)
 	for p: Vector3 in [Vector3(96, g, -30), Vector3(98, g, 4)]:
-		Dress.put(root, b, "survival_box_large", p, p.z * 21.0, 1.6, Dress.COL_BOX, true)
+		Art.col_box(root, Vector3(0.4, 0.4, 0.8), p + Vector3(0, 0.2, 0), Vector3(0, p.z * 21.0, 0))
+		bit(root, "bigbox", p, Vector3.ONE, p.z * 21.0, true)
 	# crane landmark
 	var cb := Vector3(102, g, -28)
 	Art.col_box(root, Vector3(4, 1, 4), cb + Vector3(0, 0.5, 0))
@@ -521,7 +573,7 @@ static func _construction(root: Node3D, out: Dictionary, props: PropSystem, b: B
 	jm.material_override = Art.vcol_mat()
 	jib.add_child(jm)
 	Art.part(jib, Art.cyl(0.05, 0.05, 16, 4), Art.INK, Vector3(0, -7.0, -26))
-	Art.part(jib, Art.bbox(Vector3(0.8, 0.6, 0.8), 0.3), Art.P_RED, Vector3(0, -15.2, -26))
+	live(jib, "hook", Vector3(0, -15.2, -26))
 	out.jib = jib
 	# wrecking ball across the yard
 	var wpiv := Vector3(78, 16.5, 0)
@@ -617,8 +669,7 @@ static func _meadow(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) 
 	var fire := Node3D.new()
 	fire.position = cf + Vector3(0, 0.5, 0)
 	root.add_child(fire)
-	Art.part(fire, Art.cyl(0.0, 0.5, 1.1, 5), Art.P_ORANGE, Vector3.ZERO, Vector3.ONE, Vector3.ZERO, false, 2.2)
-	Art.part(fire, Art.cyl(0.0, 0.3, 0.8, 5), Ui.YELLOW, Vector3(0, -0.1, 0), Vector3.ONE, Vector3.ZERO, false, 2.5)
+	live(fire, "flame", Vector3.ZERO)
 	var light := OmniLight3D.new()
 	light.light_color = Color("#ffb060")
 	light.light_energy = 2.0
@@ -655,20 +706,25 @@ static func _meadow(root: Node3D, out: Dictionary, props: PropSystem, b: Batch) 
 	# co-op vault: needs two plates held at once (players or heavy crates!)
 	var v := VAULT
 	Kit.landmark(root, b, "bank", v, 180.0)
-	var door := Art.solid_box(root, Vector3(3.0, 4.0, 0.4), Art.GOLD.darkened(0.2), v + Vector3(0, 2.0, -4.1))
+	# the door is a round safe door on a slab: it lifts when both plates are held.
+	# Body children stay in order (mesh, then shape): lobby.gd toggles child 1.
+	var door := StaticBody3D.new()
+	door.position = v + Vector3(0, 2.0, -4.1)
+	door.collision_mask = 0
+	root.add_child(door)
+	live(door, "vault_door", Vector3.ZERO)
+	var dcs := CollisionShape3D.new()
+	var dsh := BoxShape3D.new()
+	dsh.size = Vector3(3.0, 4.0, 0.4)
+	dcs.shape = dsh
+	door.add_child(dcs)
 	out.vault_door = door
-	# the door is a round safe door on a slab: it lifts when both plates are held
-	Art.part(door, Art.cyl(1.55, 1.55, 0.3, 16), Art.GOLD, Vector3(0, 0, -0.3), Vector3.ONE, Vector3(90, 0, 0))
-	Art.part(door, Art.cyl(0.6, 0.6, 0.2, 10), Art.P_STEEL, Vector3(0, 0, -0.5), Vector3.ONE, Vector3(90, 0, 0))
-	for i in 3:
-		Art.part(door, Art.box(Vector3(2.0, 0.14, 0.14)), Art.P_STEEL, Vector3(0, 0, -0.6), Vector3.ONE, Vector3(0, 0, 60.0 * i))
 	sign_post(root, v + Vector3(9.5, 0, -9.0), "THE VAULT\nhold both plates", 0.0, Art.GOLD)
 	chest(root, v + Vector3(0, 0, 1.5), PI)
 	var plates: Array = []
 	for pp: Vector3 in [PLATE_A, PLATE_B]:
 		Kit.landmark(root, b, "m_plate", pp)
-		var top := Art.part(root, Art.cyl(1.4, 1.4, 0.12, 10), Art.P_RED, pp + Vector3(0, 0.25, 0), Vector3.ONE,
-			Vector3.ZERO, false, 0.5)
+		var top := live(root, "plate_top", pp + Vector3(0, 0.25, 0))
 		plates.append(top)
 		props.spawn("crate", pp + Vector3(0, 0.5, -6.0))
 	out.plates = plates
@@ -741,12 +797,10 @@ static func _cove_district(root: Node3D, out: Dictionary, props: PropSystem, b: 
 	for i in 7:
 		var p := c + side * (-13.0 + i * 4.4 + (6.0 if i > 2 else 0.0)) + fwd * 8.0
 		p = _on_ground(p.x, p.z)
-		Art.part(root, Art.cyl(0.05, 0.05, 3.2, 5), Color.WHITE, p + Vector3(0, 1.6, 0))
-		Art.part(root, Art.cyl(0.0, 2.1, 0.75, 8), umbrella_cols[i % 4], p + Vector3(0, 3.2, 0))
-		Art.part(root, Art.cyl(0.0, 2.15, 0.1, 8), Color.WHITE if i % 2 == 0 else umbrella_cols[(i + 2) % 4], p + Vector3(0, 2.84, 0))
+		bit(root, "umbrella%d" % (i % umbrella_cols.size()), p, Vector3.ONE, float(i) * 25.0)
 		for sx: float in [-1.0, 1.0]:
 			var q := p + side * sx * 1.5 - fwd * 0.6
-			Art.part(root, Art.bbox(Vector3(0.75, 0.14, 2.0), 0.2), Art.P_CREAM, q + Vector3(0, 0.32, 0), Vector3.ONE, Vector3(0, rad_to_deg(atan2(fwd.x, fwd.z)), 0))
+			bit(root, "lounger", q, Vector3.ONE, rad_to_deg(atan2(fwd.x, fwd.z)) + 180.0, true)
 	# palms: the district's silhouette
 	var palms := [["pirate_palm_detailed_straight", 1.5], ["pirate_palm_detailed_bend", 1.5], ["pirate_palm_bend", 1.6], ["pirate_palm_straight", 1.5]]
 	var placed := 0
@@ -829,11 +883,8 @@ static func _carnival(root: Node3D, out: Dictionary, props: PropSystem, b: Batch
 	out.coaster = coaster
 	# the cannon landing pad: a giant bouncy target
 	var l := LANDING
-	Art.part(root, Art.cyl(7.0, 7.4, 0.5, 20), Art.P_RED, l + Vector3(0, 0.25, 0))
-	Art.part(root, Art.cyl(5.2, 5.2, 0.52, 20), Color.WHITE, l + Vector3(0, 0.26, 0))
-	Art.part(root, Art.cyl(3.4, 3.4, 0.54, 20), Art.P_RED, l + Vector3(0, 0.27, 0))
-	Art.part(root, Art.cyl(1.6, 1.6, 0.56, 20), Art.GOLD, l + Vector3(0, 0.28, 0))
-	var top := Art.part(root, Art.cyl(7.0, 7.0, 0.04, 20), Art.GOLD, l + Vector3(0, 0.02, 0))
+	bit(root, "landing", l)
+	var top := live(root, "landing_top", l + Vector3(0, 0.5, 0))
 	(out.pads as Array).append({"pos": l + Vector3(0, 0.2, 0), "r": 7.2, "vel": Vector3(0, 13.0, 0), "node": top})
 	Art.label(root, "CANNON LANDING ZONE\n(probably)", l + Vector3(0, 6.5, 0), 0.016, Art.P_RED)
 	# bunting + lights between the rides
@@ -842,8 +893,8 @@ static func _carnival(root: Node3D, out: Dictionary, props: PropSystem, b: Batch
 	Dress.bulbs(b, c + Vector3(4, 7, -2), c + Vector3(24, 7, 10), 18, 1.4, warm)
 	Dress.bulbs(b, c + Vector3(-22, 7, 20), c + Vector3(4, 7, -2), 18, 1.4, warm)
 	for p: Vector3 in [c + Vector3(-22, 0, 20), c + Vector3(4, 0, 34), c + Vector3(4, 0, -2), c + Vector3(24, 0, 10)]:
-		Art.solid_cyl(root, 0.14, 7.0, Art.P_RED, p + Vector3(0, 3.5, 0), 0.1, 6)
-		Art.part(root, Art.cyl(0.0, 0.3, 0.5, 6), Art.GOLD, p + Vector3(0, 7.3, 0))
+		Art.col_cyl(root, 0.14, 7.0, p + Vector3(0, 3.5, 0))
+		bit(root, "pole", p)
 	# prizes
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 909

@@ -44,6 +44,7 @@ const FAME := Vector3(23.2, 3.1, -23.65)
 
 
 static func build(root: Node3D, b: Batch, props: PropSystem) -> Dictionary:
+	Playground.batch = b
 	var out := {}
 	var saloon := Kit.landmark(root, b, "saloon", SALOON)
 	out.saloon_doors = saloon.dyn
@@ -66,19 +67,13 @@ static func build(root: Node3D, b: Batch, props: PropSystem) -> Dictionary:
 
 static func _square(root: Node3D, b: Batch, out: Dictionary) -> void:
 	# Stone circle under the wheel + the big red button
-	var stone := Color("#b8ad9f")
-	Art.part(root, Art.cyl(11.0, 11.2, 0.12, 24), stone, Vector3(0, 0.06, -1.5))
-	Art.part(root, Art.cyl(9.8, 9.8, 0.13, 24), Color("#d3c5ae"), Vector3(0, 0.07, -1.5))
-	Art.part(root, Art.cyl(6.4, 6.4, 0.14, 24), Color("#a33a2c"), Vector3(0, 0.08, -1.5))
-	Art.solid_cyl(root, 1.4, 1.0, Color("#4a4e69"), START_BTN + Vector3(0, 0.5, 0), -1.0, 12)
-	Art.part(root, Art.cyl(1.55, 1.55, 0.18, 12), Art.GOLD, START_BTN + Vector3(0, 0.1, 0))
-	var btn := Art.part(root, Art.cyl(0.9, 1.0, 0.35, 12), Color("#e63946"), START_BTN + Vector3(0, 1.15, 0), Vector3.ONE, Vector3.ZERO, true, 0.35)
-	out.start_button = btn
+	Kit.landmark(root, b, "square_disc", Vector3(0, 0, -1.5))
+	Art.col_cyl(root, 1.4, 1.0, START_BTN + Vector3(0, 0.5, 0))
+	out.start_button = (Kit.landmark(root, b, "start_btn", START_BTN).dyn as Dictionary).get("button")
 	Art.label(root, "START", START_BTN + Vector3(0, 2.2, 0), 0.012, Color.WHITE)
 	# Trampoline: a repurposed wagon wheel, naturally
-	Art.solid_cyl(root, 2.2, 0.5, Color("#6e4326"), TRAMPOLINE + Vector3(0, 0.25, 0), -1.0, 14)
-	Art.part(root, Art.cyl(2.28, 2.28, 0.12, 14), Art.GOLD, TRAMPOLINE + Vector3(0, 0.46, 0))
-	Art.part(root, Art.cyl(2.0, 2.0, 0.06, 14), Color("#3ec1ff"), TRAMPOLINE + Vector3(0, 0.52, 0), Vector3.ONE, Vector3.ZERO, false, 0.3)
+	Art.col_cyl(root, 2.2, 0.5, TRAMPOLINE + Vector3(0, 0.25, 0))
+	Kit.landmark(root, b, "trampoline", TRAMPOLINE)
 	# Fountain, benches and planters around the square
 	Dress.put(root, b, "fantasytown_fountain_round_detail", Vector3(-17, 0, 6), 0.0, 3.0, Dress.COL_BOX)
 	for p: Vector3 in [Vector3(-11, 0, -14), Vector3(11, 0, -14), Vector3(-11, 0, 14), Vector3(11, 0, 14)]:
@@ -118,6 +113,7 @@ static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
 	# VIP velvet gate: only the leader's collision is switched off, see Lobby
 	var gate := Art.solid_box(root, Vector3(0.25, 4.0, 4.4), Color("#e63946"), VIP_GATE + Vector3(0, 2.0, 0), false)
 	(gate.get_child(0) as MeshInstance3D).transparency = 0.9
+	b.add(Kit.part_mesh("wardrobe", "vip"), Dress.xf(VIP_GATE, 90.0), true)  # velvet rope across it
 	out.vip_gate = gate.get_child(1) as CollisionShape3D
 	Art.label(root, "VIP: LEADER ONLY", VIP_GATE + Vector3(-1.4, 3.4, 0), 0.012, Art.GOLD)
 
@@ -293,17 +289,16 @@ static func _store_and_hotel(root: Node3D, b: Batch) -> void:
 	Dress.put(root, b, "kk_restaurant_crate_tomatoes", Vector3(-14.0, 1.75, 35.0), 10.0, 0.42, Dress.COL_NONE, true)
 	Dress.put(root, b, "kk_restaurant_crate_potatoes", Vector3(-20.0, 1.75, 35.0), -14.0, 0.42, Dress.COL_NONE, true)
 	# Wardrobe in the hotel lobby: paint, hats, body swap
-	var base := Art.WOOD.darkened(0.2)
-	Art.solid_box(root, Vector3(1.8, 0.5, 1.8), base, PAINT + Vector3(0, 0.25, 0.1))
-	for i in 4:
-		Art.part(root, Art.cyl(0.35, 0.3, 0.6, 8), Art.SWATCHES[i], PAINT + Vector3(-0.42 + (i % 2) * 0.84, 0.8, -0.32 + (i / 2) * 0.84))
-	Art.solid_cyl(root, 0.1, 2.8, Art.WOOD, HATS + Vector3(0, 1.4, 0), -1.0, 6)
+	Art.col_box(root, Vector3(1.8, 0.5, 1.8), PAINT + Vector3(0, 0.25, 0.1))
+	b.add(Kit.part_mesh("wardrobe", "paint"), Dress.xf(PAINT))
+	Art.col_cyl(root, 0.1, 2.8, HATS + Vector3(0, 1.4, 0))
+	b.add(Kit.part_mesh("wardrobe", "hats"), Dress.xf(HATS))
 	for i in 3:
 		var h := Art.build_hat(["party", "top", "chef"][i])
 		h.position = HATS + Vector3(0, 2.0 + i * 0.4, 0) + Vector3(cos(i * 2.0), 0, sin(i * 2.0)) * 0.35
 		root.add_child(h)
-	Art.solid_box(root, Vector3(2.2, 3.2, 0.3), Color("#b388ff"), BODY + Vector3(0, 1.6, -1.1 + 0.9))
-	Art.part(root, Art.box(Vector3(2.4, 0.3, 1.6)), Color("#8a5fd1"), BODY + Vector3(0, 3.3, 0.5))
+	Art.col_box(root, Vector3(2.2, 3.2, 0.3), BODY + Vector3(0, 1.6, -1.1 + 0.9))
+	b.add(Kit.part_mesh("wardrobe", "booth"), Dress.xf(BODY + Vector3(0, 0, -0.4), 180.0))  # opens toward the lobby
 	Art.label(root, "BODY SWAP", BODY + Vector3(0, 3.9, 0), 0.009)
 	Art.label(root, "PAINT", PAINT + Vector3(0, 2.0, 0), 0.009)
 	Art.label(root, "HATS", HATS + Vector3(0, 3.3, 0), 0.009)
@@ -316,7 +311,7 @@ static func _store_and_hotel(root: Node3D, b: Batch) -> void:
 
 static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
 	# Hall of Fame board on the sheriff's porch (facing the square)
-	Art.part(root, Art.box(Vector3(5.0, 3.0, 0.08)), Color("#3a2f2a"), FAME + Vector3(0, 0, -0.06))
+	b.add(Kit.part_mesh("wardrobe", "fame"), Dress.xf(FAME))
 	var fame := Art.label(root, "", FAME + Vector3(0, -0.2, 0.02), 0.0052, Color.WHITE, false)
 	out.fame = fame
 	Art.label(root, "HALL OF FAME (and shame)", FAME + Vector3(0, 1.8, 0.02), 0.0075, Art.GOLD, false)

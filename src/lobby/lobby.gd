@@ -83,6 +83,7 @@ func build_world() -> void:
 	wheel = BigWheel.new()
 	wheel.position = Vector3(0, 0.1, -4)
 	add_child(wheel)
+	Kit.landmark(self, batch, "wheel_stand", wheel.position)
 	wheel.spin_finished.connect(_on_wheel_done)
 	# Everything static merges into a few chunked meshes; the keep-list stays live
 	# because Lobby animates it.
@@ -104,6 +105,7 @@ func build_world() -> void:
 		keep.append(v)
 	batch.absorb(self, keep)
 	batch.commit(self)
+	Playground.batch = null  # committed: nothing more may be added
 	Ambience.build_island(self)
 
 	floor_fx = CasinoFloorFx.new()
