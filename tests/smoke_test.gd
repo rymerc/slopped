@@ -71,6 +71,14 @@ func _process(_delta: float) -> bool:
 				_finish()
 		10:  # lobby: press start, expect the wheel to launch the minigame
 			if _elapsed() - _t0 > 2.0:
+				var m: Node = w.get_node_or_null("RoomMuffle")
+				_check(m != null and int(m.call("sources")) >= 4, "music sources registered for occlusion")
+				if m:
+					var saloon := Vector3(-21, 2, -33)
+					_check(int(m.call("room_of", saloon)) == 0, "saloon interior is room 0")
+					_check(bool(m.call("muffled", 0, Vector3(0, 2, 0))), "saloon piano is muffled out on the square")
+					_check(not bool(m.call("muffled", 0, saloon)), "saloon piano is clear inside the saloon")
+					_check(bool(m.call("muffled", 2, saloon)), "carnival organ is muffled inside the saloon")
 				root.get_node("Net").set_next_game("giant")  # the lobby picks at random
 				w.req_start()
 				_stage = 11

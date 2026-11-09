@@ -111,14 +111,6 @@
 0
 ]
 },
-"food_plate_dinner": {
-"tris": 0,
-"size": [
-0,
-0,
-0
-]
-},
 "kk_city_box_A": {
 "size": [
 0.2,
@@ -143,62 +135,6 @@
 ],
 "tris": 448
 },
-"kk_furniture_chair_A": {
-"size": [
-0.75,
-1.258,
-0.845
-],
-"tris": 308
-},
-"kk_furniture_chair_A_wood": {
-"size": [
-0.75,
-1.258,
-0.845
-],
-"tris": 308
-},
-"kk_furniture_chair_B_wood": {
-"size": [
-0.75,
-1.258,
-0.845
-],
-"tris": 384
-},
-"kk_furniture_chair_stool": {
-"size": [
-0.75,
-0.5,
-0.75
-],
-"tris": 216
-},
-"kk_furniture_couch": {
-"size": [
-3.0,
-1.224,
-1.6
-],
-"tris": 636
-},
-"kk_furniture_couch_pillows": {
-"size": [
-3.0,
-1.224,
-1.6
-],
-"tris": 808
-},
-"kk_furniture_lamp_standing": {
-"size": [
-1.0,
-2.52,
-1.0
-],
-"tris": 320
-},
 "kk_furniture_rug_oval_A": {
 "size": [
 3.0,
@@ -222,14 +158,6 @@
 0.571
 ],
 "tris": 532
-},
-"kk_furniture_table_small": {
-"size": [
-1.0,
-1.0,
-1.0
-],
-"tris": 168
 },
 "kk_restaurant_chair_stool": {
 "size": [
@@ -551,14 +479,6 @@
 ],
 "tris": 2282
 },
-"retrourban_pallet": {
-"size": [
-1.0,
-0.15,
-1.0
-],
-"tris": 84
-},
 "retrourban_truck_flat": {
 "size": [
 0.83,
@@ -590,14 +510,6 @@
 0.608
 ],
 "tris": 144
-},
-"survival_box_large": {
-"size": [
-0.25,
-0.25,
-0.5
-],
-"tris": 124
 },
 "survival_campfire_pit": {
 "size": [

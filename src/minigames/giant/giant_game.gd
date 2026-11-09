@@ -325,7 +325,7 @@ func _ev_fx(kind: String, pos: Vector3, yaw: float, r: float) -> void:
 		"slap":
 			GiantFx.slap(self, pos, r)
 			Fx.impact(self, pos + Vector3.UP, 1.6)
-			Sfx.at(self, "slap", pos, 8.0, 0.1, 0.8)
+			Sfx.at(self, "slap", pos, 4.0, 0.1, 0.8)
 			if near: cam.shake(1.0)
 		"pee":
 			GiantFx.pee(self, pos, yaw, r)
@@ -335,7 +335,7 @@ func _ev_fx(kind: String, pos: Vector3, yaw: float, r: float) -> void:
 			Sfx.at(self, "fart", pos, -6.0, 0.05, 0.5)
 		"fart":
 			GiantFx.fart(self, pos, yaw, r)
-			Sfx.at(self, "fart", pos, 8.0, 0.1)
+			Sfx.at(self, "fart", pos, 4.0, 0.1)
 			if near: cam.shake(0.8)
 		"tie":
 			GiantFx.burst(self, pos + Vector3.UP * 0.5, Color("#f4e1b0"))

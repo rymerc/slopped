@@ -30,13 +30,31 @@ static func emitter(root: Node3D, n: String, pos: Vector3, bus: StringName, db :
 	return p
 
 
-static func build_island(root: Node3D) -> void:
-	emitter(root, "saloon_piano", LobbyBuilder.SALOON + Vector3(-9, 2, -1), &"Music", -2.0, 42.0)
-	emitter(root, "casino_lounge", LobbyBuilder.CASINO + Vector3(-2, 3, 0), &"Music", -2.0, 42.0)
-	emitter(root, "carnival_organ", Playground.CAROUSEL + Vector3(0, 3, 0), &"Music", 0.0, 60.0)
-	emitter(root, "beach_ukulele", Playground.BAR2 + Vector3(0, 2, 0), &"Music", -2.0, 40.0)
+## Town interiors as boxes (building centre, half size from art_src/blender/town.py
+## and casino.py, rotated into world axes). Order matters: see build_island.
+static func town_rooms() -> Array[AABB]:
+	var out: Array[AABB] = []
+	for r: Array in [[LobbyBuilder.SALOON, Vector3(13.0, 9.6, 9.0)], [LobbyBuilder.CASINO, Vector3(12.0, 9.0, 19.0)],
+			[LobbyBuilder.SHERIFF, Vector3(9.5, 7.0, 8.0)], [LobbyBuilder.STORE, Vector3(8.5, 7.0, 7.0)],
+			[LobbyBuilder.HOTEL, Vector3(12.0, 12.0, 7.5)]]:
+		var c: Vector3 = r[0]
+		var h: Vector3 = r[1]
+		out.append(AABB(Vector3(c.x - h.x, c.y, c.z - h.z), Vector3(h.x * 2.0, h.y, h.z * 2.0)))
+	return out
+
+
+static func build_island(root: Node3D) -> RoomMuffle:
+	var muffle := RoomMuffle.new()
+	muffle.name = "RoomMuffle"
+	muffle.rooms = town_rooms()
+	root.add_child(muffle)
+	muffle.add(emitter(root, "saloon_piano", LobbyBuilder.SALOON + Vector3(-9, 2, -1), &"Music", -2.0, 42.0), 0)
+	muffle.add(emitter(root, "casino_lounge", LobbyBuilder.CASINO + Vector3(-2, 3, 0), &"Music", -2.0, 42.0), 1)
+	muffle.add(emitter(root, "carnival_organ", Playground.CAROUSEL + Vector3(0, 3, 0), &"Music", 0.0, 60.0))
+	muffle.add(emitter(root, "beach_ukulele", Playground.BAR2 + Vector3(0, 2, 0), &"Music", -2.0, 40.0))
 	var cove := Vector3(Playground.BEACH_DIR.x, 0, Playground.BEACH_DIR.y) * 118.0
-	emitter(root, "surf", cove + Vector3(0, Playground.SEA_Y + 2.0, 0), &"Ambience", 0.0, 70.0)
+	muffle.add(emitter(root, "surf", cove + Vector3(0, Playground.SEA_Y + 2.0, 0), &"Ambience", 0.0, 70.0))
 	for a: float in [0.2, 1.3, 2.9, 4.7, 5.6]:
 		var p := Vector3(cos(a), 0, sin(a)) * 132.0 + Vector3(0, Playground.SEA_Y + 2.0, 0)
-		emitter(root, "surf", p, &"Ambience", -5.0, 60.0)
+		muffle.add(emitter(root, "surf", p, &"Ambience", -5.0, 60.0))
+	return muffle

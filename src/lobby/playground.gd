@@ -55,6 +55,8 @@ const FLATS := [
 ]
 
 static var _noise: FastNoiseLite
+## Linear multiplier for the Nature kit bushes: their greens read neon at range.
+const BUSH_TINT := Color(0.66, 0.74, 0.58)
 ## The world Batch while the lobby is being built: small modelled bits (sign
 ## planks, lamps, chests) go straight into it. Set by LobbyBuilder / build().
 static var batch: Batch
@@ -401,7 +403,9 @@ static func _trees(root: Node3D, b: Batch) -> void:
 		var x := rng.randf_range(-126, 126)
 		var z := rng.randf_range(-126, 126)
 		if _grassy(x, z):
-			Dress.put(root, b, bushes[i % bushes.size()], _on_ground(x, z), rng.randf() * 360.0, rng.randf_range(2.0, 3.6), Dress.COL_NONE, true)
+			var bush: String = bushes[i % bushes.size()]
+			var tint := BUSH_TINT if bush.begins_with("nature_plant_bush") else Color.WHITE
+			Dress.put(root, b, bush, _on_ground(x, z), rng.randf() * 360.0, rng.randf_range(2.0, 3.6), Dress.COL_NONE, true, tint)
 	var rocks := ["nature_rock_largeA", "nature_rock_largeD", "nature_rock_largeE", "survival_rock_a", "survival_rock_b", "survival_rock_c"]
 	for i in 54:
 		var x := rng.randf_range(-130, 130)

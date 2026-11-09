@@ -16,9 +16,9 @@ static func xf(pos: Vector3, yaw_deg := 0.0, s := 1.0) -> Transform3D:
 
 ## detail=true puts it on the no-shadow, distance-culled layer (small clutter).
 static func put(root: Node3D, b: Batch, id: String, pos: Vector3, yaw_deg := 0.0, s := 1.0,
-		col := COL_NONE, detail := false) -> void:
+		col := COL_NONE, detail := false, tint := Color.WHITE) -> void:
 	var t := xf(pos, yaw_deg, s)
-	b.add(Kit.mesh(id), t, detail)
+	b.add(Kit.mesh(id), t, detail, tint)
 	if col == COL_BOX:
 		box_collider(root, t, Kit.aabb(id))
 

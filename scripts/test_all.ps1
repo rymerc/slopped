@@ -35,6 +35,7 @@ Run-Test "smoke lobby" "tests/smoke_test.gd" @("--host", "--bots=3") 60 "SMOKE O
 Run-Test "smoke giant" "tests/smoke_test.gd" @("--host", "--bots=4", "--giant") 60 "SMOKE OK"
 Run-Test "physics" "tests/physics_test.gd" @("--host", "--bots=2") 70 "PHYSICS OK"
 Run-Test "settings" "tests/settings_test.gd" @() 30 "SETTINGS OK"
+Run-Test "gamepad + display" "tests/ui_test.gd" @() 30 "UI OK"
 Run-Test "town walk" "tests/town_test.gd" @("--host", "--bots=1") 280 "TOWN OK"
 Run-Test "rides" "tests/rides_test.gd" @("--host", "--bots=1") 175 "RIDES OK"
 foreach ($g in "pocket", "soup", "cursed") {

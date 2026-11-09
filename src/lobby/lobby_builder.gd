@@ -86,24 +86,26 @@ static func _saloon_interior(root: Node3D, b: Batch, out: Dictionary) -> void:
 	var f := 0.4
 	# stools along the bar
 	for i in 8:
-		Dress.put(root, b, "kk_restaurant_chair_stool", SALOON + Vector3(-8.0 + i * 2.0, f, -3.3), 15.0 * i, 0.95, Dress.COL_NONE, true)
+		Furn.put(b, "stool", SALOON + Vector3(-8.0 + i * 2.0, f, -3.3), 15.0 * i)
 	# tables
 	for t: Vector3 in [Vector3(-7, 0, 2.5), Vector3(-1.5, 0, 4.8), Vector3(3.5, 0, 1.0), Vector3(-8.6, 0, 6.6)]:
 		var p := SALOON + t + Vector3(0, f, 0)
-		Dress.put(root, b, "kk_furniture_table_small", p, 20.0, 1.25, Dress.COL_BOX)
+		Furn.put(b, "table", p, 20.0)
+		Art.col_box(root, Vector3(1.25, 1.25, 1.25), p + Vector3(0, 0.625, 0), Vector3(0, 20.0, 0))
 		for k in 3:
 			var a := k * TAU / 3.0 + t.x
-			Dress.put(root, b, "kk_furniture_chair_A_wood", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0, 0.95, Dress.COL_NONE, true)
+			Furn.put(b, "chair", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0)
 		Dress.put(root, b, "food_mug", p + Vector3(0.1, 1.0, 0.15), 0.0, 0.5, Dress.COL_NONE, true)
 		Dress.put(root, b, "pirate_bottle", p + Vector3(-0.2, 1.0, -0.1), 0.0, 0.5, Dress.COL_NONE, true)
 	Dress.put(root, b, "kk_furniture_rug_oval_A", SALOON + Vector3(-3, f + 0.01, 3), 0.0, 3.0, Dress.COL_NONE, true)
 	var up := 5.62
 	for t: Vector3 in [Vector3(-6.5, 0, 7.0), Vector3(5.5, 0, 7.0)]:
 		var p := SALOON + t + Vector3(0, up, 0)
-		Dress.put(root, b, "kk_furniture_table_small", p, -10.0, 1.25, Dress.COL_BOX)
+		Furn.put(b, "table", p, -10.0)
+		Art.col_box(root, Vector3(1.25, 1.25, 1.25), p + Vector3(0, 0.625, 0), Vector3(0, -10.0, 0))
 		for k in 2:
 			var a := PI * k + 0.3
-			Dress.put(root, b, "kk_furniture_chair_A_wood", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0, 0.95, Dress.COL_NONE, true)
+			Furn.put(b, "chair", p + Vector3(cos(a), 0, sin(a)) * 1.25, rad_to_deg(-a) - 90.0)
 		Dress.put(root, b, "pirate_bottle", p + Vector3(-0.2, 1.0, -0.1), 0.0, 0.5, Dress.COL_NONE, true)
 	# barrels behind the bar + on the porch
 	for i in 3:
@@ -236,7 +238,7 @@ static func casino_floor(root: Node3D, b: Batch, out: Dictionary) -> void:
 	Kit.landmark(root, b, "blackjack_table", BJ_TABLE, 0.0)
 	# stools + a dealer per table
 	for i in BJ_SEATS:
-		Dress.put(root, b, "kk_furniture_chair_stool", bj_stool(i) + (BJ_TABLE - bj_stool(i)).normalized() * 0.1, i * 30.0, 0.62, Dress.COL_NONE, true)
+		Furn.put(b, "stool", bj_stool(i) + (BJ_TABLE - bj_stool(i)).normalized() * 0.1, i * 30.0, 0.65)
 	# VIP couch + plants, and the Crash wall label
 	Kit.landmark(root, b, "back_room", DEEDS + Vector3(0.6, 0, 0), 90.0)
 	_seats(root, out)
@@ -302,11 +304,12 @@ static func _store_and_hotel(root: Node3D, b: Batch) -> void:
 	Art.label(root, "BODY SWAP", BODY + Vector3(0, 3.9, 0), 0.009)
 	Art.label(root, "PAINT", PAINT + Vector3(0, 2.0, 0), 0.009)
 	Art.label(root, "HATS", HATS + Vector3(0, 3.3, 0), 0.009)
-	Dress.put(root, b, "kk_furniture_couch", Vector3(10.4, 0.4, 30.5), 90.0, 1.3, Dress.COL_BOX, true)
-	Dress.put(root, b, "kk_furniture_lamp_standing", Vector3(10.2, 0.4, 28.2), 0.0, 1.3, Dress.COL_NONE, true)
+	Furn.put(b, "settee", Vector3(10.4, 0.4, 30.5), 90.0)  # collider: the old couch's 3.9 x 1.59 x 2.08 box
+	Art.col_box(root, Vector3(3.9, 1.59, 2.08), Vector3(10.4, 0.4, 30.5) + Basis(Vector3.UP, PI * 0.5) * Vector3(0, 0.796, 0.065), Vector3(0, 90, 0))
+	Furn.put(b, "lamp", Vector3(10.2, 0.4, 28.2), 0.0)
 	Dress.put(root, b, "kk_furniture_shelf_B_large_decorated", Vector3(8.2, 0.4, 38.8), 180.0, 1.2, Dress.COL_NONE, true)
 	for x: float in [10.0, 14.0, 24.0, 28.0]:
-		Dress.put(root, b, "kk_furniture_chair_A", Vector3(x, 0.4, 23.8), x * 7.0, 1.0, Dress.COL_NONE, true)
+		Furn.put(b, "armchair", Vector3(x, 0.4, 23.8), x * 7.0)
 
 
 static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
@@ -317,7 +320,7 @@ static func _jail(root: Node3D, b: Batch, out: Dictionary) -> void:
 	Art.label(root, "HALL OF FAME (and shame)", FAME + Vector3(0, 1.8, 0.02), 0.0075, Art.GOLD, false)
 	Art.label(root, "ADOPT A BOT", KENNEL + Vector3(-3.2, 1.5, -1.2), 0.008, Ui.YELLOW)  # below the crime signs
 	Art.label(root, "RELEASE A BOT", KENNEL + Vector3(4.6, 1.5, -1.2), 0.008, Ui.YELLOW)
-	Dress.put(root, b, "kk_furniture_chair_B_wood", KENNEL + Vector3(-5.0, 0, 4.9), 200.0, 1.0, Dress.COL_NONE, true)
+	Furn.put(b, "chair", KENNEL + Vector3(-5.0, 0, 4.9), 200.0)
 	Dress.put(root, b, "kk_furniture_shelf_B_small_decorated", KENNEL + Vector3(7.5, 0, 7.5), 0.0, 1.1, Dress.COL_NONE, true)
 	# the cell signs say what they're in for
 	var crimes := [[Vector3(-6.0, 0, 0), "LIFE\nfor running in the lobby"], [Vector3(4.2, 0, 0), "25 YEARS\nfor counting cards (badly)"]]

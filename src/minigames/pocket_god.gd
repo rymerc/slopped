@@ -261,7 +261,7 @@ func _ev_hand(pos: Vector3) -> void:
 	tw.tween_property(h, "position", pos + Vector3.UP * 1.5, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(h, "position", pos + Vector3.UP * 30.0, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tw.tween_callback(h.queue_free)
-	Sfx.at(self, "slap", pos, 6.0, 0.1, 0.7)
+	Sfx.at(self, "slap", pos, 2.0, 0.1, 0.7)
 
 
 func game_visuals(delta: float) -> void:

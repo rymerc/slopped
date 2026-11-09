@@ -604,7 +604,7 @@ func _hazard_hits(av: Avatar) -> void:
 					_hz_cd[key] = now
 					var v: Vector3 = r[1]
 					av.self_hit(v * 1.25 + (mid - (r[0] as Vector3)).normalized() * 5.0 + Vector3.UP * 5.0)
-					Sfx.at(self, "bonk", mid, 6.0, 0.1, 0.6)
+					Sfx.at(self, "bonk", mid, 2.0, 0.1, 0.6)
 	for pad: Dictionary in _play.get("pads", []):
 		var p: Vector3 = pad.pos
 		var rel := av.global_position - p

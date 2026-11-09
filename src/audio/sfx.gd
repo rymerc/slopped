@@ -92,9 +92,9 @@ static func _make(n: String) -> AudioStreamWAV:
 		"whoosh": return _render(0.3, func(t: float, _i: int) -> float:  # soft and dark: it plays a lot
 			return _bp_noise(0.04 + 0.12 * sin(PI * t / 0.3)) * sin(PI * t / 0.3) * 0.4)
 		"knock": return _render(0.1, func(t: float, _i: int) -> float:
-			return (sin(TAU * 190.0 * t) * 0.7 + _lp_noise(0.5) * 0.5) * _env(t, 0.1, 0.001))
+			return (sin(TAU * 190.0 * t) * 0.7 + _lp_noise(0.5) * 0.5) * _env(t, 0.1, 0.001) * 0.7)
 		"thud": return _render(0.22, func(t: float, _i: int) -> float:
-			return (sin(TAU * lerpf(80.0, 40.0, t / 0.22) * t) + _lp_noise(0.12) * 0.7) * 0.8 * _env(t, 0.22, 0.002))
+			return (sin(TAU * lerpf(80.0, 40.0, t / 0.22) * t) + _lp_noise(0.12) * 0.7) * 0.6 * _env(t, 0.22, 0.002))
 		"death": return _render(0.75, func(t: float, _i: int) -> float:
 			var f := lerpf(950.0, 220.0, t / 0.75) * (1.0 + sin(TAU * 7.0 * t) * 0.04)
 			return sin(TAU * f * t) * 0.4 * _env(t, 0.75, 0.01))
@@ -107,10 +107,10 @@ static func _make(n: String) -> AudioStreamWAV:
 		"fart": return _render(0.8, func(t: float, _i: int) -> float:
 			var f := 70.0 + sin(TAU * 9.0 * t) * 18.0 + randf() * 6.0
 			return (_saw(t, f) * 0.6 + _lp_noise(0.2) * 0.4) * _env(t, 0.8, 0.02) * 0.8)
-		"slap": return _render(0.12, func(t: float, _i: int) -> float:
-			return randf_range(-1, 1) * pow(maxf(0.0, 1.0 - t / 0.12), 4.0))
-		"hiss": return _render(0.8, func(t: float, _i: int) -> float:
-			return randf_range(-1, 1) * 0.25 * _env(t, 0.8, 0.05))
+		"slap": return _render(0.12, func(t: float, _i: int) -> float:  # filtered: raw white noise was harsh
+			return (_lp_noise(0.45) * 0.55 + sin(TAU * lerpf(260.0, 120.0, t / 0.12) * t) * 0.35) * pow(maxf(0.0, 1.0 - t / 0.12), 3.0))
+		"hiss": return _render(0.8, func(t: float, _i: int) -> float:  # band-limited: it repeats a lot
+			return _bp_noise(0.45) * 0.3 * _env(t, 0.8, 0.05))
 		"splash": return _render(0.5, func(t: float, _i: int) -> float:
 			return _bp_noise(0.3) * _env(t, 0.5, 0.004) * 0.9)
 		"ding": return _render(0.5, func(t: float, _i: int) -> float:
@@ -120,8 +120,8 @@ static func _make(n: String) -> AudioStreamWAV:
 			return _sq(t, 988.0 if t < 0.07 else 1319.0) * 0.22 * _env(t, 0.22, 0.002))
 		"boing": return _render(0.4, func(t: float, _i: int) -> float:
 			return sin(TAU * 200.0 * t + 6.0 * sin(TAU * 14.0 * t)) * 0.5 * _env(t, 0.4, 0.002))
-		"click": return _render(0.03, func(t: float, _i: int) -> float:
-			return randf_range(-1, 1) * maxf(0.0, 1.0 - t * 40.0) * 0.6)
+		"click": return _render(0.03, func(t: float, _i: int) -> float:  # a soft tick: it plays for every card
+			return (_lp_noise(0.5) * 0.3 + sin(TAU * 1700.0 * t) * 0.25) * maxf(0.0, 1.0 - t * 40.0))
 		"wind": return _render(2.0, func(t: float, _i: int) -> float:
 			return _bp_noise(0.04 + 0.02 * sin(TAU * 0.5 * t)) * 0.8, true)
 		"flush": return _render(1.5, func(t: float, _i: int) -> float:

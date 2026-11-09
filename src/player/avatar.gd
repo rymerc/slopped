@@ -384,8 +384,8 @@ func die(impulse: Vector3, style := "launch") -> void:
 		Fx.confetti(w, pos + Vector3.UP, 24)
 		Fx.text(w, pos + Vector3.UP * 2.2 * size, ["RIP", "BONK", "ouchie", "skill issue", "x_x", "WASTED (lol)"].pick_random(),
 			Art.GOLD, 0.022, 2.0, 1.6)
-		Sfx.at(w, "death", pos, 2.0, 0.1)
-		Sfx.at(w, "bonk", pos, 0.0)
+		Sfx.at(w, "death", pos, 0.0, 0.1)
+		Sfx.at(w, "bonk", pos, -6.0)  # layered under the whistle, not doubled on top of it
 	set_dead(true)
 
 

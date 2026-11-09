@@ -105,6 +105,9 @@ func _process(_d: float) -> bool:
 				["fame", Vector3(23.2, 3.0, -19.5), Vector3(23.2, 3.0, -23.65)],
 				["vip", Vector3(-9.5, 2.0, -24.5), Vector3(-13.4, 1.0, -26.2)],
 				["umbrellas", Vector3(-84, 3.5, 70), Vector3(-96, 1.5, 78)],
+				["saloon_tables", Vector3(-18, 2.4, -27), Vector3(-24, 0.8, -33)],
+				["hotel_lounge", Vector3(16, 2.4, 26), Vector3(10.4, 0.8, 30)],
+				["bushes", Vector3(-30, 14, 60), Vector3(-60, 0, 100)],
 			]
 			w.casino.req_slots(1)
 			w.casino.req_wheel()

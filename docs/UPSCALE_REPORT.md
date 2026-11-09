@@ -39,22 +39,22 @@ The original game had **no model, texture or audio files**. Everything was GDScr
 
 - **Retained**: all gameplay systems, characters, Big Wheel, Slide Hill, Gauntlet, Narrow Bridge, crane, wrecking ball, Giant Hunt.
 - **Replaced**: everything marked above.
-- **Added**: 63 custom models, 96 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
+- **Added**: 84 custom models, 85 CC0 models, 5 music and ambience loops, UI font, roulette game, Human Cannon, spiral slide, diving tower, second Mystery Slop bar, carousel and Ferris wheel, settings system, gamepad support.
 
 ## 3 and 4. Sources and licences
 
 See [ASSET_CREDITS.md](ASSET_CREDITS.md). All third-party models are CC0 and all fonts are OFL.
 
-## 5. Custom models (33)
+## 5. Custom models
 
-No Meshy or Tripo API keys were available, so these are procedural Blender builds. Run `art_src/blender/build_landmarks.py` to regenerate them.
+The table lists the landmarks; with the props, set pieces and "bits" files there are 84 GLBs in all (see 7b and 7c). No Meshy or Tripo API keys were available, so these are procedural Blender builds. Run `art_src/blender/build_landmarks.py` to regenerate them.
 
 | District | Models |
 |---|---|
 | Western | `saloon`, `sheriff`, `store`, `hotel`, `water_tower`, `outhouse`, `town_arch` |
 | Casino | `casino`, `slot_duck`, `slot_skull`, `slot_soup`, `cards`, `back_room`, `roulette_table`, `poker_table`, `blackjack_table`, `prize_wheel`, `crash_cabinet`, `duck_track` |
 | Beach | `beach_bar`, `tiki_hut`, `dock_section`, `dive_tower`, `lighthouse` |
-| Minigames | `soup_pot`, `rocket`, `shrine` |
+| Minigames | `soup_pot`, `rocket`, `shrine`, `soup_raft`, `pg_camp`, `gh_fence`, `gh_hut`, `gh_rack`, `gh_plaza`, `cc_gate_big`, `cc_gate_small`, `cc_candles`, `cc_mess`, `game_bits` |
 | Chaos | `ferris_wheel`, `carousel`, `big_cannon`, `giant_duck`, `spiral_slide`, `ticket_booth` |
 
 Collision is box shapes (`COL_*`), moving parts are separate nodes (`DYN_*`), and AO and lamp light are baked into vertex colours. Each is one material, and buildings run 5–26k triangles.
@@ -97,15 +97,29 @@ Many set pieces were built in GDScript from plain boxes and cylinders. They now 
 - **The Carnival**: four custom stalls (corn dogs, soda, lost and found, restrooms) replace the kit stalls.
 - **Ramps** made in code are now planks on stringers, not slabs.
 
+## 7c. Second detail pass: minigame arenas and lobby leftovers
+
+The same rule as 7b: colliders, triggers and every node the game animates stay in code at their old sizes; the look comes from models placed at the same anchors. New modules: `art_src/blender/arenas.py` (minigames), `street.py` (lobby pieces) and `furniture.py`.
+
+- **Lava Soup**: a toast raft (butter, crumb, a cocktail-stick flag) on the old raft collider; cracker, carrot-coin and mushroom platforms alongside the kit foods; carrots, peas, celery, onion rings and bubbles that ride the soup as it rises; riveted pot seams, a scorched base, a rolled rim, a thermometer clipped to the rim, a leek and celery over the edge, a ring of burner flames, and a real tasting ladle. "SOUP OF THE DAY: YOU" now wraps the curved wall on the sun side; on the old wall the raking sun drew a second, shadow copy under it.
+- **Pocket God**: a castaway workshop (lean-to, blueprint easel, workbench, fire pit, washing line, crates and drums, a LAUNCH sign) replaces the scattered kit tents; lattice launch masts, a hazard-ringed pad and fuel tanks; rocket stages with seams, rivets and mismatched scrap patches; carved shrine stones with an altar, offerings and a haloed duck; a proper giant hand.
+- **Giant Hunt**: log palisade with shields and torches, thatched wattle huts (same little-only doorway), broken columns on worn flagstones, spear racks, mossy boulders, irregular dirt, faceted snow-capped mountains, kit trees with the old trunk colliders.
+- **Cursed Casino Night**: barred, boarded and padlocked doors with their signs built in (the floating label is gone), purple candelabras by the doors, spilled chips and dropped cards.
+- **Lobby**: sign posts (planked boards cut to the text, capped posts, iron brackets; text is still one-sided per face), iron street lamps with tinted glass, the Big Wheel trestle, the START pedestal and button, paving under the wheel, a wagon-wheel trampoline, the Vault's round safe door (same moving body), bounce pads and the inflatable cannon target (the parts that squash are still the animated nodes), deck-level ropes and stakes on the Narrow Bridge (still no railings), pink froth along the chasm goo's shoreline, a Chaos Yard entrance arch (its sign replaces the floating label), pallets and tool crates, a crane hook block, treasure chests, the Slide Hill summit deck and duck flag, the trophy, the striped sweeper, pressure plates, carnival poles, beach umbrellas and loungers, campfire flames, coaster cars and station, the hotel wardrobe (paint bench, hat stand, body-swap booth), the Hall of Fame board and the VIP rope.
+- **Furniture**: the saloon tables, chairs and bar stools, the hotel settee, armchairs and floor lamp, the casino stools and the jail chair are custom western pieces instead of plain KayKit models.
+
+Primitives deliberately left: ramp planks (already planks on stringers), slide-lane rail sticks, the sweeper's flat hazard disc, pendulum and crane cables, far backdrop islands (pure silhouettes in fog), the lighthouse beam, and the casino's flying cards and chips (short-lived FX).
+
 ## 8. Remaining visual deficiencies
 
 - **Upstairs spaces are walk-tested**: the saloon gallery, the saloon's outside stairs, both hotel balconies and the hotel's side stairs are all covered by the town walk test, which now also checks each route ends on the right floor.
-- **Some Nature kit bushes** still read too neon from far away.
+- **Nature kit bushes** are now tinted toward the meadow palette in code (`Playground.BUSH_TINT`). They are still the kit shapes.
 - **NPCs** carry one thing each, fidget (scratch, check a watch, shift about) and slowly wave when you get close. They still have no voices beyond the mutter lines.
-- **Avatars walk through saloon doors and stools**; these have no collision by design.
-- **Music passes through walls.** There's no occlusion.
-- **Not heard by a human:** audio levels and the synthesised music were checked by construction only. Nobody has listened to them yet, including the slide sound you asked about. Sliders are there if anything needs nudging.
-- **Gamepad and the display-mode revert dialog were not exercised** by any test.
+- **Avatars walk through saloon doors and bar stools** by design. The swing doors must be walked through, and stools with collision would box players away from the bar and break the town walk routes. Tables, the settee and the jail furniture keep their colliders.
+- **Music occlusion is cheap and box-based** (`src/audio/room_muffle.gd`). The saloon, casino, sheriff, store and hotel are boxes. A music or surf source whose room differs from the camera's is turned down 9 dB and low-passed to 900 Hz, eased over a third of a second. Only the players' own volume and filter change, so the buses and sliders are untouched. There's no portal logic: an open door muffles the same as a wall, and porches inside a building's footprint count as indoors.
+- **Audio pass (2026-11-08)**: every synthesised clip was rendered and measured. `click`, `slap` and `hiss` were raw white noise and are now filtered. `knock` is 3 dB quieter and `thud` 2.5 dB, since props repeat them. Call sites: the death bonk −6 dB (it sat on top of the death whistle) and the death whistle −2 dB; pendulum bonk +6 → +2 dB; god slap +6 → +2 dB; Giant slap +8 → +4 dB; fire fart +8 → +4 dB.
+- **Not heard by a human:** audio levels and the synthesised music were checked by construction and measurement only. Nobody has listened to them yet, including the slide sound you asked about. Sliders are there if anything needs nudging.
+- **Gamepad and the display-mode revert dialog** are now covered by `tests/ui_test.gd`: every pad binding, the stick and button flow through `Input`, the countdown revert, and Keep. A real controller has still never been plugged in.
 
 ## 9. Performance
 
@@ -121,6 +135,8 @@ Measured at 1600x900 on an RTX 4080 Super with vsync off, Medium preset:
 After the rides, Vault, cave and hotel upstairs were added, the same probe reads: Spawn 949 draws / 3.52 ms, Street 1560 / 3.17, Overview 1203 / 3.08, East 844 / 2.85, with 690k to 910k primitives. Draws are up, mostly from Street, but frame time is about the same. Low-end machines haven't been tested.
 
 The saloon upstairs, hotel balcony and NPC props and eyes add about 100 draws and 0.2 to 0.3 ms, measured back to back against the previous commit on the same machine.
+
+The 2026-11-08 detail pass (minigame arenas, lobby leftovers, furniture), measured back to back against the commit before it: Spawn 928–949 → 861–909 draws, 3.37–3.53 → 3.36–3.44 ms; Street 1547–1561 → 1493–1519, 3.20–3.71 → 3.07–3.14 ms; Overview 1069–1075 → 1029–1043, 2.89–3.00 → 2.81–2.83 ms; East 812–820 → 785–790, 2.80–2.88 → 2.81–2.82 ms. Primitives rose 5–8% (1.06M → 1.15M at Spawn), video memory from about 118 MB to 127 MB, and first world frame stayed about 1.45 s. Draws fell because many separate primitive nodes became batched geometry. The minigame arenas were not perf-probed.
 
 World build went from 946 ms to about 1190 ms, and video memory from 80 MB to 96 MB. Assets add 20 MB to the repo. **None of this was tested on low-end hardware**, which is the real target, so try the Low preset on the weakest machine in your group.
 
@@ -143,7 +159,7 @@ python art_src/make_audio.py
 python art_src/make_grain.py
 ```
 
-`bake_kit.py` needs the source packs downloaded and laid out as in `art_src/kit_manifest.py`. Only 106 of the 321 baked models are committed; re-bake to get others. Don't name a node ending in `_wheel`, `_col`, `_rigid` or similar: Godot's importer treats those suffixes as hints.
+`bake_kit.py` needs the source packs downloaded and laid out as in `art_src/kit_manifest.py`. Only 85 of the 321 baked models are committed; re-bake to get others. Don't name a node ending in `_wheel`, `_col`, `_rigid` or similar: Godot's importer treats those suffixes as hints.
 
 ## Tests
 
@@ -153,6 +169,7 @@ godot --headless --path . -s tests/smoke_test.gd -- --host --bots=3
 godot --headless --path . -s tests/smoke_test.gd -- --host --bots=4 --giant
 godot --headless --path . -s tests/physics_test.gd -- --host --bots=2
 godot --headless --path . -s tests/settings_test.gd
+godot --headless --path . -s tests/ui_test.gd                            # gamepad + display revert
 godot --headless --path . -- --host --bots=1                             # then, in a second shell:
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
 ```

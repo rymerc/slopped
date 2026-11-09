@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://q1ooh2yi2f5l"
-path="res://.godot/imported/survival_box_large.glb-5a616483843a9b365f57333b8f456da0.scn"
+uid="uid://bbt8o8kfkcw1t"
+path="res://.godot/imported/furn.glb-0c87d4c7e3a2b6ad020f6dcaa2788d58.scn"
 
 [deps]
 
-source_file="res://assets/models/kit/survival_box_large.glb"
-dest_files=["res://.godot/imported/survival_box_large.glb-5a616483843a9b365f57333b8f456da0.scn"]
+source_file="res://assets/models/custom/furn.glb"
+dest_files=["res://.godot/imported/furn.glb-0c87d4c7e3a2b6ad020f6dcaa2788d58.scn"]
 
 [params]
 
